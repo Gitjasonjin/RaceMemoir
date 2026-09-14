@@ -34,7 +34,7 @@ function RouteMap({ compact = false }: { compact?: boolean }) {
   </svg>
 }
 export default function Artwork({ item, tapeStyle = 'classic' }: { item: Memory; tapeStyle?: TapeStyle }) {
-  if (item.kind === 'medal') return <Medal item={item}/>
+  if (item.kind === 'medal') return <div className="medal-frame"><div className="frame-mat"><div className="frame-backing"><Medal item={item}/></div></div><span className="frame-glass" aria-hidden="true"/></div>
   if (item.kind === 'photo') return <div className={`photo paper ${item.variant === 'landscape' ? 'landscape' : 'polaroid'}`}><div className="photo-image"><img src={item.image} alt={item.title} draggable={false}/>{item.variant === 'landscape' && <div className="photo-caption handwritten">{item.title}</div>}</div>{item.variant !== 'landscape' && <div className="photo-footer handwritten"><span>{item.title}</span><small>{item.subtitle}</small></div>}</div>
   if (item.kind === 'bib') return <div className={`bib paper ${item.variant === 'blue' ? 'blue' : ''}`}><i className={`tape tape-left tape-${tapeStyle}`}/><i className={`tape tape-right tape-${tapeStyle}`}/><div className="bib-brand"><MountainLogo/><strong>{item.title}</strong><span>RUN<br/>HIGHER<br/>FURTHER</span></div><div className="bib-number">{item.number}</div><div className="bib-tagline">{item.variant === 'blue' ? 'SMALL STEPS, BIG MOUNTAINS' : 'MOUNTAINS MAKE A KINDER YOU'}</div><div className="bib-trees"><Trees/><MountainLogo/><Trees/></div></div>
   if (item.kind === 'note') return <div className={`note ${item.variant === 'paper' ? 'white-note paper' : 'yellow-note'}`}><div className="handwritten">{item.title}</div>{item.variant !== 'paper' && <span className="smiley">◡</span>}</div>

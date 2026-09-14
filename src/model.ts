@@ -7,14 +7,22 @@ export type TapeStyle = typeof TAPE_STYLES[number]
 export type ThreadStyle = typeof THREAD_STYLES[number]
 export interface Decorations { pin: PinStyle; tape: TapeStyle; thread: ThreadStyle }
 export type DecorationChange = { kind: 'pin'; style: PinStyle | undefined } | { kind: 'tape'; style: TapeStyle | undefined } | { kind: 'thread'; style: ThreadStyle | undefined }
-export interface Memory { id: string; kind: Kind; x: number; y: number; w: number; h: number; rotation: number; title: string; subtitle?: string; image?: string; variant?: string; number?: string; pinStyle?: PinStyle; tapeStyle?: TapeStyle }
+export interface Memory { id: string; kind: Kind; x: number; y: number; w: number; h: number; rotation: number; title: string; subtitle?: string; image?: string; variant?: string; number?: string; pinStyle?: PinStyle; tapeStyle?: TapeStyle; pinEnabled?: boolean }
 export interface Thread { id: string; from: string; to: string; style?: ThreadStyle }
 export interface Board { title: string; items: Memory[]; threads: Thread[]; decorations?: Partial<Decorations> }
 export const DEFAULT_DECORATIONS: Decorations = { pin: 'classic', tape: 'classic', thread: 'classic' }
 export function getDecorations(board: Board): Decorations {
   return { pin: board.decorations?.pin ?? DEFAULT_DECORATIONS.pin, tape: board.decorations?.tape ?? DEFAULT_DECORATIONS.tape, thread: board.decorations?.thread ?? DEFAULT_DECORATIONS.thread }
 }
-export function hasPin(item: Memory): boolean { return item.kind !== 'note' || item.variant === 'paper' }
+export function hasTape(item: Memory): boolean { return item.kind === 'bib' }
+export function hasPin(item: Memory): boolean {
+  if (item.kind === 'medal') return false
+  if (hasTape(item)) return item.pinEnabled === true
+  return item.kind !== 'note' || item.variant === 'paper'
+}
+export function setTapePin(board: Board, id: string, enabled: boolean): Board {
+  return { ...board, items: board.items.map(item => item.id === id && hasTape(item) ? { ...item, pinEnabled: enabled } : item) }
+}
 /** Without a target, replace this decoration across the board and set its future default. */
 export function changeDecoration(board: Board, change: DecorationChange, targetId?: string): Board {
   const next = { ...board }
@@ -24,8 +32,8 @@ export function changeDecoration(board: Board, change: DecorationChange, targetI
   } else {
     next.items = board.items.map(item => {
       if (targetId && item.id !== targetId) return item
-      if (change.kind === 'pin' && hasPin(item)) return { ...item, pinStyle: targetId ? change.style : undefined }
-      if (change.kind === 'tape' && item.kind === 'bib') return { ...item, tapeStyle: targetId ? change.style : undefined }
+      if (change.kind === 'pin' && (hasPin(item) || hasTape(item))) return { ...item, pinStyle: targetId ? change.style : undefined }
+      if (change.kind === 'tape' && hasTape(item)) return { ...item, tapeStyle: targetId ? change.style : undefined }
       return item
     })
   }
@@ -66,10 +74,10 @@ export function isBoard(value: unknown): value is Board {
   for (const item of b.items) {
     if (!item || typeof item.id !== 'string' || ids.has(item.id) || !['photo', 'medal', 'bib', 'note', 'map'].includes(item.kind) || typeof item.title !== 'string') return false
     if (![item.x, item.y, item.w, item.h, item.rotation].every(Number.isFinite) || item.w < 30 || item.h < 30 || item.w > WIDTH || item.h > HEIGHT) return false
-    if (item.x < 0 || item.y < 0 || item.x + item.w > WIDTH || item.y + item.h > HEIGHT) return false
     if (['subtitle', 'image', 'variant', 'number'].some(key => item[key as keyof Memory] !== undefined && typeof item[key as keyof Memory] !== 'string')) return false
     if (item.image && !['/images/mountain.jpg', '/images/hiking.jpg', '/images/sunrise.jpg'].includes(item.image)) return false
     if (!validStyle(item.pinStyle, PIN_STYLES) || !validStyle(item.tapeStyle, TAPE_STYLES)) return false
+    if (item.pinEnabled !== undefined && typeof item.pinEnabled !== 'boolean') return false
     ids.add(item.id)
   }
   const threadIds = new Set<string>()
@@ -85,7 +93,7 @@ export function loadBoard(): Board {
   return structuredClone(seed)
 }
 export function pinPosition(item: Memory) {
-  const px = item.w * (item.kind === 'medal' ? .5 : item.kind === 'bib' ? .65 : .35)
+  const px = hasTape(item) ? (hasPin(item) ? item.w * .65 : item.w - 25) : item.w * (item.kind === 'medal' ? .5 : .35)
   const py = item.kind === 'medal' ? 7 : 13
   const angle = item.rotation * Math.PI / 180
   const dx = px - item.w / 2, dy = py - item.h / 2

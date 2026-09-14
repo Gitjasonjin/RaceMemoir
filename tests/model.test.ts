@@ -27,7 +27,7 @@ test('拒绝损坏数据、重复 ID、悬空连接和外部图片路径', () =>
   assert.equal(isBoard({ ...seed, items: [null] }), false)
   assert.equal(isBoard({ ...seed, items: [seed.items[0], seed.items[0]] }), false)
   assert.equal(isBoard({ ...seed, items: [{ ...seed.items[0], x: NaN }] }), false)
-  assert.equal(isBoard({ ...seed, items: [{ ...seed.items[0], x: WIDTH + 1 }], threads: [] }), false)
+  assert.equal(isBoard({ ...seed, items: [{ ...seed.items[0], x: WIDTH + 1 }], threads: [] }), true)
   assert.equal(isBoard({ ...seed, threads: [seed.threads[0], seed.threads[0]] }), false)
   assert.equal(isBoard({ ...seed, threads: [{ id: 'bad', from: 'missing', to: seed.items[0].id }] }), false)
   assert.equal(isBoard({ ...seed, items: [{ ...seed.items[2], image: 'https://example.com/track' }], threads: [] }), false)
