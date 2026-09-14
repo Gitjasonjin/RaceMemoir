@@ -1,7 +1,6 @@
+import { PIN_STYLES, TAPE_STYLES, THREAD_STYLES, resolveStyle } from './styleCatalog.ts'
 export type Kind = 'photo' | 'medal' | 'bib' | 'note' | 'map'
-export const PIN_STYLES = ['classic', 'brass', 'pearl', 'forest'] as const
-export const TAPE_STYLES = ['classic', 'kraft', 'sage', 'dots'] as const
-export const THREAD_STYLES = ['classic', 'fine', 'cord', 'dashed'] as const
+export { PIN_STYLES, TAPE_STYLES, THREAD_STYLES } from './styleCatalog.ts'
 export type PinStyle = typeof PIN_STYLES[number]
 export type TapeStyle = typeof TAPE_STYLES[number]
 export type ThreadStyle = typeof THREAD_STYLES[number]
@@ -9,7 +8,7 @@ export interface Decorations { pin: PinStyle; tape: TapeStyle; thread: ThreadSty
 export type DecorationChange = { kind: 'pin'; style: PinStyle | undefined } | { kind: 'tape'; style: TapeStyle | undefined } | { kind: 'thread'; style: ThreadStyle | undefined }
 export interface Memory { id: string; kind: Kind; x: number; y: number; w: number; h: number; rotation: number; title: string; subtitle?: string; image?: string; variant?: string; number?: string; pinStyle?: PinStyle; tapeStyle?: TapeStyle; pinEnabled?: boolean; recordId?: string; medalScale?: number; photoZoom?: number; photoX?: number; photoY?: number }
 export interface Thread { id: string; from: string; to: string; style?: ThreadStyle }
-export interface Board { title: string; items: Memory[]; threads: Thread[]; decorations?: Partial<Decorations> }
+export interface Board { title: string; items: Memory[]; threads: Thread[]; decorations?: Partial<Decorations>; backgroundStyle?: string }
 export const DEFAULT_DECORATIONS: Decorations = { pin: 'classic', tape: 'classic', thread: 'classic' }
 export function getDecorations(board: Board): Decorations {
   return { pin: board.decorations?.pin ?? DEFAULT_DECORATIONS.pin, tape: board.decorations?.tape ?? DEFAULT_DECORATIONS.tape, thread: board.decorations?.thread ?? DEFAULT_DECORATIONS.thread }
@@ -18,7 +17,7 @@ export function hasTape(item: Memory): boolean { return item.kind === 'bib' }
 export function hasPin(item: Memory): boolean {
   if (item.kind === 'medal') return false
   if (hasTape(item)) return item.pinEnabled === true
-  return item.kind !== 'note' || item.variant === 'paper'
+  return item.kind !== 'note' || resolveStyle('note',item.variant).pin
 }
 export function setTapePin(board: Board, id: string, enabled: boolean): Board {
   return { ...board, items: board.items.map(item => item.id === id && hasTape(item) ? { ...item, pinEnabled: enabled } : item) }
@@ -70,6 +69,7 @@ export function isBoard(value: unknown): value is Board {
     if (!b.decorations || typeof b.decorations !== 'object' || Array.isArray(b.decorations)) return false
     if (!validStyle(b.decorations.pin, PIN_STYLES) || !validStyle(b.decorations.tape, TAPE_STYLES) || !validStyle(b.decorations.thread, THREAD_STYLES)) return false
   }
+  if(b.backgroundStyle!==undefined&&(typeof b.backgroundStyle!=='string'||b.backgroundStyle.length>100))return false
   const ids = new Set<string>()
   for (const item of b.items) {
     if (!item || typeof item.id !== 'string' || ids.has(item.id) || !['photo', 'medal', 'bib', 'note', 'map'].includes(item.kind) || typeof item.title !== 'string') return false
@@ -104,6 +104,6 @@ export function pinPosition(item: Memory) {
   return { x: item.x + item.w / 2 + dx * Math.cos(angle) - dy * Math.sin(angle), y: item.y + item.h / 2 + dx * Math.sin(angle) + dy * Math.cos(angle) }
 }
 export function createMemory(kind: Kind, title: string, variant: string, image: string, number: string): Memory {
-  const size = { photo: [255, 298], medal: [205, 325], bib: [315, 231], note: [160, 150], map: [245, 365] }[kind]
-  return { id: crypto.randomUUID(), kind, title, variant, image: kind === 'photo' ? image : undefined, number, x: 580, y: 320, w: size[0], h: size[1], rotation: -4 + Math.random() * 8, subtitle: '2024.10.26' }
+  const style = resolveStyle(kind,variant)
+  return { id: crypto.randomUUID(), kind, title, variant:style.id, image: kind === 'photo' ? image : undefined, number, x: 580, y: 320, w: style.w, h: style.h, rotation: -4 + Math.random() * 8, subtitle: '2024.10.26' }
 }

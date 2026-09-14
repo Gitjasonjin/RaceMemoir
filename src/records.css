@@ -10,3 +10,7 @@
 
 
 .photo-composition-preview{position:relative;margin:16px auto;max-width:100%}.photo-composition-preview .photo-image img{max-height:none;padding:0}.photo-composition-preview .photo-footer{font-size:22px}.photo-composition-controls select{width:100%;padding:9px;border:1px solid #d7dccb;background:#faf9f2;border-radius:5px}.photo-composition-controls input[type=range]{width:100%;accent-color:#71845d}
+
+.marquee-selection{position:absolute;border:solid #fff8d9;background:#f9f0c62b;pointer-events:none;z-index:10;box-sizing:border-box}
+
+.photo-date{font-family:Arial,sans-serif;font-size:13px;font-weight:400;letter-spacing:.5px}.photo-caption .photo-date{display:block;margin-top:5px;text-align:right;font-size:13px}.photo-footer .photo-date{flex-shrink:0}

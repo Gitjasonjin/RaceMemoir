@@ -1,10 +1,7 @@
+import { PIN_OPTIONS as pinOptions, TAPE_OPTIONS as tapeOptions, THREAD_OPTIONS as threadOptions } from './styleCatalog'
 import { Check, Palette, RotateCcw, X } from 'lucide-react'
 import { getDecorations, hasPin, hasTape } from './model'
-import type { Board, DecorationChange, Memory, PinStyle, TapeStyle, Thread, ThreadStyle } from './model'
-
-const pinOptions: {id: PinStyle; label: string}[] = [{id:'classic',label:'经典红钉'},{id:'brass',label:'复古黄铜'},{id:'pearl',label:'珍珠白钉'},{id:'forest',label:'森林绿钉'}]
-const tapeOptions: {id: TapeStyle; label: string}[] = [{id:'classic',label:'原稿搭配'},{id:'kraft',label:'牛皮纸胶'},{id:'sage',label:'鼠尾草绿'},{id:'dots',label:'蓝色波点'}]
-const threadOptions: {id: ThreadStyle; label: string}[] = [{id:'classic',label:'经典红线'},{id:'fine',label:'轻盈细线'},{id:'cord',label:'编织红绳'},{id:'dashed',label:'手缝虚线'}]
+import type { Board, DecorationChange, Memory, Thread, ThreadStyle } from './model'
 
 /** The canvas and style swatches share the same strokes, including the cord texture. */
 export function ThreadStroke({d, style, shadow = false}: {d: string; style: ThreadStyle; shadow?: boolean}) {
