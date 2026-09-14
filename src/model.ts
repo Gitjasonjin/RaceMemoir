@@ -7,7 +7,7 @@ export type TapeStyle = typeof TAPE_STYLES[number]
 export type ThreadStyle = typeof THREAD_STYLES[number]
 export interface Decorations { pin: PinStyle; tape: TapeStyle; thread: ThreadStyle }
 export type DecorationChange = { kind: 'pin'; style: PinStyle | undefined } | { kind: 'tape'; style: TapeStyle | undefined } | { kind: 'thread'; style: ThreadStyle | undefined }
-export interface Memory { id: string; kind: Kind; x: number; y: number; w: number; h: number; rotation: number; title: string; subtitle?: string; image?: string; variant?: string; number?: string; pinStyle?: PinStyle; tapeStyle?: TapeStyle; pinEnabled?: boolean }
+export interface Memory { id: string; kind: Kind; x: number; y: number; w: number; h: number; rotation: number; title: string; subtitle?: string; image?: string; variant?: string; number?: string; pinStyle?: PinStyle; tapeStyle?: TapeStyle; pinEnabled?: boolean; recordId?: string; medalScale?: number; photoZoom?: number; photoX?: number; photoY?: number }
 export interface Thread { id: string; from: string; to: string; style?: ThreadStyle }
 export interface Board { title: string; items: Memory[]; threads: Thread[]; decorations?: Partial<Decorations> }
 export const DEFAULT_DECORATIONS: Decorations = { pin: 'classic', tape: 'classic', thread: 'classic' }
@@ -78,6 +78,10 @@ export function isBoard(value: unknown): value is Board {
     if (item.image && !['/images/mountain.jpg', '/images/hiking.jpg', '/images/sunrise.jpg'].includes(item.image)) return false
     if (!validStyle(item.pinStyle, PIN_STYLES) || !validStyle(item.tapeStyle, TAPE_STYLES)) return false
     if (item.pinEnabled !== undefined && typeof item.pinEnabled !== 'boolean') return false
+    if (item.recordId !== undefined && (typeof item.recordId !== 'string' || !item.recordId || !['medal','map','photo'].includes(item.kind))) return false
+    if (item.medalScale !== undefined && (!Number.isFinite(item.medalScale) || item.medalScale < .4 || item.medalScale > 1.8)) return false
+    if(item.photoZoom!==undefined&&(!Number.isFinite(item.photoZoom)||item.photoZoom<1||item.photoZoom>3))return false
+    if([item.photoX,item.photoY].some(v=>v!==undefined&&(!Number.isFinite(v)||v<0||v>100)))return false
     ids.add(item.id)
   }
   const threadIds = new Set<string>()

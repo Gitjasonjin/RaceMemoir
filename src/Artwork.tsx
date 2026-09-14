@@ -1,5 +1,10 @@
 import { useId } from 'react'
 import type { Memory, TapeStyle } from './model'
+import type { CollectionRecord } from './records'
+import { displayMemory } from './records'
+import { useBlobUrl } from './useBlobUrl'
+import { useMedalImage } from './useMedalImage'
+import RouteArtwork from './RouteArtwork'
 
 export function MountainLogo({ className = '' }: { className?: string }) {
   return <svg className={className} viewBox="0 0 64 44" fill="currentColor" aria-hidden="true"><path d="M0 42 25 6l10 14L43 8l21 34H0Z"/><path fill="#f6f3e9" d="m16 28 9-13 10 15-8-5-4 6-4-6Zm23-3 4-7 7 12-7-5-3 4Z"/></svg>
@@ -11,7 +16,7 @@ function Medal({ item }: { item: Memory }) {
   const uid = useId().replace(/:/g, '')
   const silver = item.variant === 'silver'
   const light = silver ? '#e3e5df' : '#e5bc7b', mid = silver ? '#898d8b' : '#9b713c', dark = silver ? '#454a4a' : '#4b3725'
-  return <div className={`medal-art ${silver ? 'silver' : ''}`}><div className="ribbon"><MountainLogo/><span>{silver ? 'PINE TRAIL' : 'INTO THE WILD'}</span></div><svg className="medal-svg" viewBox="0 0 240 254" aria-label={item.title}>
+  return <div style={{transform:`scale(${item.medalScale??1})`}} className={`medal-art ${silver ? 'silver' : ''}`}><div className="ribbon"><MountainLogo/><span>{silver ? 'PINE TRAIL' : 'INTO THE WILD'}</span></div><svg className="medal-svg" viewBox="0 0 240 254" aria-label={item.title}>
     <defs><linearGradient id={`${uid}-metal`} x1="0" y1="0" x2="1" y2="1"><stop stopColor={light}/><stop offset=".28" stopColor={dark}/><stop offset=".48" stopColor={mid}/><stop offset=".7" stopColor={dark}/><stop offset="1" stopColor={light}/></linearGradient><linearGradient id={`${uid}-edge`} x2=".9" y2="1"><stop stopColor={light}/><stop offset=".5" stopColor={mid}/><stop offset="1" stopColor={light}/></linearGradient><filter id={`${uid}-grain`}><feTurbulence baseFrequency=".4" numOctaves="3" seed="3" result="noise"/><feComposite in="noise" in2="SourceGraphic" operator="in"/><feBlend in="SourceGraphic" mode="soft-light"/></filter></defs>
     <rect x="92" y="2" width="56" height="21" rx="5" fill={dark} stroke={mid} strokeWidth="5"/><rect x="99" y="1" width="42" height="10" rx="2" fill="#252d28"/>
     <path d={silver ? 'M120 18C180 18 224 67 224 131S183 239 120 239 16 196 16 132 60 18 120 18Z' : 'm120 18 23 11 21-4 15 20 24 7 7 25 18 19-6 28 9 21-17 22-6 25-26 9-18 22-26-1-18 18-24-14-24 2-19-21-26-8-5-24-18-20 8-26-6-25 20-17 8-25 26-6 15-18 22 3Z'} fill={`url(#${uid}-metal)`} stroke={`url(#${uid}-edge)`} strokeWidth="5" filter={`url(#${uid}-grain)`}/>
@@ -33,9 +38,13 @@ function RouteMap({ compact = false }: { compact?: boolean }) {
     <circle cx="93" cy="38" r="4" fill={compact ? '#bd4944' : '#406abd'} stroke="white" strokeWidth="2"/><text x="16" y="22" fontSize="8" fill="#606e61">N</text><path d="m19 27-4 13 4-3 4 3Z" fill="#526c5b"/>
   </svg>
 }
-export default function Artwork({ item, tapeStyle = 'classic' }: { item: Memory; tapeStyle?: TapeStyle }) {
-  if (item.kind === 'medal') return <div className="medal-frame"><div className="frame-mat"><div className="frame-backing"><Medal item={item}/></div></div><span className="frame-glass" aria-hidden="true"/></div>
-  if (item.kind === 'photo') return <div className={`photo paper ${item.variant === 'landscape' ? 'landscape' : 'polaroid'}`}><div className="photo-image"><img src={item.image} alt={item.title} draggable={false}/>{item.variant === 'landscape' && <div className="photo-caption handwritten">{item.title}</div>}</div>{item.variant !== 'landscape' && <div className="photo-footer handwritten"><span>{item.title}</span><small>{item.subtitle}</small></div>}</div>
+export default function Artwork({ item:instance, tapeStyle = 'classic',record }: { item: Memory; tapeStyle?: TapeStyle;record?:CollectionRecord }) {
+  const item=displayMemory(instance,record), {url:imageUrl}=useMedalImage(record?.kind==='medal'?record.originalImage:undefined,record?.kind==='medal'?record.image:undefined)
+  const photoUrl=useBlobUrl(record?.kind==='photo'?record.image:undefined)
+  if(item.recordId&&!record)return <div className="missing-record paper"><strong>记录不可用</strong><span>请从收藏库重新添加，或导入完整备份。</span></div>
+  if (item.kind === 'medal') return <div className="medal-frame"><div className="frame-mat"><div className="frame-backing">{record?.source==='upload'?<img className="real-medal" style={{transform:`scale(${item.medalScale??1})`}} src={imageUrl||undefined} alt={record.name} draggable={false}/>:<Medal item={item}/>}</div></div><span className="frame-glass" aria-hidden="true"/></div>
+  if(item.kind==='map'&&record?.kind==='route'&&record.source==='upload')return <RouteArtwork record={record} compact={item.variant==='green'}/>
+  if (item.kind === 'photo') return <div className={`photo paper ${item.variant === 'landscape' ? 'landscape' : 'polaroid'}`}><div className="photo-image"><img style={{position:"absolute",width:`${(item.photoZoom??1)*100}%`,height:`${(item.photoZoom??1)*100}%`,left:`${(1-(item.photoZoom??1))*(item.photoX??50)}%`,top:`${(1-(item.photoZoom??1))*(item.photoY??50)}%`,objectFit:"cover",objectPosition:`${item.photoX??50}% ${item.photoY??50}%`}} src={photoUrl||item.image} alt={item.title} draggable={false}/>{item.variant === 'landscape' && <div className="photo-caption handwritten">{item.title}</div>}</div>{item.variant !== 'landscape' && <div className="photo-footer handwritten"><span>{item.title}</span><small>{item.subtitle}</small></div>}</div>
   if (item.kind === 'bib') return <div className={`bib paper ${item.variant === 'blue' ? 'blue' : ''}`}><i className={`tape tape-left tape-${tapeStyle}`}/><i className={`tape tape-right tape-${tapeStyle}`}/><div className="bib-brand"><MountainLogo/><strong>{item.title}</strong><span>RUN<br/>HIGHER<br/>FURTHER</span></div><div className="bib-number">{item.number}</div><div className="bib-tagline">{item.variant === 'blue' ? 'SMALL STEPS, BIG MOUNTAINS' : 'MOUNTAINS MAKE A KINDER YOU'}</div><div className="bib-trees"><Trees/><MountainLogo/><Trees/></div></div>
   if (item.kind === 'note') return <div className={`note ${item.variant === 'paper' ? 'white-note paper' : 'yellow-note'}`}><div className="handwritten">{item.title}</div>{item.variant !== 'paper' && <span className="smiley">◡</span>}</div>
   return <div className={`map-paper paper ${item.variant === 'green' ? 'compact' : ''}`}>
