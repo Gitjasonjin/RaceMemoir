@@ -30,3 +30,12 @@ export async function putRecords(records:CollectionRecord[]):Promise<void>{
     catch { tx.abort() }
   })
 }
+export async function deleteRecord(id:string):Promise<void>{
+  const db=await openDatabase()
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction('records','readwrite')
+    tx.oncomplete=()=>{db.close();resolve()}
+    tx.onabort=tx.onerror=()=>{db.close();reject(new Error('删除收藏失败，请重试'))}
+    tx.objectStore('records').delete(id)
+  })
+}

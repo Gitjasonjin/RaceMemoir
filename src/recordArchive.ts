@@ -49,6 +49,10 @@ export function readArchive(text:string):{board:Board;records:CollectionRecord[]
       return decoded
     })
   }
+  return restoreArchive(board,records)
+}
+export function restoreArchive(board:Board,records:CollectionRecord[]){
+  if(!isBoard(board)||records.some(r=>!validRecord(r)))throw new Error('收藏板或记录无效')
   const ids=new Map(records.map(r=>[r.id,r]))
   if(ids.size!==records.length)throw new Error('备份存在重复记录 ID')
   for(const item of board.items){

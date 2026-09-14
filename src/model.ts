@@ -7,7 +7,7 @@ export type ThreadStyle = typeof THREAD_STYLES[number]
 export interface Decorations { pin: PinStyle; tape: TapeStyle; thread: ThreadStyle }
 export type DecorationChange = { kind: 'pin'; style: PinStyle | undefined } | { kind: 'tape'; style: TapeStyle | undefined } | { kind: 'thread'; style: ThreadStyle | undefined }
 export interface Memory { id: string; kind: Kind; x: number; y: number; w: number; h: number; rotation: number; title: string; subtitle?: string; image?: string; variant?: string; number?: string; pinStyle?: PinStyle; tapeStyle?: TapeStyle; pinEnabled?: boolean; recordId?: string; medalScale?: number; photoZoom?: number; photoX?: number; photoY?: number }
-export interface Thread { id: string; from: string; to: string; style?: ThreadStyle }
+export interface Thread { id: string; from: string; to: string; style?: ThreadStyle; curvature?: number }
 export interface Board { title: string; items: Memory[]; threads: Thread[]; decorations?: Partial<Decorations>; backgroundStyle?: string }
 export const DEFAULT_DECORATIONS: Decorations = { pin: 'classic', tape: 'classic', thread: 'classic' }
 export function getDecorations(board: Board): Decorations {
@@ -88,6 +88,7 @@ export function isBoard(value: unknown): value is Board {
   return b.threads.every(t => {
     if (!t || typeof t.id !== 'string' || threadIds.has(t.id) || !ids.has(t.from) || !ids.has(t.to) || t.from === t.to) return false
     if (!validStyle(t.style, THREAD_STYLES)) return false
+    if(t.curvature!==undefined&&(!Number.isFinite(t.curvature)||Math.abs(t.curvature)>.35))return false
     threadIds.add(t.id)
     return true
   })

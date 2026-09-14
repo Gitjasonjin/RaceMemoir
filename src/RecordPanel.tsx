@@ -1,7 +1,8 @@
+import PhotoCropPreview from './PhotoCropPreview'
 import PhotoComposition from './PhotoComposition'
 import { useEffect, useRef, useState } from 'react'
-import type { FormEvent } from 'react'
-import { Archive, ArrowLeft, Check, ImagePlus, Medal, Plus, Route, X } from 'lucide-react'
+import type { FormEvent, ReactNode } from 'react'
+import { Archive, ArrowLeft, Check, ImagePlus, Medal, Plus, RotateCcw, Route, Trash2, X } from 'lucide-react'
 import Artwork from './Artwork'
 import RouteArtwork from './RouteArtwork'
 import { createMemory } from './model'
@@ -17,28 +18,59 @@ import RibbonRepair from './RibbonRepair.tsx'
 
 export type RecordPanelMode = { mode: 'library' | 'medal' | 'photo' | 'route' | 'detail'; id?: string }
 interface Props {
+  styles?: ReactNode
   item?: Memory; onLayout?: (change: Partial<Memory>) => void
   mode: RecordPanelMode; records: CollectionRecord[]; references: (id: string) => number
   onMode: (mode: RecordPanelMode) => void; onClose: () => void
   onSave: (record: CollectionRecord, add: boolean, layout?: Partial<Memory>) => Promise<void>
   onAdd: (record: CollectionRecord) => void
+  onDelete: (id: string) => Promise<void>
 }
 
 export default function RecordPanel(props: Props) {
-  const [recycle, setRecycle] = useState(false)
+  const [showHelp,setShowHelp]=useState(false)
   const record = props.records.find(r => r.id === props.mode.id)
-  return <aside className="record-panel" data-record-panel aria-label="收藏记录" onKeyDown={e => e.stopPropagation()}>
+  return <aside className={`record-panel ${showHelp?'show-editor-help':'hide-editor-help'}`} data-record-panel aria-label="收藏记录" onKeyDown={e => e.stopPropagation()}>
+    <button className="editor-help-toggle" aria-expanded={showHelp} onClick={()=>setShowHelp(v=>!v)}>{showHelp?'隐藏说明':'使用说明'}</button>
     {props.mode.mode === 'library' ? <>
       <div className="record-heading"><div><small>YOUR TRAIL COLLECTION</small><h2>我的收藏库</h2></div><button onClick={props.onClose} aria-label="关闭收藏库"><X size={20}/></button></div>
       <p className="record-muted">保存一份记忆，随时放上画布。移除画布物件不会删除记录。</p>
       <div className="record-actions"><button onClick={() => props.onMode({mode:'medal'})}><Plus size={16}/>上传奖牌</button><button onClick={() => props.onMode({mode:'photo'})}><ImagePlus size={16}/>上传照片</button><button onClick={() => props.onMode({mode:'route'})}><Route size={16}/>导入 GPX</button></div>
-      <button className="record-recycle" onClick={() => setRecycle(!recycle)}><Archive size={14}/>{recycle?'返回全部收藏':'查看回收站'}</button>
-      <div className="record-list">{props.records.filter(r => !!r.archived === recycle).map(r => <div className="record-row" key={r.id}>
-        <button className="record-row-main" onClick={() => props.onMode({mode:'detail',id:r.id})}>{r.kind==='medal'?<Medal size={24}/>:r.kind==='photo'?<ImagePlus size={24}/>:<Route size={24}/>}<span><strong>{r.name}</strong><small>{r.source==='demo'?'示例 · ':''}{r.kind==='medal'?'奖牌':r.kind==='photo'?'照片':'路线'} · 画布上 {props.references(r.id)} 件</small></span></button>
-        {!recycle&&<button onClick={() => props.onAdd(r)} aria-label={`将 ${r.name} 放上画布`} title="放上画布"><Plus size={18}/></button>}
-      </div>)}{!props.records.some(r => !!r.archived === recycle)&&<p className="record-empty">{recycle?'回收站是空的':'还没有收藏，上传第一份记忆吧。'}</p>}</div>
+      <LibraryRecords {...props}/>
     </> : props.mode.mode==='detail'&&!record ? <><div className="record-heading"><h2>记录暂不可用</h2><button onClick={props.onClose} aria-label="关闭详情"><X size={20}/></button></div><p>此物件关联的本地记录已丢失，可以导入完整备份恢复。</p><button onClick={() => props.onMode({mode:'library'})}>打开收藏库</button></> : <RecordEditor key={record?.id||props.mode.mode} {...props} record={record}/>}
   </aside>
+}
+
+function LibraryRecords(props:Props){
+  const [recycle,setRecycle]=useState(false)
+  const [filter,setFilter]=useState<'all'|CollectionRecord['kind']>('all')
+  const [confirmId,setConfirmId]=useState<string|null>(null)
+  const [busy,setBusy]=useState(false),[error,setError]=useState('')
+  const pending=useRef(false)
+  const kinds=[{id:'all',label:'全部'},{id:'medal',label:'奖牌'},{id:'photo',label:'照片'},{id:'route',label:'路线'}] as const
+  const records=props.records.filter(r=>!!r.archived===recycle)
+  const visible=records.filter(r=>filter==='all'||r.kind===filter)
+  const run=async(action:()=>Promise<void>)=>{
+    if(pending.current)return
+    pending.current=true;setBusy(true);setError('')
+    try{await action();setConfirmId(null)}catch(e){setError(e instanceof Error?e.message:'操作失败，请重试')}
+    finally{pending.current=false;setBusy(false)}
+  }
+  return <>
+    <div className="record-filters" role="group" aria-label="收藏类别">{kinds.map(k=><button type="button" key={k.id} aria-pressed={filter===k.id} disabled={busy} onClick={()=>{setFilter(k.id);setConfirmId(null);setError('')}}>{k.label}<span>{k.id==='all'?records.length:records.filter(r=>r.kind===k.id).length}</span></button>)}</div>
+    <button type="button" className="record-recycle" disabled={busy} onClick={()=>{setRecycle(!recycle);setConfirmId(null);setError('')}}><Archive size={14}/>{recycle?'返回收藏库':'查看回收站'}{!recycle&&`（${props.records.filter(r=>r.archived).length}）`}</button>
+    {error&&<p className="record-error" role="alert">{error}</p>}
+    <div className="record-list">{visible.map(r=>{
+      const references=props.references(r.id)
+      return <div className="record-entry" key={r.id}><div className="record-row">
+        <button type="button" className="record-row-main" title={r.name} disabled={busy} onClick={()=>props.onMode({mode:'detail',id:r.id})}>{r.kind==='medal'?<Medal size={24}/>:r.kind==='photo'?<ImagePlus size={24}/>:<Route size={24}/>}<span><strong>{r.name}</strong><small>{r.source==='demo'?'示例 · ':''}{r.kind==='medal'?'奖牌':r.kind==='photo'?'照片':'路线'} · 画布上 {references} 件</small></span></button>
+        {recycle?<button type="button" disabled={busy} onClick={()=>void run(()=>props.onSave({...r,archived:false},false))} aria-label={`恢复 ${r.name}`} title="恢复收藏"><RotateCcw size={17}/></button>:<button type="button" disabled={busy} onClick={()=>props.onAdd(r)} aria-label={`将 ${r.name} 放上画布`} title="放上画布"><Plus size={18}/></button>}
+        <button type="button" className="record-delete" disabled={busy||(recycle&&references>0)} aria-label={`${recycle?'彻底删除':'删除'} ${r.name}`} title={recycle?(references?'请先移除画布上使用此收藏的物件':'彻底删除原始文件'):'移入回收站，画布物件保留'} onClick={()=>{if(recycle){setConfirmId(r.id);setError('')}else void run(()=>props.onSave({...r,archived:true},false))}}><Trash2 size={17}/></button>
+      </div>{recycle&&references>0&&<p className="record-delete-hint">先移除画布上的 {references} 件物件，才能彻底删除。</p>}
+      {confirmId===r.id&&<div className="record-delete-confirm" role="group" aria-label={`确认删除 ${r.name}`}><p>彻底删除这份收藏及原始文件？此操作无法撤销。</p><button type="button" disabled={busy} className="record-delete" onClick={()=>void run(()=>props.onDelete(r.id))}>确认彻底删除</button><button type="button" disabled={busy} onClick={()=>setConfirmId(null)}>取消</button></div>}
+      </div>
+    })}{!visible.length&&<p className="record-empty">{filter!=='all'?'此类别暂无收藏':recycle?'回收站是空的':'还没有收藏，上传第一份记忆吧。'}</p>}</div>
+  </>
 }
 
 function RecordEditor(props: Props & { record?: CollectionRecord }) {
@@ -106,9 +138,9 @@ function RecordEditor(props: Props & { record?: CollectionRecord }) {
   const demoItem=createMemory(draft.kind==='medal'?'medal':'map',draft.name,draft.kind==='medal'?(draft.variant||'bronze'):'blue','','')
   return <>
     <div className="record-heading"><button disabled={saving} onClick={() => props.onMode({mode:'library'})} aria-label="返回收藏库"><ArrowLeft size={19}/></button><div><small>A MEMORY WORTH KEEPING</small><h2>{record?'编辑':'添加'}{kindLabel}</h2></div><button onClick={props.onClose} aria-label="关闭详情"><X size={20}/></button></div>
-    {draft.source==='demo'&&<p className="record-notice">示例记录 · 上传{draft.kind==='medal'?'真实奖牌照片':'GPX'}后，画布上的关联物件会一同替换。</p>}
+    {draft.source==='demo'&&<p className="record-notice editor-explanation">示例记录 · 上传{draft.kind==='medal'?'真实奖牌照片':'GPX'}后，画布上的关联物件会一同替换。</p>}
     {!repairing&&<div ref={preview} className={`record-preview ${draft.kind==='medal'?'medal-preview':''}`}>
-      {draft.kind==='photo'&&image?<div className="photo-composition-preview" style={{width:photoItem.w,height:photoItem.h}}><Artwork item={photoItem} record={draft}/></div>:draft.kind!=='route' ? image ? <img src={showOriginal?original:image} alt={`${draft.name||kindLabel}预览`}/> : draft.source==='demo'? <div className="demo-record-preview"><Artwork item={demoItem} record={draft}/></div>:<div className="upload-placeholder">{draft.kind==='photo'?<ImagePlus size={42}/>:<Medal size={42}/>}<span>{draft.kind==='photo'?'上传照片，留下你的山野瞬间':'让这块奖牌，成为你的收藏'}</span></div>
+      {draft.kind==='photo'&&image?<PhotoCropPreview key={image} item={photoItem} record={draft} onChange={!busy&&(!record||props.item?.kind==='photo')?changePhoto:undefined}/>:draft.kind!=='route' ? image ? <img src={showOriginal?original:image} alt={`${draft.name||kindLabel}预览`}/> : draft.source==='demo'? <div className="demo-record-preview"><Artwork item={demoItem} record={draft}/></div>:<div className="upload-placeholder">{draft.kind==='photo'?<ImagePlus size={42}/>:<Medal size={42}/>}<span>{draft.kind==='photo'?'上传照片，留下你的山野瞬间':'让这块奖牌，成为你的收藏'}</span></div>
         : draft.trackPoints.length ? <RouteArtwork record={draft as RouteRecord}/> : <div className="upload-placeholder"><Route size={42}/><span>{draft.source==='demo'?'示例路线 · 尚无真实轨迹':'导入走过的路'}</span></div>}
     </div>}
     {draft.kind==='photo'&&(!record||props.item?.kind==='photo')&&<PhotoComposition item={photoItem} onChange={changePhoto}/>}
@@ -117,7 +149,7 @@ function RecordEditor(props: Props & { record?: CollectionRecord }) {
       <MedalSizing item={props.item} aspect={aspect} onChange={props.onLayout}/>
     </>}
     {repairing&&draft.kind==='medal'&&draft.originalImage&&draft.image&&<RibbonRepair original={draft.originalImage} image={draft.image} onApply={image=>{patch({image,cutout:'done'});setRepairing(false);setShowOriginal(false);setNotice(`绶带修复已应用，点击「${record?'保存修改':'保存并放上画布'}」保存到收藏记录。`)}} onClose={()=>setRepairing(false)}/>}
-    <form onSubmit={e=>void save(e)}>
+    <form onSubmit={e=>void save(e)}><p className="record-muted">名称、日期和上传文件需点击下方保存；已放上画布的构图调整会自动保存。</p>
       <label className="record-upload">{reading?'正在读取文件…':draft.kind!=='route'?`选择 / 更换${kindLabel}图片`:'选择 / 更换 GPX 文件'}<input type="file" disabled={saving||reading||repairing} accept={draft.kind!=='route'?'image/png,image/jpeg,image/webp':'.gpx'} onChange={e=>{void upload(e.target.files?.[0]);e.currentTarget.value=''}}/></label>
       <p className="record-muted">{draft.kind==='photo'?'PNG / JPG / WebP，最大 20 MB。保留原图并存入本机收藏库。':draft.kind==='medal'?'PNG / JPG / WebP，最大 20 MB。上传后自动抠取奖牌并补全绶带，首次需下载模型。':'最大 15 MB / 10 万轨迹点；按 GPX 计算里程与爬升，不加载地图底图。'}</p>
       {cutout.progress&&<div className="record-progress" role="status"><span className="record-spinner"/>{cutout.progress}<button type="button" onClick={()=>{cutout.cancel();setNotice('已取消抠图，使用原图。')}}>取消抠图</button></div>}
@@ -126,6 +158,7 @@ function RecordEditor(props: Props & { record?: CollectionRecord }) {
       {draft.kind==='photo'&&<label className="field-label">拍摄日期<input type="date" value={draft.date||''} disabled={saving} onChange={e=>patch({date:e.target.value})}/></label>}
       <label className="field-label">备注<textarea rows={3} maxLength={5000} value={draft.note} disabled={saving} onChange={e=>patch({note:e.target.value})} placeholder="记下这段旅程的故事…"/></label>
       {error&&<p className="record-error" role="alert">{error}</p>}{notice&&<p className="record-notice" role="status">{notice}</p>}
+      {props.styles}
       <button className="primary-button full-width" type="submit" disabled={busy}><Check size={17}/>{saving?'正在保存…':record?'保存修改':'保存并放上画布'}</button>
     </form>
     {record?.archived&&<div className="record-footer"><button type="button" disabled={busy} onClick={async()=>{setSaving(true);setError('');try{await props.onSave({...draft,archived:false},false);if(mounted.current)props.onClose()}catch(e){if(mounted.current){setError(e instanceof Error?e.message:'恢复失败');setSaving(false)}}}}>恢复收藏</button></div>}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="76" viewBox="0 0 64 76" fill="none">
+  <!-- Near-frontal spool pin: shallow relief and restrained, matte shading. -->
+  <ellipse cx="30" cy="57" rx="17" ry="12" fill="#39251d" opacity=".14"/>
+  <g transform="rotate(8 32 54)">
+    <path d="M15 53v2c0 7 8 12 17 12s17-5 17-12v-2Z" fill="#ac2c3a"/>
+    <ellipse cx="32" cy="53" rx="17" ry="12" fill="#d33e49" stroke="#b93240" stroke-width=".7"/>
+    <ellipse cx="32" cy="51" rx="8" ry="4" fill="#a92e3b" opacity=".35"/>
+    <path d="M26 34c1 6 1 12-2 17 1 4 15 4 16 0-3-5-3-11-2-17Z" fill="#c03443"/>
+    <path d="M17 29v2c0 7 7 13 15 13s15-6 15-13v-2Z" fill="#b82e3d"/>
+    <ellipse cx="32" cy="29" rx="15" ry="13" fill="#ed5057" stroke="#d84450" stroke-width=".7"/>
+    <path d="M22 23c3-3 7-4 11-4" stroke="#ff9990" stroke-opacity=".45" stroke-width="1.2" stroke-linecap="round"/>
+  </g>
+</svg>

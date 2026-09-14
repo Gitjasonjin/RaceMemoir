@@ -4,13 +4,25 @@ import 'fake-indexeddb/auto'
 import { seed, isBoard } from '../src/model.ts'
 import { migrateBoard, displayMemory, recordFor, validRecord } from '../src/records.ts'
 import type { MedalRecord, RouteRecord } from '../src/records.ts'
-import { readRecords, putRecords } from '../src/recordStore.ts'
+import { deleteRecord, readRecords, putRecords } from '../src/recordStore.ts'
 import { makeArchive, readArchive } from '../src/recordArchive.ts'
 
 const original=new Blob(['original-image'],{type:'image/jpeg'})
 const processed=new Blob(['transparent-png'],{type:'image/png'})
 const medal:MedalRecord={id:'real-medal',kind:'medal',name:'山野五十公里',date:'2026-09-14',note:'完赛纪念',source:'upload',originalImage:original,image:processed,cutout:'done'}
 const route:RouteRecord={id:'real-route',kind:'route',name:'山脊环线',note:'清晨出发',source:'upload',gpx:new Blob(['<gpx/>'],{type:'application/gpx+xml'}),trackPoints:[{lat:30,lon:120,elevation:100,segment:0},{lat:30.01,lon:120.01,elevation:110,segment:0}]}
+
+test('彻底删除释放整条收藏及文件，重新读取不恢复且不影响其他记录',async()=>{
+  const removed={...medal,id:'delete-medal',archived:true},kept={...route,id:'keep-route'}
+  await putRecords([removed,kept])
+  await deleteRecord(removed.id)
+  await deleteRecord(removed.id)
+  const records=await readRecords()
+  assert.equal(records.some(r=>r.id===removed.id),false)
+  const restored=records.find(r=>r.id===kept.id) as RouteRecord
+  assert.equal(await restored.gpx!.text(),await kept.gpx!.text())
+  assert.deepEqual(restored.trackPoints,kept.trackPoints)
+})
 
 test('上传照片通过本地存储和完整备份恢复原始字节及物件关联',async()=>{
   const photo={id:'uploaded-photo',kind:'photo' as const,name:'山野照片',note:'',source:'upload' as const,image:new Blob([new Uint8Array([1,2,3,255])],{type:'image/png'})}

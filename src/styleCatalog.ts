@@ -31,7 +31,7 @@ export function resolveStyle<K extends StyledKind>(kind:K,id?:string):(typeof IT
   return (options.find(style=>style.id===id)??options[0]) as (typeof ITEM_STYLES)[K][number]
 }
 
-export const PIN_OPTIONS = [{id:'classic',label:'经典红钉'},{id:'brass',label:'复古黄铜'},{id:'pearl',label:'珍珠白钉'},{id:'forest',label:'森林绿钉'}] as const
+export const PIN_OPTIONS = [{id:'classic',label:'经典红钉'},{id:'brass',label:'复古黄铜'},{id:'pearl',label:'珍珠白钉'},{id:'forest',label:'森林绿钉'},{id:'spool',label:'工字钉'}] as const
 export const TAPE_OPTIONS = [{id:'classic',label:'原稿搭配'},{id:'kraft',label:'牛皮纸胶'},{id:'sage',label:'鼠尾草绿'},{id:'dots',label:'蓝色波点'}] as const
 export const THREAD_OPTIONS = [{id:'classic',label:'经典红线'},{id:'fine',label:'轻盈细线'},{id:'cord',label:'编织红绳'},{id:'dashed',label:'手缝虚线'}] as const
 export const PIN_STYLES=PIN_OPTIONS.map(s=>s.id)

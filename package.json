@@ -15,6 +15,7 @@
   "type": "module",
   "dependencies": {
     "@imgly/background-removal": "^1.7.0",
+    "fflate": "^0.8.3",
     "html-to-image": "^1.11.13",
     "lucide-react": "^1.43.0",
     "react": "^19.3.0",
