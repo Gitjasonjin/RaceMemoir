@@ -8,6 +8,8 @@
   <a href="LICENSE"><img alt="License: AGPL v3" src="https://img.shields.io/badge/License-AGPL_v3-blue" /></a>
 </p>
 
+<p align="center">简体中文 · <a href="README.en.md">English</a></p>
+
 山径线索板是一款记录赛事与山野旅程的 Web 数字收藏板。
 
 将真实奖牌装入展示框、照片用大头钉固定、号码布用胶带贴住，把 GPX 轨迹变成路线卡，在无限画布上用红线串联每段记忆。
