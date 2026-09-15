@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { seed, getDecorations, DEFAULT_DECORATIONS, changeDecoration, isBoard, pinPosition, hasPin, setTapePin } from '../src/model.ts'
+import { seed, getDecorations, DEFAULT_DECORATIONS, changeDecoration, isBoard, pinPosition, hasPin, setTapePin } from '../src/domain/model.ts'
 
 test('旧收藏板无需迁移即可使用原稿样式', () => {
   const legacy = JSON.parse(JSON.stringify(seed))

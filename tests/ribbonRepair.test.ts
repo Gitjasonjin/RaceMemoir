@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { paintRibbonStroke } from '../src/ribbonBrush.ts'
-import type { PixelImage } from '../src/ribbonBrush.ts'
+import { paintRibbonStroke } from '../src/items/medal/ribbonBrush.ts'
+import type { PixelImage } from '../src/items/medal/ribbonBrush.ts'
 
 const image=(width:number,height:number,alpha:number):PixelImage=>({width,height,data:Uint8ClampedArray.from({length:width*height*4},(_,i)=>i%4===3?alpha:[190,40,65][i%4])})
 const alpha=(pixels:PixelImage,x:number,y:number)=>pixels.data[(y*pixels.width+x)*4+3]

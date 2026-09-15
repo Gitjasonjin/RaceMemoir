@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { automaticRibbonMask } from '../src/autoRibbon.ts'
-import type { PixelImage } from '../src/ribbonBrush.ts'
+import { automaticRibbonMask } from '../src/items/medal/autoRibbon.ts'
+import type { PixelImage } from '../src/items/medal/ribbonBrush.ts'
 
 function fixture(){
   const width=100,height=120

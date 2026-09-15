@@ -1,11 +1,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import 'fake-indexeddb/auto'
-import { seed, isBoard } from '../src/model.ts'
-import { migrateBoard, displayMemory, recordFor, validRecord } from '../src/records.ts'
-import type { MedalRecord, RouteRecord } from '../src/records.ts'
-import { deleteRecord, readRecords, putRecords } from '../src/recordStore.ts'
-import { makeArchive, readArchive } from '../src/recordArchive.ts'
+import { seed, isBoard } from '../src/domain/model.ts'
+import { migrateBoard, displayMemory, recordFor, validRecord } from '../src/domain/records.ts'
+import type { MedalRecord, RouteRecord } from '../src/domain/records.ts'
+import { deleteRecord, readRecords, putRecords } from '../src/persistence/recordStore.ts'
+import { makeArchive, readArchive } from '../src/persistence/recordArchive.ts'
 
 const original=new Blob(['original-image'],{type:'image/jpeg'})
 const processed=new Blob(['transparent-png'],{type:'image/png'})

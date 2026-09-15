@@ -1,10 +1,10 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
 import {unzipSync,zipSync,strFromU8,strToU8} from 'fflate'
-import {seed} from '../src/model.ts'
-import {makeZipArchive,readBackup} from '../src/zipArchive.ts'
-import {makeArchive} from '../src/recordArchive.ts'
-import type {CollectionRecord} from '../src/records.ts'
+import {seed} from '../src/domain/model.ts'
+import {makeZipArchive,readBackup} from '../src/persistence/zipArchive.ts'
+import {makeArchive} from '../src/persistence/recordArchive.ts'
+import type {CollectionRecord} from '../src/domain/records.ts'
 
 const image=new Blob([new Uint8Array([1,2,3,4,5])],{type:'image/png'})
 const records:CollectionRecord[]=[

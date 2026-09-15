@@ -2,28 +2,31 @@
 
 ## 入口
 
-`src/styleCatalog.ts` 是物件与装饰样式的配置入口，集中维护稳定 ID、名称、默认尺寸、CSS 类和模板行为。编辑选项、渲染、创建物件和校验共同使用目录。
+`src/domain/styleCatalog.ts` 是物件与装饰样式的配置入口，集中维护稳定 ID、名称、默认尺寸、CSS 类和模板行为。编辑选项、渲染、创建物件和校验共同使用目录。
 
-- 相纸：`PHOTO_STYLES`，`caption` 选择图片叠字或底部留白。
+- 照片版式：`PHOTO_STYLES` 定义比例与默认尺寸；`PHOTO_PAPERS` 定义 Polaroid、冲印照片和撕边相纸，`caption` 选择图片叠字或底部留白。
 - 便利贴：`NOTE_STYLES`，明确图钉与笑脸是否显示。
 - 号码布：`BIB_STYLES`，配置 CSS 类和标语。
 - 奖牌材质与路线：`MEDAL_STYLES`、`ROUTE_STYLES`。
+- 奖牌展示框：`MEDAL_FRAMES`，目前为原木框、黑框和挂钩；阴影深度独立配置。
 - 图钉、胶带、红线：对应 `*_OPTIONS`，可选 ID 从目录推导。
 - 背景：`BACKGROUND_STYLES`；画布和 PNG 导出使用同一个 `backgroundStyle`，坐标按世界原点对齐。
+
+各类物件的渲染与 CSS 位于 `src/items/<类别>/`，图钉、胶带与连接绳位于 `src/appearance/`。全部 CSS 由 `src/app/styles.css` 按既定顺序引入。
 
 ## 添加样式
 
 1. 在对应目录新增稳定 ID 和展示配置。同一类别内 ID 唯一。
 2. 现有模板能表达的颜色、纹理和形状，增加对应 CSS 类即可；全新内容结构需要扩展渲染模板。
 3. 默认尺寸只影响新建或主动切换样式，不用于覆盖已保存的物件尺寸。
-4. 增加背景预设后，再提供选择入口并将 ID 写入 `Board.backgroundStyle`。当前只有软木预设，不展示多余的单选入口。
+4. 背景选择器直接读取目录，选中 ID 写入 `Board.backgroundStyle`。新增纹理放入 `public`，同时配置底色、平铺尺寸、光照和文字颜色；现有软木板、深色木板、牛皮纸、黑板可作为参考。
 5. 核对编辑预览、主画布和 PNG 导出；运行样式目录及备份测试。
 
 ## 保存与兼容
 
 现阶段继续使用 `Memory.variant` 保存物件样式 ID，避免对已有收藏板做破坏性迁移。`resolveStyle(kind, id)` 按物件类型解析，旧的缺省值和未知 ID 回退到对应默认外观，不改写存档。`ItemStyleId<K>` 可用于新接口的类型约束。
 
-照片缩放和位置仍独立保存在 `photoZoom`、`photoX`、`photoY`；内容记录不承担相纸布局。原图、文字、坐标与红线不会因样式解析而改变。
+相纸外观通过 `photoPaper` 保存，展示框通过 `medalFrame` 保存，阴影深度通过 `shadowDepth` 保存，均属于画布物件。照片缩放和位置独立保存在 `photoZoom`、`photoX`、`photoY`；内容记录不承担相纸布局。原图、文字、坐标与红线不会因样式解析而改变。
 
 未知背景 ID 也只在显示时回退，完整备份保留其 ID。旧版严格校验的图钉、胶带和红线仍保持原校验规则。
 

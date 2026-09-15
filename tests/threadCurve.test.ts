@@ -1,8 +1,8 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {threadCurve} from '../src/threadCurve.ts'
-import {seed,isBoard,pinPosition} from '../src/model.ts'
-import {contentBounds} from '../src/canvas.ts'
+import {threadCurve} from '../src/board/threadCurve.ts'
+import {seed,isBoard,pinPosition} from '../src/domain/model.ts'
+import {contentBounds} from '../src/board/canvas.ts'
 test('curvature supports straight lines and signed perpendicular bending',()=>{
   assert.deepEqual(threadCurve({x:0,y:0},{x:100,y:0},0).control,{x:50,y:0})
   assert.deepEqual(threadCurve({x:0,y:0},{x:100,y:0},.2).control,{x:50,y:40})

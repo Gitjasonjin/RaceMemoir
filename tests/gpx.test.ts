@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { DOMParser as XmlParser } from '@xmldom/xmldom'
-import { parseGpx, routeGeometry } from '../src/gpx.ts'
+import { parseGpx, routeGeometry } from '../src/items/route/gpx.ts'
 
 const parser=new XmlParser({onError:()=>{throw new Error('invalid XML')}}) as unknown as Pick<DOMParser,'parseFromString'>
 const parse=(text:string)=>parseGpx(text,parser)

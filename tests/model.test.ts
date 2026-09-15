@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { seed, isBoard, pinPosition, createMemory, WIDTH, HEIGHT } from '../src/model.ts'
+import { seed, isBoard, pinPosition, createMemory, WIDTH, HEIGHT } from '../src/domain/model.ts'
 
 test('示例收藏板有效，藏品和连接引用完整', () => {
   assert.equal(isBoard(seed), true)

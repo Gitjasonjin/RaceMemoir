@@ -1,0 +1,1 @@
+.save-failure-banner{position:absolute;top:74px;left:50%;transform:translateX(-50%);z-index:130;max-width:calc(100% - 32px);padding:10px 14px;background:#fff0e6;color:#9c3f30;border:1px solid #d9a38e;border-radius:7px;font-size:12px;box-shadow:0 3px 12px #0002}.save-failure-banner button{margin-left:12px;text-decoration:underline}

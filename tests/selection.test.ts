@@ -1,7 +1,7 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {selectionBounds,intersectsSelection} from '../src/selection.ts'
-import {seed} from '../src/model.ts'
+import {selectionBounds,intersectsSelection} from '../src/board/selection.ts'
+import {seed} from '../src/domain/model.ts'
 
 test('marquee normalizes reverse drags and selects partial intersections',()=>{
   assert.deepEqual(selectionBounds(100,80,-20,-40),{x:-20,y:-40,width:120,height:120})

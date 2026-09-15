@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {panPhoto} from '../src/photoCrop.ts'
+import {panPhoto} from '../src/items/photo/photoCrop.ts'
 
 test('cover crop converts pixel drag to object position and clamps edges',()=>{
   // 400x200 source in a square: horizontal overflow 200, no vertical overflow.

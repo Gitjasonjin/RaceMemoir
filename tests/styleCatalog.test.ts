@@ -1,8 +1,8 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {ITEM_STYLES,resolveStyle,backgroundStyle,resolveBackground,PIN_OPTIONS,PIN_STYLES} from '../src/styleCatalog.ts'
-import {seed,isBoard,createMemory,hasPin} from '../src/model.ts'
-import {makeArchive,readArchive} from '../src/recordArchive.ts'
+import {ITEM_STYLES,resolveStyle,backgroundStyle,resolveBackground,PIN_OPTIONS,PIN_STYLES} from '../src/domain/styleCatalog.ts'
+import {seed,isBoard,createMemory,hasPin} from '../src/domain/model.ts'
+import {makeArchive,readArchive} from '../src/persistence/recordArchive.ts'
 
 test('every registered item style resolves to its own definition and default size',()=>{
   for(const kind of Object.keys(ITEM_STYLES) as (keyof typeof ITEM_STYLES)[]){

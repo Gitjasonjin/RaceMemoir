@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { seed, isBoard } from '../src/model.ts'
+import { seed, isBoard } from '../src/domain/model.ts'
 
 test('photo composition persists per instance and rejects invalid crop values',()=>{
   const board=structuredClone(seed),photo=board.items.find(i=>i.kind==='photo')!

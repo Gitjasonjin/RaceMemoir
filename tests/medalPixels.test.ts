@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { medalBounds, restoreMedalPixels } from '../src/medalPixels.ts'
-import { seed, isBoard } from '../src/model.ts'
+import { medalBounds, restoreMedalPixels } from '../src/items/medal/medalPixels.ts'
+import { seed, isBoard } from '../src/domain/model.ts'
 
 test('cutout preserves sharp source RGB and applies only mask alpha', () => {
   const original={width:3,height:1,data:new Uint8ClampedArray([255,255,255,255,0,0,0,255,191,48,32,80])}

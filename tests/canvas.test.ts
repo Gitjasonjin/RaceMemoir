@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { contentBounds, fitCamera, screenToWorld, visibleBounds, unionBounds, exportSize } from '../src/canvas.ts'
-import { seed, isBoard, pinPosition } from '../src/model.ts'
+import { contentBounds, fitCamera, screenToWorld, visibleBounds, unionBounds, exportSize } from '../src/board/canvas.ts'
+import { seed, isBoard, pinPosition } from '../src/domain/model.ts'
 
 test('无限画布的负坐标和远距离藏品可保存并重新导入',()=>{
   const items=seed.items.map((i,index)=>({...i,x:index%2?-20000:35000,y:index%2?16000:-24000}))

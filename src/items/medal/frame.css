@@ -1,0 +1,14 @@
+.medal-frame{position:relative;width:100%;height:100%;padding:10px;background-color:#be955d;background-image:repeating-linear-gradient(2deg,#6e461827 0,#6e461827 1px,transparent 2px,transparent 5px),repeating-linear-gradient(88deg,#f1d09b20 0,#f1d09b20 2px,transparent 3px,transparent 9px),linear-gradient(120deg,#f2d3a2,#c49c65 27%,#e0b982 48%,#b98b54 80%,#e4be87);border:1px solid #a17643;box-shadow:inset 2px 2px 1px #ffebbbd9,inset -2px -2px 2px #80552e99,4px 9px 12px #35251f66,0 1px 2px #513c26;}
+.frame-mat{height:100%;padding:10px;background:linear-gradient(115deg,#e9e8dc,#d8d9cc 47%,#f2f0e4);border:1px solid #a9ac9c;box-shadow:inset 3px 3px 5px #6a6a4e70,0 0 0 2px #f6d8a080;}
+.frame-backing{position:relative;height:100%;width:100%;container-type:inline-size;background:radial-gradient(ellipse at 35% 20%,#272d29,#111a17 75%);box-shadow:inset 3px 5px 10px #000a,0 0 0 1px #afb09c,0 0 0 2px #fff9e1;overflow:hidden}
+.frame-backing .medal-art{position:absolute;left:8%;top:19.5%;width:84%;height:61%;filter:drop-shadow(2px 4px 3px #0009)}
+.frame-backing .ribbon{width:26%;left:37%;height:28%;box-shadow:inset 2px 0 2px #84907360,inset -2px 0 2px #00120970,0 -3px 5px #0008;}
+.frame-backing .ribbon>svg{width:70%;height:70%;margin-top:0}.frame-backing .ribbon>span{display:none}.frame-backing .medal-svg,.frame-backing .silver .medal-svg{height:85%;bottom:0}
+.frame-glass{position:absolute;inset:11px;pointer-events:none;background:linear-gradient(115deg,#fff0 10%,#ffffff06 11%,#fff0 43%,#ffffff08 44%,#fff0 75%);box-shadow:inset 0 0 0 1px #ffffff20}
+
+/* The world has no boundary; the viewport clips only what is off screen. */
+.scene{overflow:visible}
+.minimap{padding:0}
+.minimap svg{display:block}
+
+/* The SVG separates cap, barrel and flange; its base stays on the line anchor. */
