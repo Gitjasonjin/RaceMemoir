@@ -1,10 +1,11 @@
 import type { Memory, Thread, PinStyle } from '../domain/model'
-import { pinPosition } from '../domain/model.ts'
+import {resolveEndpoint,threadEndpoints} from './threadEndpoints.ts'
+import type {CollectionRecord} from '../domain/records'
 import { threadCurve } from './threadCurve.ts'
 
 export interface Bounds { x: number; y: number; width: number; height: number }
 export interface Camera { x: number; y: number; scale: number }
-export function contentBounds(items: Memory[], padding = 60, threads:Thread[] = [],defaultPin:PinStyle='classic'): Bounds {
+export function contentBounds(items: Memory[], padding = 60, threads:Thread[] = [],defaultPin:PinStyle='classic',records:CollectionRecord[]=[]): Bounds {
   if (!items.length) return { x: 0, y: 0, width: 1440, height: 900 }
   let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity
   for (const item of items) {
@@ -18,9 +19,10 @@ export function contentBounds(items: Memory[], padding = 60, threads:Thread[] = 
     top = Math.min(top, cy-halfH); bottom = Math.max(bottom, cy+halfH)
   }
   for(const thread of threads){
-    const from=items.find(i=>i.id===thread.from),to=items.find(i=>i.id===thread.to)
-    if(!from||!to)continue
-    const a=pinPosition(from,defaultPin),b=pinPosition(to,defaultPin),{control}=threadCurve(a,b,thread.curvature)
+    const board={title:'',items,threads},[from,to]=threadEndpoints(thread)
+    const a=resolveEndpoint(board,records,from,defaultPin),b=resolveEndpoint(board,records,to,defaultPin)
+    if(!a||!b)continue
+    const {control}=threadCurve(a,b,thread.curvature)
     // Quadratic Bezier extrema, including the endpoints.
     const points=[a,b]
     for(const key of ['x','y'] as const){const denominator=a[key]-2*control[key]+b[key];const t=denominator?(a[key]-control[key])/denominator:0;if(t>0&&t<1)points.push({x:(1-t)**2*a.x+2*(1-t)*t*control.x+t*t*b.x,y:(1-t)**2*a.y+2*(1-t)*t*control.y+t*t*b.y})}

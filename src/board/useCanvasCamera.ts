@@ -1,17 +1,19 @@
 import {useCallback,useEffect,useRef,useState} from 'react'
 import type {RefObject} from 'react'
+import type {CollectionRecord} from '../domain/records'
 import type {Board} from '../domain/model'
 import {getDecorations} from '../domain/model'
 import {contentBounds,fitCamera} from './canvas'
 import type {Gesture,View} from './types'
 const clamp=(value:number,min:number,max:number)=>Math.min(max,Math.max(min,value))
 
-export function useCanvasCamera(boardRef:RefObject<Board>,gesture:RefObject<Gesture|null>){
+export function useCanvasCamera(boardRef:RefObject<Board>,gesture:RefObject<Gesture|null>,records:CollectionRecord[]=[]){
+  const recordsRef=useRef(records);recordsRef.current=records
   const [view,setView]=useState<View>({x:0,y:0,scale:1})
   const viewRef=useRef(view);viewRef.current=view
   const viewport=useRef<HTMLDivElement>(null)
   const [viewportSize,setViewportSize]=useState({width:1440,height:900})
-  const fit = useCallback(() => { if (!viewport.current) return; const {width,height} = viewport.current.getBoundingClientRect(); setView(fitCamera(contentBounds(boardRef.current.items,60,boardRef.current.threads,getDecorations(boardRef.current).pin),width,height)) }, [])
+  const fit = useCallback(() => { if (!viewport.current) return; const {width,height} = viewport.current.getBoundingClientRect(); setView(fitCamera(contentBounds(boardRef.current.items,60,boardRef.current.threads,getDecorations(boardRef.current).pin,recordsRef.current),width,height)) }, [])
   useEffect(() => {
     const el=viewport.current; if(!el)return
     let previous={width:el.clientWidth,height:el.clientHeight}

@@ -17,6 +17,8 @@ import { useCutout } from '../items/medal/useCutout'
 import RibbonRepair from '../items/medal/RibbonRepair.tsx'
 
 import type {RecordPanelProps} from './types'
+import RaceLocationEditor from '../race-map/RaceLocationEditor'
+import {normalizeRaceLocation,validRaceLocation} from '../domain/raceLocation'
 
 export default function RecordEditor(props: RecordPanelProps & { record?: CollectionRecord }) {
   const {record} = props
@@ -76,9 +78,10 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
   const save = async (event?: FormEvent) => {
     event?.preventDefault(); if(busy)return
     if(!draft.name.trim()){setError('请填写收藏名称');return}
+    if(draft.kind!=='photo'&&draft.location&&!validRaceLocation(draft.location)){setError('请填写地点名称和有效的经纬度');return}
     if(draft.source==='upload'&&(draft.kind!=='route'?!draft.image?.size:draft.trackPoints.length<2)){setError(draft.kind!=='route'?'请先上传图片':'请先导入 GPX 文件');return}
     setSaving(true);setError('')
-    try {await props.onSave({...draft,name:draft.name.trim()},!record,draft.kind==='photo'?{w:photoItem.w,h:photoItem.h,variant:photoItem.variant,photoPaper:photoItem.photoPaper,photoZoom:photoItem.photoZoom,photoX:photoItem.photoX,photoY:photoItem.photoY}:draft.kind==='medal'?{w:medalItem.w,h:medalItem.h,medalScale:medalItem.medalScale,medalFrame:medalItem.medalFrame,shadowDepth:medalItem.shadowDepth}:undefined);if(mounted.current)props.onClose()}
+    try {await props.onSave({...draft,name:draft.name.trim(),...(draft.kind!=='photo'&&draft.location?{location:normalizeRaceLocation(draft.location)}:{})},!record,draft.kind==='photo'?{w:photoItem.w,h:photoItem.h,variant:photoItem.variant,photoPaper:photoItem.photoPaper,photoZoom:photoItem.photoZoom,photoX:photoItem.photoX,photoY:photoItem.photoY}:draft.kind==='medal'?{w:medalItem.w,h:medalItem.h,medalScale:medalItem.medalScale,medalFrame:medalItem.medalFrame,shadowDepth:medalItem.shadowDepth}:undefined);if(mounted.current)props.onClose()}
     catch(e){if(mounted.current)setError(e instanceof Error?e.message:'保存失败，请重试')}
     finally{if(mounted.current)setSaving(false)}
   }
@@ -105,6 +108,7 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
       <label className="field-label">{kindLabel}名称<input required maxLength={200} value={draft.name} disabled={saving} onChange={e=>patch({name:e.target.value})} placeholder={draft.kind==='medal'?'我的第一场越野赛':'山野环线'}/></label>
       {draft.kind==='photo'&&<label className="field-label">拍摄日期<input type="date" value={draft.date||''} disabled={saving} onChange={e=>patch({date:e.target.value})}/></label>}
       <label className="field-label">备注<textarea rows={3} maxLength={5000} value={draft.note} disabled={saving} onChange={e=>patch({note:e.target.value})} placeholder="记下这段旅程的故事…"/></label>
+      {draft.kind!=='photo'&&<RaceLocationEditor value={draft.location} onChange={location=>patch({location})} disabled={busy}/>}
       {error&&<p className="record-error" role="alert">{error}</p>}{notice&&<p className="record-notice" role="status">{notice}</p>}
       {props.styles}
       <button className="primary-button full-width" type="submit" disabled={busy}><Check size={17}/>{saving?'正在保存…':record?'保存修改':'保存并放上画布'}</button>

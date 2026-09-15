@@ -1,9 +1,11 @@
 import type { Board, Memory } from './model'
+import {validRaceLocation} from './raceLocation.ts'
+import type {RaceLocation} from './raceLocation'
 
 export interface TrackPoint { lat: number; lon: number; elevation?: number; time?: string; segment: number }
 interface RecordBase { id: string; name: string; note: string; source: 'upload' | 'demo'; archived?: boolean }
-export interface MedalRecord extends RecordBase { kind: 'medal'; date: string; originalImage?: Blob; image?: Blob; cutout: 'original' | 'done'; variant?: string }
-export interface RouteRecord extends RecordBase { kind: 'route'; trackPoints: TrackPoint[]; gpx?: Blob; date?: string }
+export interface MedalRecord extends RecordBase { kind: 'medal'; date: string; originalImage?: Blob; image?: Blob; cutout: 'original' | 'done'; variant?: string; location?: RaceLocation }
+export interface RouteRecord extends RecordBase { kind: 'route'; trackPoints: TrackPoint[]; gpx?: Blob; date?: string; location?: RaceLocation }
 export interface PhotoRecord extends RecordBase { kind: 'photo'; image: Blob; date?: string }
 export type CollectionRecord = MedalRecord | RouteRecord | PhotoRecord
 export const IMAGE_TYPES = ['image/png','image/jpeg','image/webp']
@@ -13,6 +15,7 @@ export function validRecord(value: unknown): value is CollectionRecord {
   const r=value as CollectionRecord
   if(typeof r.id!=='string'||!r.id||typeof r.name!=='string'||!r.name.trim()||r.name.length>200||typeof r.note!=='string'||r.note.length>5000||!['upload','demo'].includes(r.source))return false
   if(r.archived!==undefined&&typeof r.archived!=='boolean')return false
+  if(r.kind!=='photo'&&r.location!==undefined&&!validRaceLocation(r.location))return false
   if(r.kind==='photo')return r.source==='upload'&&r.image instanceof Blob&&IMAGE_TYPES.includes(r.image.type)&&r.image.size>0&&r.image.size<=20*1024*1024&&(r.date===undefined||typeof r.date==='string')
   if(r.kind==='medal')return typeof r.date==='string'&&r.date.length<=30&&['original','done'].includes(r.cutout)&&[r.image,r.originalImage].every(b=>b===undefined||(b instanceof Blob&&IMAGE_TYPES.includes(b.type)&&b.size>0&&b.size<=20*1024*1024))&&(r.source==='demo'||(r.image instanceof Blob&&r.originalImage instanceof Blob))&&(r.variant===undefined||typeof r.variant==='string')
   if(r.kind!=='route'||!Array.isArray(r.trackPoints)||r.trackPoints.length>MAX_POINTS||(r.source==='upload'&&r.trackPoints.length<2))return false

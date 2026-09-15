@@ -58,7 +58,8 @@ export function restoreArchive(board:Board,records:CollectionRecord[]){
   for(const item of board.items){
     if(item.recordId){const r=ids.get(item.recordId);if(!r||(item.kind==='medal'?r.kind!=='medal':item.kind==='photo'?r.kind!=='photo':r.kind!=='route'))throw new Error('备份缺少物件关联的记录')}
   }
+  for(const t of board.threads)for(const id of [t.fromRaceId,t.toRaceId]){if(id!==undefined&&(!ids.has(id)||ids.get(id)!.kind==='photo'))throw new Error('备份缺少地点连线关联的赛事')}
   // Import always allocates new ids; it must not overwrite records used elsewhere.
   const remap=new Map(records.map(r=>[r.id,crypto.randomUUID()]))
-  return {board:{...board,items:board.items.map(i=>i.recordId?{...i,recordId:remap.get(i.recordId)!}:i)},records:records.map(r=>({...r,id:remap.get(r.id)!}))}
+  return {board:{...board,items:board.items.map(i=>i.recordId?{...i,recordId:remap.get(i.recordId)!}:i),threads:board.threads.map(t=>({...t,...(t.fromRaceId?{fromRaceId:remap.get(t.fromRaceId)!}:{}),...(t.toRaceId?{toRaceId:remap.get(t.toRaceId)!}:{})}))},records:records.map(r=>({...r,id:remap.get(r.id)!}))}
 }

@@ -7,6 +7,7 @@ export interface RecordPanelProps {
   styles?: ReactNode
   item?: Memory; onLayout?: (change: Partial<Memory>) => void
   mode: RecordPanelMode; records: CollectionRecord[]; references: (id: string) => number
+  threadReferences?: (id:string)=>number
   onMode: (mode: RecordPanelMode) => void; onClose: () => void
   onSave: (record: CollectionRecord, add: boolean, layout?: Partial<Memory>) => Promise<void>
   onAdd: (record: CollectionRecord) => void

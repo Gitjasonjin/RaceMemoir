@@ -7,9 +7,10 @@
 | `src/app` | 页面组装及跨模块操作；`App.tsx` 协调选中、拖拽、编辑和导入，`Topbar.tsx`、`BoardDialog.tsx` 管理顶部栏与弹窗 |
 | `src/domain` | 物件、收藏记录、校验、样式目录与示例数据；不依赖 React、DOM 或浏览器存储 |
 | `src/board` | 画布几何、框选、连线与照片绳排列；`useBoardHistory.ts` 管理撤销历史，`useCanvasCamera.ts` 管理视口与缩放 |
-| `src/items` | 按照片、奖牌、路线、号码布和便签分别维护渲染、取景/抠图辅助与样式；`Artwork.tsx` 只分发物件类型 |
+| `src/items` | 按照片、奖牌、路线、赛事地图、号码布和便签分别维护渲染、取景/抠图辅助与样式；`Artwork.tsx` 只分发物件类型 |
 | `src/appearance` | 图钉、胶带、连接绳等装饰控件与渲染 |
 | `src/library` | 收藏库列表、筛选、编辑、回收站及记录状态；`RecordPanel.tsx` 组装列表与记录编辑，`MemoryEditor.tsx` 编辑未关联记录的物件 |
+| `src/race-map` | 离线赛事地图、地点编辑、地点聚合与收藏跳转；本地底图在 `src/assets/maps`，详见 [赛事地图说明](offline-race-map.md) |
 | `src/persistence` | 本地读写、自动保存、备份恢复和导出；`boardStore.ts` 读取布局，`recordStore.ts` 保存文件，`zipArchive.ts` 处理备份，`exportImage.ts` 生成 PNG |
 | `src/shared` | 通用小组件、资源 URL hook 与基础样式；仅放入没有业务归属的复用代码 |
 
@@ -28,6 +29,8 @@
 - 修改画布缩放或历史策略：`board/useCanvasCamera.ts`、`useBoardHistory.ts`。选中与拖拽的联动仍在 `app/App.tsx`，避免将一套手势状态拆散。
 - 修改收藏筛选或回收站：`library/LibraryRecords.tsx`；上传与内容编辑：`library/RecordEditor.tsx`。
 - 修改备份或 PNG：`persistence/zipArchive.ts`、`recordArchive.ts`、`exportImage.ts`。PNG 导出保留 SVG 样式、伪元素资源和离屏定位的兼容处理。
+
+- 修改地图地点连线：`board/threadEndpoints.ts` 统一解析地点投影、取景、尺寸与旋转后的端点；画布、预览线、缩略图和导出边界复用同一结果。
 
 ## 样式与验证
 

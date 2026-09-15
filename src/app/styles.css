@@ -32,3 +32,5 @@
 @import '../items/photo/surfaces.css';
 @import '../items/medal/surfaces.css';
 @import '../shared/surfaceOptions.css';
+@import '../race-map/raceMap.css';
+@import '../items/race-map/artwork.css';

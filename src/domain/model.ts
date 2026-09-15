@@ -1,13 +1,15 @@
+import {MAX_MAP_SCALE,MAP_SIZE_OPTIONS} from './mapSettings.ts'
 import { PIN_STYLES, TAPE_STYLES, THREAD_STYLES, resolveStyle } from './styleCatalog.ts'
-export type Kind = 'photo' | 'medal' | 'bib' | 'note' | 'map'
+export type Kind = 'photo' | 'medal' | 'bib' | 'note' | 'map' | 'race-map'
+export interface MapView {x:number;y:number;scale:number}
 export { PIN_STYLES, TAPE_STYLES, THREAD_STYLES } from './styleCatalog.ts'
 export type PinStyle = typeof PIN_STYLES[number]
 export type TapeStyle = typeof TAPE_STYLES[number]
 export type ThreadStyle = typeof THREAD_STYLES[number]
 export interface Decorations { pin: PinStyle; tape: TapeStyle; thread: ThreadStyle }
 export type DecorationChange = { kind: 'pin'; style: PinStyle | undefined } | { kind: 'tape'; style: TapeStyle | undefined } | { kind: 'thread'; style: ThreadStyle | undefined }
-export interface Memory { id: string; kind: Kind; x: number; y: number; w: number; h: number; rotation: number; title: string; subtitle?: string; image?: string; variant?: string; number?: string; pinStyle?: PinStyle; tapeStyle?: TapeStyle; pinEnabled?: boolean; recordId?: string; medalScale?: number; photoZoom?: number; photoX?: number; photoY?: number; photoPaper?: string; medalFrame?: string; shadowDepth?: number }
-export interface Thread { id: string; from: string; to: string; style?: ThreadStyle; curvature?: number }
+export interface Memory { id: string; kind: Kind; x: number; y: number; w: number; h: number; rotation: number; title: string; subtitle?: string; image?: string; variant?: string; number?: string; pinStyle?: PinStyle; tapeStyle?: TapeStyle; pinEnabled?: boolean; recordId?: string; medalScale?: number; photoZoom?: number; photoX?: number; photoY?: number; photoPaper?: string; medalFrame?: string; shadowDepth?: number; mapView?: MapView }
+export interface Thread { id: string; from: string; to: string; fromRaceId?:string; toRaceId?:string; style?: ThreadStyle; curvature?: number }
 export interface Board { title: string; items: Memory[]; threads: Thread[]; decorations?: Partial<Decorations>; backgroundStyle?: string }
 export const DEFAULT_DECORATIONS: Decorations = { pin: 'classic', tape: 'classic', thread: 'classic' }
 export function getDecorations(board: Board): Decorations {
@@ -72,8 +74,8 @@ export function isBoard(value: unknown): value is Board {
   if(b.backgroundStyle!==undefined&&(typeof b.backgroundStyle!=='string'||b.backgroundStyle.length>100))return false
   const ids = new Set<string>()
   for (const item of b.items) {
-    if (!item || typeof item.id !== 'string' || ids.has(item.id) || !['photo', 'medal', 'bib', 'note', 'map'].includes(item.kind) || typeof item.title !== 'string') return false
-    if (![item.x, item.y, item.w, item.h, item.rotation].every(Number.isFinite) || item.w < 30 || item.h < 30 || item.w > WIDTH || item.h > HEIGHT) return false
+    if (!item || typeof item.id !== 'string' || ids.has(item.id) || !['photo', 'medal', 'bib', 'note', 'map', 'race-map'].includes(item.kind) || typeof item.title !== 'string') return false
+    if (![item.x, item.y, item.w, item.h, item.rotation].every(Number.isFinite) || item.w < 30 || item.h < 30 || item.w > WIDTH || item.h > (item.kind==='race-map'?Math.max(HEIGHT,...MAP_SIZE_OPTIONS.map(s=>s.h)):HEIGHT)) return false
     if (['subtitle', 'image', 'variant', 'number'].some(key => item[key as keyof Memory] !== undefined && typeof item[key as keyof Memory] !== 'string')) return false
     if (item.image && !['/images/mountain.jpg', '/images/hiking.jpg', '/images/sunrise.jpg'].includes(item.image)) return false
     if (!validStyle(item.pinStyle, PIN_STYLES) || !validStyle(item.tapeStyle, TAPE_STYLES)) return false
@@ -84,13 +86,17 @@ export function isBoard(value: unknown): value is Board {
     if(item.shadowDepth!==undefined&&(!Number.isFinite(item.shadowDepth)||item.shadowDepth<0||item.shadowDepth>100))return false
     if(item.photoZoom!==undefined&&(!Number.isFinite(item.photoZoom)||item.photoZoom<1||item.photoZoom>3))return false
     if([item.photoX,item.photoY].some(v=>v!==undefined&&(!Number.isFinite(v)||v<0||v>100)))return false
+    if(item.kind==='race-map'&&(item.w<200||item.h<148))return false
+    if(item.mapView!==undefined){const v=item.mapView;if(item.kind!=='race-map'||!v||![v.x,v.y,v.scale].every(Number.isFinite)||v.scale<1||v.scale>MAX_MAP_SCALE||v.x>300||v.x<1000*(1-v.scale)-300||v.y>210||v.y<700*(1-v.scale)-210)return false}
     ids.add(item.id)
   }
   const threadIds = new Set<string>()
   return b.threads.every(t => {
-    if (!t || typeof t.id !== 'string' || threadIds.has(t.id) || !ids.has(t.from) || !ids.has(t.to) || t.from === t.to) return false
+    if (!t || typeof t.id !== 'string' || threadIds.has(t.id) || !ids.has(t.from) || !ids.has(t.to)) return false
     if (!validStyle(t.style, THREAD_STYLES)) return false
     if(t.curvature!==undefined&&(!Number.isFinite(t.curvature)||Math.abs(t.curvature)>.35))return false
+    for(const [id,raceId] of [[t.from,t.fromRaceId],[t.to,t.toRaceId]]){if(raceId!==undefined&&(typeof raceId!=='string'||!raceId||b.items.find(i=>i.id===id)?.kind!=='race-map'))return false}
+    if(t.from===t.to&&t.fromRaceId===t.toRaceId)return false
     threadIds.add(t.id)
     return true
   })
