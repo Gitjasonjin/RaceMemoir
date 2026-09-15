@@ -10,9 +10,9 @@ test('示例收藏板有效，藏品和连接引用完整', () => {
 })
 test('旋转后的图钉在藏品中心坐标系中正确变换', () => {
   const item = { ...seed.items[0], x: 100, y: 100, w: 200, h: 300, rotation: 0 }
-  assert.deepEqual(pinPosition(item), { x: 200, y: 107 })
+  assert.deepEqual(pinPosition(item), { x: 200, y: 92 })
   const rotated = pinPosition({ ...item, rotation: 90 })
-  assert.equal(rotated.x, 343)
+  assert.equal(rotated.x, 358)
   assert.equal(rotated.y, 250)
 })
 test('藏品平移后红线端点同步平移', () => {
@@ -36,4 +36,17 @@ test('各类新藏品具有唯一 ID，且可导入和导出', () => {
   const items = (['photo', 'medal', 'bib', 'note', 'map'] as const).map(kind => createMemory(kind, '新记忆', 'green', '/images/mountain.jpg', '1234'))
   assert.equal(new Set(items.map(i => i.id)).size, 5)
   assert.equal(isBoard(JSON.parse(JSON.stringify({ title: '收藏板', items, threads: [] }))), true)
+})
+
+test('mount variation is stable, bounded and independent of serialization',()=>{
+  for(const kind of ['photo','map','note'] as const){
+    const item={...seed.items[2],kind,variant:kind==='note'?'paper':'landscape',rotation:0}
+    const p=pinPosition(item),q=pinPosition(JSON.parse(JSON.stringify(item)))
+    assert.deepEqual(p,q)
+    if(kind!=='note'){
+      assert(Math.abs(p.x-(item.x+item.w*.35))<=20)
+      assert(Math.abs(p.y-(item.y+13))<=3)
+      assert.notDeepEqual(p,pinPosition({...item,id:'another-object'}))
+    }
+  }
 })

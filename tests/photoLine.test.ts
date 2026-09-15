@@ -33,7 +33,9 @@ test('reuses an existing connection, safely ignores non-photo selections and kee
   const next=hangPhotos(board,photos.map(i=>i.id))
   assert.equal(next.threads.length,1);assert.equal(next.threads[0].id,'existing');assert.equal(next.threads[0].style,'hemp')
   const item={...photos[0],rotation:0,pinStyle:'clip' as const}
-  assert.deepEqual(pinPosition(item),{x:item.x+item.w/2,y:item.y-2})
-  assert.deepEqual(pinPosition({...item,rotation:90}),{x:item.x+item.w/2+item.h/2+2,y:item.y+item.h/2})
+  const p=pinPosition(item),cx=item.x+item.w/2,cy=item.y+item.h/2
+  assert(Math.abs(p.x-cx)<=20);assert(Math.abs(p.y-(item.y-2))<=1.5)
+  const rotated=pinPosition({...item,rotation:90})
+  assert(Math.abs(rotated.x-(cx-(p.y-cy)))<1e-8);assert(Math.abs(rotated.y-(cy+p.x-cx))<1e-8)
   assert.deepEqual(pinPosition({...item,pinStyle:undefined},'clip'),pinPosition(item))
 })

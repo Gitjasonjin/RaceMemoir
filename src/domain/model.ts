@@ -103,8 +103,15 @@ export function isBoard(value: unknown): value is Board {
 }
 export function pinPosition(item: Memory, defaultPin:PinStyle='classic') {
   const clip=hasPin(item)&&(item.pinStyle??defaultPin)==='clip'
-  const px = clip?item.w*.5:hasTape(item) ? (hasPin(item) ? item.w * .65 : item.w - 25) : item.w * (item.kind === 'medal' ? .5 : .35)
-  const py = clip?-2:item.kind === 'medal' ? 7 : 13
+  let px = clip?item.w*.5:hasTape(item) ? (hasPin(item) ? item.w * .65 : item.w - 25) : item.w * (item.kind === 'medal' ? .5 : .35)
+  let py = clip?-2:item.kind === 'medal' ? -8 : 13
+  if(hasPin(item)&&['photo','note','map'].includes(item.kind)){
+    // Stable per-object variation: never reroll on render, drag or archive restore.
+    let hash=2166136261
+    for(const char of item.id)hash=Math.imul(hash^char.charCodeAt(0),16777619)>>>0
+    px+=((hash&65535)/65535*2-1)*Math.min(item.w*.1,20)
+    py+=((hash>>>16)/65535*2-1)*(clip?1.5:3)
+  }
   const angle = item.rotation * Math.PI / 180
   const dx = px - item.w / 2, dy = py - item.h / 2
   return { x: item.x + item.w / 2 + dx * Math.cos(angle) - dy * Math.sin(angle), y: item.y + item.h / 2 + dx * Math.sin(angle) + dy * Math.cos(angle) }

@@ -16,3 +16,9 @@
 .selection-bar .photo-line-action{width:auto;padding:0 10px;gap:6px;color:#725335;white-space:nowrap;font-size:12px}
 .selection-bar .photo-line-action:disabled:hover{background:none}
 @media(max-width:700px){.selection-bar:has(.photo-line-action){flex-wrap:wrap;justify-content:center;width:max-content;max-width:calc(100% - 30px)}.selection-bar:has(.photo-line-action) .selection-label{flex-basis:100%;text-align:center;padding:5px}.selection-bar .photo-line-action{font-size:11px}}
+
+/* A small brass eyelet gives medal threads a physical fastening point. */
+.medal-thread-eyelet{position:absolute;z-index:6;width:16px;height:16px;padding:0;box-sizing:border-box;transform:translate(-50%,-50%);border:3px solid #b39864;border-radius:50%;background:transparent;box-shadow:1px 2px 2px #35281755,inset 1px 1px 1px #5c482b70,0 -1px 0 #f9e4b1;cursor:grab;touch-action:none}
+.medal-thread-eyelet:after{content:"";position:absolute;left:2px;top:10px;width:6px;height:8px;border-radius:1px;background:linear-gradient(90deg,#806746,#d4b782,#947b54);box-shadow:1px 1px 1px #33261240;pointer-events:none}
+.medal-thread-eyelet:focus-visible,.medal-thread-eyelet.pin-active{outline:3px solid #fff9;outline-offset:4px}
+.connect-mode .medal-thread-eyelet{cursor:crosshair}
