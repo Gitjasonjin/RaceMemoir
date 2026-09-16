@@ -17,3 +17,8 @@
 .layer-target-mode,.layer-target-mode .memory,.layer-target-mode .pushpin{cursor:crosshair}
 .memory.layer-target-highlight .selection-outline{opacity:1;border:2px solid #c8e0a4;box-shadow:0 0 0 3px #566b4433;filter:none}
 .layer-target-hint{max-width:calc(100% - 180px);white-space:normal}.layer-target-hint>span{max-width:500px;overflow-wrap:anywhere}.layer-target-hint small{display:block;margin-top:5px;font-size:11px;color:#868578}
+
+.canvas-context-menu{position:fixed;z-index:70;width:196px;max-width:calc(100vw - 16px);padding:6px;background:#faf8f0;border:1px solid #dfdfd2;border-radius:10px;box-shadow:0 8px 28px #34372630}
+.canvas-context-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 10px;border-radius:6px;font-size:13px;text-align:left}
+.canvas-context-menu button span{flex:1}.canvas-context-menu .unchecked{visibility:hidden}
+.canvas-context-menu button:hover{background:#e6e9dd}.canvas-context-menu button:focus-visible{outline:2px solid #788666;outline-offset:-2px}

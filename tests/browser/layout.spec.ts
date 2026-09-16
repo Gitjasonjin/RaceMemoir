@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test'
 const key='racememoir-board-v1'
 test('layout alignment grouping locking snapping overlap and reload',async({page},info)=>{
- await page.addInitScript(({key})=>{if(!sessionStorage.getItem('layout-fixture')){localStorage.setItem(key,JSON.stringify({title:'Layout',items:[
+ await page.addInitScript(({key})=>{localStorage.setItem('racememoir-snap-enabled','true');if(!sessionStorage.getItem('layout-fixture')){localStorage.setItem(key,JSON.stringify({title:'Layout',items:[
  {id:'a',kind:'note',title:'A',variant:'paper',x:200,y:150,w:100,h:100,rotation:0},
  {id:'b',kind:'note',title:'B',variant:'paper',x:380,y:230,w:100,h:100,rotation:0},
  {id:'c',kind:'note',title:'C',variant:'paper',x:580,y:300,w:100,h:100,rotation:0}],threads:[]}));sessionStorage.setItem('layout-fixture','1')}},{key})

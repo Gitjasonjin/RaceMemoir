@@ -1,3 +1,4 @@
+import CanvasContextMenu from '../board/CanvasContextMenu'
 import {useLayerTarget} from '../board/useLayerTarget'
 import LayoutMenu from '../board/LayoutMenu'
 import {expandGroups,lockedSelection,arrangeItems,snapMove} from '../board/layout'
@@ -58,6 +59,10 @@ export default function App() {
   const scene = useRef<HTMLDivElement>(null)
   const pointer = useRef({x:0,y:0})
   const [guides,setGuides]=useState<Guide[]>([])
+  const [snapEnabled,setSnapEnabled]=useState(()=>{try{return localStorage.getItem('racememoir-snap-enabled')==='true'}catch{return false}})
+  const [canvasMenu,setCanvasMenu]=useState<{x:number;y:number}|null>(null)
+  const closeCanvasMenu=useCallback(()=>setCanvasMenu(null),[])
+  const toggleSnap=()=>{const enabled=!snapEnabled;setSnapEnabled(enabled);setGuides([]);closeCanvasMenu();try{localStorage.setItem('racememoir-snap-enabled',String(enabled))}catch{/* Preference remains available for this session. */}}
   const overlap=useRef<{x:number;y:number;id:string}|null>(null)
   const [marquee,setMarquee]=useState<Bounds|null>(null)
   const [selectedIds,setSelectedIds]=useState<string[]>([])
@@ -214,7 +219,7 @@ export default function App() {
     g.moved=true; setDragging(true);if(g.type==='item'){setRecordPanel(null);setMemoryPanel(null);setMapPanel(null)}
     if(g.type==='pan') setView(v=>({...v,x:g.x+dx,y:g.y+dy}))
     else {const v=viewRef.current,dxWorld=(dx+g.cameraX-v.x)/v.scale,dyWorld=(dy+g.cameraY-v.y)/v.scale
-      const snap=e.altKey?{dx:dxWorld,dy:dyWorld,guides:[]}:snapMove(g.before.items,g.ids??[],dxWorld,dyWorld,6/v.scale)
+      const snap=!snapEnabled||e.altKey?{dx:dxWorld,dy:dyWorld,guides:[]}:snapMove(g.before.items,g.ids??[],dxWorld,dyWorld,6/v.scale)
       setGuides(snap.guides);setBoard(b=>({...b,items:b.items.map(i=>g.ids?.includes(i.id)?{...i,x:g.before.items.find(o=>o.id===i.id)!.x+snap.dx,y:g.before.items.find(o=>o.id===i.id)!.y+snap.dy}:i)}))}
   }
   const endGesture = (cancel = false) => {
@@ -348,7 +353,7 @@ export default function App() {
       if(decorationScope==='selection' && !target) return
       commit(changeDecoration(board,change,target??undefined))
     }}/>}
-    <main className={`board-viewport ${space?'space-mode':''} ${dragging?'is-dragging':''} ${tool==='connect'?'connect-mode':''} ${layerTarget.mode?'layer-target-mode':''}`} ref={viewport} onDoubleClickCapture={e=>{if(tool==='connect'){e.preventDefault();e.stopPropagation();setTool('select');setConnecting(null);setToast('已结束连线')}}} style={backgroundStyle(board.backgroundStyle,view.scale,view.x,view.y)} onPointerMoveCapture={layerTarget.onMove} onPointerLeave={()=>{if(layerTarget.mode)layerTarget.clearHover()}} onPointerDownCapture={e=>{if(layerTarget.mode){layerTarget.onDown(e);return}if(e.ctrlKey&&e.button===0&&tool==='select'&&!space)startGesture(e)}} onPointerDown={e=>startGesture(e)} onPointerMove={moveGesture} onPointerUp={()=>endGesture()} onPointerCancel={()=>endGesture(true)} onLostPointerCapture={()=>endGesture()}>
+    <main onContextMenu={e=>{e.preventDefault();if(gesture.current)return;layerTarget.cancel();setCanvasMenu({x:e.clientX,y:e.clientY})}} className={`board-viewport ${space?'space-mode':''} ${dragging?'is-dragging':''} ${tool==='connect'?'connect-mode':''} ${layerTarget.mode?'layer-target-mode':''}`} ref={viewport} onDoubleClickCapture={e=>{if(tool==='connect'){e.preventDefault();e.stopPropagation();setTool('select');setConnecting(null);setToast('已结束连线')}}} style={backgroundStyle(board.backgroundStyle,view.scale,view.x,view.y)} onPointerMoveCapture={layerTarget.onMove} onPointerLeave={()=>{if(layerTarget.mode)layerTarget.clearHover()}} onPointerDownCapture={e=>{if(e.button===2){e.stopPropagation();return}if(layerTarget.mode){layerTarget.onDown(e);return}if(e.ctrlKey&&e.button===0&&tool==='select'&&!space)startGesture(e)}} onPointerDown={e=>startGesture(e)} onPointerMove={moveGesture} onPointerUp={()=>endGesture()} onPointerCancel={()=>endGesture(true)} onLostPointerCapture={()=>endGesture()}>
       <div className="scene cork" ref={scene} style={{width:1,height:1,transform:`translate(${view.x}px,${view.y}px) scale(${view.scale})`}}>
         {board.items.map(item=><div key={item.id} role="button" tabIndex={0} aria-label={`${item.kind==='medal'?'奖牌':item.kind==='photo'?'照片':item.kind==='bib'?'号码布':item.kind==='note'?'便签':item.kind==='race-map'?'赛事地图':'路线卡'}：${displayMemory(item,recordFor(item,library.records)).title}`} aria-pressed={selectedIds.includes(item.id)} className={`memory memory-${item.kind} ${selectedIds.includes(item.id)?'selected':''} ${item.locked?'is-locked':''} ${item.groupId?'is-grouped':''} ${layerTarget.highlightIds.includes(item.id)?'layer-target-highlight':''} ${connecting?.itemId===item.id?'connection-source':''}`} style={{left:item.x,top:item.y,width:item.w,height:item.h,transform:`rotate(${item.rotation}deg)`}} onPointerDown={e=>startGesture(e,item)} onDoubleClick={e=>{if(tool!=='connect'&&!e.ctrlKey&&selectedIds.length<2)editItem(item)}} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();if(tool==='connect')connectItem(item.id);else{setSelected(item.id);setSelectedThread(null);editItem(item)}}}}><Artwork raceGroups={mapGroups} item={item} record={recordFor(item,library.records)} tapeStyle={item.tapeStyle??decorations.tape}/><div className="selection-outline"/></div>)}
         <svg className="threads" width={1} height={1} aria-label="赛事记忆连接线">
@@ -371,11 +376,12 @@ export default function App() {
             startGesture(e,item);if(gesture.current?.type==='item')gesture.current.mapGroupKey=group.key
           }} onClick={e=>{if(e.detail===0)activate()}}>{pin==='clip'&&<Clothespin/>}</button>
         }))}
-        {guides.map((g,index)=><div key={index} className="snap-guide" style={g.axis==='x'?{left:g.value,top:g.start,width:1/view.scale,height:g.end-g.start}:{left:g.start,top:g.value,width:g.end-g.start,height:1/view.scale}}/>)}
+        {snapEnabled&&guides.map((g,index)=><div key={index} className="snap-guide" style={g.axis==='x'?{left:g.value,top:g.start,width:1/view.scale,height:g.end-g.start}:{left:g.start,top:g.value,width:g.end-g.start,height:1/view.scale}}/>)}
         {marquee&&<div className="marquee-selection" style={{left:marquee.x,top:marquee.y,width:marquee.width,height:marquee.height,borderWidth:1.5/view.scale}}/>}
         {board.items.length===0 && <div className="empty-board" style={{left:visible.x+visible.width/2,top:visible.y+visible.height*.3,width:600}}><MountainLogo/><h1>每段旅程，都值得收藏</h1><p>从一张照片、一块奖牌开始，串起你的山野记忆。</p><button className="primary-button" onPointerDown={e=>e.stopPropagation()} onClick={()=>openAdd('photo')}><Plus size={18}/>添加第一张照片</button></div>}
       </div>
     </main>
+    {canvasMenu&&<CanvasContextMenu position={canvasMenu} snapEnabled={snapEnabled} onToggle={toggleSnap} onClose={closeCanvasMenu}/>}
     <nav className="tool-palette" aria-label="收藏板工具"><button className={tool==='select'?'tool active':'tool'} onClick={()=>{setTool('select');setConnecting(null)}} title="选择 · V"><MousePointer2 size={26} fill={tool==='select'?'currentColor':'none'}/><span>选择</span></button><div className="tool-divider"/>{kinds.slice(0,3).map(({kind:k,label,icon:Icon})=><button key={k} className="tool" onClick={()=>openAdd(k)}><Icon size={25}/><span>添加{label}</span></button>)}<button className="tool" onClick={()=>openAdd("map")}><Route size={25}/><span>添加路线</span></button><button className="tool" onClick={()=>openAdd('race-map')}><Map size={25}/><span>添加地图</span></button><div className="tool-divider"/><button className={`tool connect-tool ${tool==='connect'?'active':''}`} onClick={()=>{setTool(tool==='connect'?'select':'connect');setConnecting(null);setSelected(null);setSelectedThread(null)}} title="添加连线 · C"><Spline size={28}/><span>添加连线</span></button><button className="tool note-tool" onClick={()=>openAdd('note')}><StickyNote size={23}/><span>添加便签</span></button></nav>
     {layerTarget.mode&&<div className="connection-hint layer-target-hint" data-layer-target-hint role="status"><span>{layerTarget.target?`放到「${board.items.find(i=>i.id===layerTarget.target)?.title.replaceAll('\n',' ')||'物件'}」${layerTarget.mode.action==='above'?'上方':'下方'}`:`点击目标物件，放到它的${layerTarget.mode.action==='above'?'上方':'下方'}`}<small>Alt 单击切换重叠目标 · 点击或 Enter 确认 · Esc 取消</small></span><button type="button" onClick={layerTarget.cancel} aria-label="取消指定层级"><X size={16}/></button></div>}
     <div className="history-controls" data-history={historyTick}><button title="撤销 · Ctrl+Z" aria-label="撤销" disabled={!history.canUndo || dragging} onClick={undo}><Undo2 size={17}/></button><span/><button title="重做 · Ctrl+Shift+Z" aria-label="重做" disabled={!history.canRedo || dragging} onClick={redo}><Redo2 size={17}/></button></div>
