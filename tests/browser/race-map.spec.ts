@@ -27,7 +27,7 @@ async function prepare(page:Page){
 }
 const button=(page:Page,name:string)=>page.getByRole('button',{name,exact:true})
 async function save(page:Page){await button(page,'保存修改').click();await expect(page.locator('.record-panel')).toHaveCount(0)}
-async function addMap(page:Page){await button(page,'添加地图').click();await expect(page.locator('.race-map-editor')).toBeVisible();await save(page)}
+async function addMap(page:Page){await button(page,'添加地图').click();await expect(page.locator('.race-map-editor')).toBeVisible();await expect(button(page,'使用说明')).toHaveCount(0);await save(page)}
 async function editor(page:Page){await page.locator('.memory-race-map').first().focus();await page.keyboard.press('Enter');await expect(page.locator('.race-map-editor')).toBeVisible()}
 async function connect(page:Page){
   await button(page,'添加连线').click();await button(page,'地点钉子：四姑娘山，2 场赛事').click()

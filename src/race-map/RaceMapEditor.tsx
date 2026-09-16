@@ -16,13 +16,10 @@ export default function RaceMapEditor({item,board,records,groups,groupKey,choosi
   onRace:(id:string)=>void;onConnect:(id:string)=>void;onRemoveThread:(id:string)=>void
 }){
   const [draft,setDraft]=useState<Pick<Memory,'w'|'h'|'mapView'|'pinStyle'|'variant'>>(()=>({variant:resolveStyle('race-map',item.variant).id,w:item.w,h:item.h,mapView:item.mapView??{x:0,y:0,scale:1},pinStyle:item.pinStyle??board.decorations?.pin??'classic'}))
-  const [help,setHelp]=useState(false)
   const group=groups.find(g=>g.key===groupKey)
   const races=group?.races??boardRaceRecords(board,records)
   return <aside className="record-panel race-map-editor" data-record-panel aria-label="赛事地图编辑" onKeyDown={e=>e.stopPropagation()}>
-    <button type="button" className="editor-help-toggle" aria-expanded={help} onClick={()=>setHelp(!help)}>{help?'隐藏说明':'使用说明'}</button>
-    <div className="record-heading"><div><small>PLACES ON YOUR BOARD</small><h2>编辑赛事地图</h2></div><button type="button" aria-label="关闭地图编辑" onClick={onClose}><X size={20}/></button></div>
-    {help&&<p className="race-map-editor-help">画布上拖动整张地图，在这里调整取景后保存。红圈汇总本板的赛事，地点钉子可以连接照片与奖牌。</p>}
+    <div className="record-heading"><div><h2>编辑赛事地图</h2></div><button type="button" aria-label="关闭地图编辑" onClick={onClose}><X size={20}/></button></div>
     <form onSubmit={e=>{e.preventDefault();onSave(draft);onClose()}}>
       <div className="race-map-editor-preview"><RaceMapCanvas theme={draft.variant} value={draft.mapView} onViewChange={mapView=>setDraft(d=>({...d,mapView}))} groups={groups} selected={groupKey} onSelect={onSelectGroup}/></div>
       <fieldset className="decoration-section"><legend>地图尺寸</legend><div className="map-size-options">{MAP_SIZE_OPTIONS.map(size=><button type="button" key={size.label} aria-pressed={draft.w===size.w&&draft.h===size.h} onClick={()=>setDraft(d=>({...d,w:size.w,h:size.h}))}><strong>{size.label}</strong><small>{size.w} × {size.h}</small></button>)}</div></fieldset>

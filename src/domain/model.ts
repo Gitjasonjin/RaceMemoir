@@ -8,7 +8,7 @@ export type TapeStyle = typeof TAPE_STYLES[number]
 export type ThreadStyle = typeof THREAD_STYLES[number]
 export interface Decorations { pin: PinStyle; tape: TapeStyle; thread: ThreadStyle }
 export type DecorationChange = { kind: 'pin'; style: PinStyle | undefined } | { kind: 'tape'; style: TapeStyle | undefined } | { kind: 'thread'; style: ThreadStyle | undefined }
-export interface Memory { id: string; kind: Kind; x: number; y: number; w: number; h: number; rotation: number; title: string; subtitle?: string; image?: string; variant?: string; number?: string; pinStyle?: PinStyle; tapeStyle?: TapeStyle; pinEnabled?: boolean; recordId?: string; medalScale?: number; photoZoom?: number; photoX?: number; photoY?: number; photoPaper?: string; medalFrame?: string; shadowDepth?: number; mapView?: MapView }
+export interface Memory { id: string; kind: Kind; x: number; y: number; w: number; h: number; rotation: number; title: string; subtitle?: string; image?: string; variant?: string; number?: string; pinStyle?: PinStyle; tapeStyle?: TapeStyle; pinEnabled?: boolean; recordId?: string; medalScale?: number; photoZoom?: number; photoX?: number; photoY?: number; photoPaper?: string; medalFrame?: string; shadowDepth?: number; mapView?: MapView; groupId?:string; locked?:boolean }
 export interface Thread { id: string; from: string; to: string; fromRaceId?:string; toRaceId?:string; style?: ThreadStyle; curvature?: number }
 export interface Board { title: string; items: Memory[]; threads: Thread[]; decorations?: Partial<Decorations>; backgroundStyle?: string }
 export const DEFAULT_DECORATIONS: Decorations = { pin: 'classic', tape: 'classic', thread: 'classic' }
@@ -86,6 +86,8 @@ export function isBoard(value: unknown): value is Board {
     if(item.shadowDepth!==undefined&&(!Number.isFinite(item.shadowDepth)||item.shadowDepth<0||item.shadowDepth>100))return false
     if(item.photoZoom!==undefined&&(!Number.isFinite(item.photoZoom)||item.photoZoom<1||item.photoZoom>3))return false
     if([item.photoX,item.photoY].some(v=>v!==undefined&&(!Number.isFinite(v)||v<0||v>100)))return false
+    if(item.groupId!==undefined&&(typeof item.groupId!=='string'||!item.groupId||item.groupId.length>100))return false
+    if(item.locked!==undefined&&typeof item.locked!=='boolean')return false
     if(item.kind==='race-map'&&(item.w<200||item.h<148))return false
     if(item.mapView!==undefined){const v=item.mapView;if(item.kind!=='race-map'||!v||![v.x,v.y,v.scale].every(Number.isFinite)||v.scale<1||v.scale>MAX_MAP_SCALE||v.x>300||v.x<1000*(1-v.scale)-300||v.y>210||v.y<700*(1-v.scale)-210)return false}
     ids.add(item.id)

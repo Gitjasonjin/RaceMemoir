@@ -88,8 +88,7 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
   const kindLabel=draft.kind==='medal'?'奖牌':draft.kind==='photo'?'照片':'路线'
   const demoItem=createMemory(draft.kind==='medal'?'medal':'map',draft.name,draft.kind==='medal'?(draft.variant||'bronze'):'blue','','')
   return <>
-    <div className="record-heading"><button disabled={saving} onClick={() => props.onMode({mode:'library'})} aria-label="返回收藏库"><ArrowLeft size={19}/></button><div><small>A MEMORY WORTH KEEPING</small><h2>{record?'编辑':'添加'}{kindLabel}</h2></div><button onClick={props.onClose} aria-label="关闭详情"><X size={20}/></button></div>
-    {draft.source==='demo'&&<p className="record-notice editor-explanation">示例记录 · 上传{draft.kind==='medal'?'真实奖牌照片':'GPX'}后，画布上的关联物件会一同替换。</p>}
+    <div className="record-heading"><button disabled={saving} onClick={() => props.onMode({mode:'library'})} aria-label="返回收藏库"><ArrowLeft size={19}/></button><div><h2>{record?'编辑':'添加'}{kindLabel}</h2></div><button onClick={props.onClose} aria-label="关闭详情"><X size={20}/></button></div>
     {!repairing&&<div ref={preview} className={`record-preview ${draft.kind==='medal'?'medal-preview':''}`}>
       {draft.kind==='photo'&&image?<PhotoCropPreview key={image} item={photoItem} record={draft} onChange={!busy&&(!record||props.item?.kind==='photo')?changePhoto:undefined}/>:draft.kind!=='route' ? image ? <img src={showOriginal?original:image} alt={`${draft.name||kindLabel}预览`}/> : draft.source==='demo'? <div className="demo-record-preview"><Artwork item={demoItem} record={draft}/></div>:<div className="upload-placeholder">{draft.kind==='photo'?<ImagePlus size={42}/>:<Medal size={42}/>}<span>{draft.kind==='photo'?'上传照片，留下你的山野瞬间':'让这块奖牌，成为你的收藏'}</span></div>
         : draft.trackPoints.length ? <RouteArtwork record={draft as RouteRecord}/> : <div className="upload-placeholder"><Route size={42}/><span>{draft.source==='demo'?'示例路线 · 尚无真实轨迹':'导入走过的路'}</span></div>}
@@ -100,9 +99,9 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
       <MedalSizing item={medalItem} aspect={aspect} onChange={changeMedal}/>
     </>}
     {repairing&&draft.kind==='medal'&&draft.originalImage&&draft.image&&<RibbonRepair original={draft.originalImage} image={draft.image} onApply={image=>{patch({image,cutout:'done'});setRepairing(false);setShowOriginal(false);setNotice(`绶带修复已应用，点击「${record?'保存修改':'保存并放上画布'}」保存到收藏记录。`)}} onClose={()=>setRepairing(false)}/>}
-    <form onSubmit={e=>void save(e)}><p className="record-muted">名称、日期和上传文件需点击下方保存；已放上画布的构图调整会自动保存。</p>
+    <form onSubmit={e=>void save(e)}>
       <label className="record-upload">{reading?'正在读取文件…':draft.kind!=='route'?`选择 / 更换${kindLabel}图片`:'选择 / 更换 GPX 文件'}<input type="file" disabled={saving||reading||repairing} accept={draft.kind!=='route'?'image/png,image/jpeg,image/webp':'.gpx'} onChange={e=>{void upload(e.target.files?.[0]);e.currentTarget.value=''}}/></label>
-      <p className="record-muted">{draft.kind==='photo'?'PNG / JPG / WebP，最大 20 MB。保留原图并存入本机收藏库。':draft.kind==='medal'?'PNG / JPG / WebP，最大 20 MB。上传后自动抠取奖牌并补全绶带，首次需下载模型。':'最大 15 MB / 10 万轨迹点；按 GPX 计算里程与爬升，不加载地图底图。'}</p>
+
       {cutout.progress&&<div className="record-progress" role="status"><span className="record-spinner"/>{cutout.progress}<button type="button" onClick={()=>{cutout.cancel();setNotice('已取消抠图，使用原图。')}}>取消抠图</button></div>}
       {draft.kind==='medal'&&draft.originalImage&&!cutout.progress&&!repairing&&<div className="record-actions"><button type="button" disabled={busy} onClick={()=>processImage((draft as MedalRecord).originalImage!)}>自动抠图（含绶带）</button>{draft.cutout==='done'&&<><button type="button" disabled={busy} onClick={()=>{setRepairing(true);setNotice('')}}>手动微调</button><button type="button" onClick={()=>setShowOriginal(!showOriginal)}>{showOriginal?'查看抠图':'对比原图'}</button><button type="button" disabled={saving} onClick={()=>{patch({image:draft.originalImage,cutout:'original'});setShowOriginal(false)}}>使用原图</button></>}</div>}
       <label className="field-label">{kindLabel}名称<input required maxLength={200} value={draft.name} disabled={saving} onChange={e=>patch({name:e.target.value})} placeholder={draft.kind==='medal'?'我的第一场越野赛':'山野环线'}/></label>

@@ -59,7 +59,7 @@ export default function RibbonRepair({original,image,onApply,onClose}:Props){
     },'image/png')
   }
   return <section ref={section} className="ribbon-repair" aria-label="修复奖牌绶带">
-    <h3>修复绶带</h3><p className="record-muted">沿原图中的绶带涂抹，将被误删的部分恢复。可放大后用小画笔修边。</p>
+    <h3>修复绶带</h3>
     <div className="record-actions" role="group" aria-label="修复工具"><button type="button" aria-pressed={mode==='restore'} disabled={busy} onClick={()=>setMode('restore')}>恢复绶带</button><button type="button" aria-pressed={mode==='erase'} disabled={busy} onClick={()=>setMode('erase')}>擦除背景</button><button type="button" disabled={!ready||busy} onClick={()=>setRevision(n=>n+1)}>重置修复</button></div>
     <label className="ribbon-range">画笔大小 <input type="range" min={2} max={50} value={size} disabled={busy} onChange={e=>setSize(Number(e.target.value))}/><span>{size}</span></label>
     <div className="ribbon-options"><label><input type="checkbox" checked={guide} onChange={e=>setGuide(e.target.checked)}/>显示原图参考</label><label>放大 <select aria-label="修复画布缩放" value={zoom} onChange={e=>setZoom(Number(e.target.value))}><option value={1}>1×</option><option value={2}>2×</option><option value={4}>4×</option></select></label></div>
@@ -68,7 +68,7 @@ export default function RibbonRepair({original,image,onApply,onClose}:Props){
       <canvas ref={canvas} aria-label="沿绶带拖动画笔恢复，切换擦除工具移除多余背景" onPointerDown={e=>paint(e,true)} onPointerMove={e=>paint(e)} onPointerUp={e=>{paint(e);stroke.current=null}} onPointerCancel={()=>{stroke.current=null}} onLostPointerCapture={()=>{stroke.current=null}}/>
       {ready&&guide&&guideUrl&&<img src={guideUrl} alt="原图参考，半透明显示且不写入结果" draggable={false}/>}
     </div></div>
-    <p className="record-muted">半透明原图仅供定位；关闭参考即可检查透明效果。</p>
+
     {error&&<p className="record-error" role="alert">{error}</p>}
     <div className="record-actions"><button type="button" disabled={!ready||busy} onClick={apply}>{busy?'正在应用…':'应用修复'}</button><button type="button" disabled={busy} onClick={onClose}>取消</button></div>
   </section>

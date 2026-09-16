@@ -5,3 +5,15 @@
 .selection-bar .layer-popover button:disabled{opacity:.35;cursor:default;background:none}
 .selection-bar .layer-control>button[aria-expanded=true]{background:#e3e8d9}
 .selection-bar .layer-popover button:focus-visible{outline:2px solid #788666;outline-offset:-2px}
+
+.snap-guide{position:absolute;background:#dc6273;z-index:8;pointer-events:none;box-shadow:0 0 0 1px #fff5}
+.memory.is-locked{cursor:default}.memory.is-locked .selection-outline{border-style:solid;border-color:#e0c785}
+.memory.is-grouped.selected .selection-outline{border-color:#dceab6}
+.selection-bar{max-width:calc(100% - 160px);flex-wrap:wrap;justify-content:center}
+.selection-bar button:disabled{opacity:.35;cursor:default;background:none}
+.layout-popover{width:166px;display:grid;grid-template-columns:1fr}
+
+.layer-target-menu{width:202px}.layer-target-menu hr{border:0;border-top:1px solid #dfdfd2;margin:5px}
+.layer-target-mode,.layer-target-mode .memory,.layer-target-mode .pushpin{cursor:crosshair}
+.memory.layer-target-highlight .selection-outline{opacity:1;border:2px solid #c8e0a4;box-shadow:0 0 0 3px #566b4433;filter:none}
+.layer-target-hint{max-width:calc(100% - 180px);white-space:normal}.layer-target-hint>span{max-width:500px;overflow-wrap:anywhere}.layer-target-hint small{display:block;margin-top:5px;font-size:11px;color:#868578}
