@@ -1,3 +1,5 @@
+import {bibLayout} from '../items/bib/bibGeometry'
+import ToolPalette from '../board/ToolPalette'
 import CanvasContextMenu from '../board/CanvasContextMenu'
 import {useLayerTarget} from '../board/useLayerTarget'
 import LayoutMenu from '../board/LayoutMenu'
@@ -19,7 +21,7 @@ import { selectionBounds, intersectsSelection } from '../board/selection'
 import type { Bounds } from '../board/canvas'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, PointerEvent as ReactPointerEvent } from 'react'
-import { MousePointer2, ImagePlus, Medal, RectangleEllipsis, Spline, Plus, Minus, Maximize, Undo2, Redo2, StickyNote, X, Check, RotateCcw, RotateCw, Trash2, Move, Keyboard, Palette, Route, Map } from 'lucide-react'
+import { Spline, Plus, Minus, Maximize, Undo2, Redo2, X, Check, RotateCcw, RotateCw, Trash2, Move, Keyboard, Palette } from 'lucide-react'
 import {exportBoardImage} from '../persistence/exportImage'
 import {downloadBlob} from '../persistence/download'
 import Artwork from '../items/Artwork'
@@ -44,7 +46,6 @@ import {boardRaceRecords,groupRaceLocations} from '../race-map/raceMapGrouping'
 import {resolveEndpoint,threadEndpoints,hasConnection,sameEndpoint,racePointOnMap,recordThreadReferences} from '../board/threadEndpoints'
 import type {ThreadEndpoint} from '../board/threadEndpoints'
 
-const kinds: {kind: Kind; label: string; icon: typeof ImagePlus}[] = [{kind:'photo',label:'照片',icon:ImagePlus},{kind:'medal',label:'奖牌',icon:Medal},{kind:'bib',label:'号码布',icon:RectangleEllipsis},{kind:'note',label:'便签',icon:StickyNote},{kind:'map',label:'路线',icon:Route}]
 
 export default function App() {
   const history=useBoardHistory(loadBoard)
@@ -267,8 +268,9 @@ export default function App() {
   const addRecord = async (record: CollectionRecord,layout?:Partial<Memory>) => {
     const current=boardRef.current
     if(current.items.length>=500){setToast('每块收藏板最多放置 500 件藏品');return}
-    const item=createMemory(record.kind==='medal'?'medal':record.kind==='photo'?'photo':'map',record.name,record.kind==='medal'?(record.variant||'bronze'):'blue','','')
+    const item=createMemory(record.kind==='medal'?'medal':record.kind==='photo'?'photo':record.kind==='bib'?'bib':'map',record.name,record.kind==='medal'?(record.variant||'bronze'):'blue','','')
     item.recordId=record.id
+    if(record.kind==='bib')Object.assign(item,bibLayout(record.width,record.height))
     if(layout)Object.assign(item,layout)
     const el=viewport.current
     if(el){const center=screenToWorld(el.clientWidth/2,el.clientHeight/2,viewRef.current);item.x=center.x-item.w/2;item.y=center.y-item.h/2}
@@ -277,6 +279,11 @@ export default function App() {
   const saveRecord = async (record:CollectionRecord,add:boolean,layout?:Partial<Memory>) => {
     await library.save([record])
     if(add)await addRecord(record,layout)
+    else if(record.kind==='bib'){
+      const current=boardRef.current
+      const items=current.items.map(item=>{if(item.recordId!==record.id)return item;const size=bibLayout(record.width,record.height,item.id===selected?layout?.w??item.w:item.w);return size.w===item.w&&size.h===item.h?item:{...item,...size,x:item.x+(item.w-size.w)/2,y:item.y+(item.h-size.h)/2}})
+      if(items.some((item,index)=>item!==current.items[index]))commit({...current,items})
+    }
   }
   const deleteRecord = async (id:string) => {
     if(fileOperation.current)throw new Error('请等待当前操作完成')
@@ -339,8 +346,8 @@ export default function App() {
   return <div className="app-shell">
     {(!library.ready||exporting)&&<div className="records-loading" role="status"><div><h2>{exporting?'正在处理收藏板文件…':library.error?'收藏库暂不可用':'正在载入你的收藏…'}</h2>{library.error&&<><p>{library.error}</p><button className="primary-button" onClick={library.retry}>重试</button></>}</div></div>}
     {saveError&&<div className="save-failure-banner" role="alert">{saveError}。当前修改仍在此页面中，请勿刷新。{boardSave.error&&<button onClick={boardSave.retry}>重试画布保存</button>}<button onClick={()=>setModal('share')}>导出已提交内容</button></div>}
-    {library.ready&&recordPanel&&<RecordPanel styles={recordPanel.mode==='detail'&&selectedItem?.recordId===recordPanel.id?itemStyles:undefined} item={recordPanel.mode==='detail'&&selectedItem&&selectedItem.recordId===recordPanel.id?selectedItem:undefined} onLayout={transformItem} mode={recordPanel} records={library.records} references={id=>board.items.filter(i=>i.recordId===id).length} threadReferences={id=>recordThreadReferences(board,id)} onMode={setRecordPanel} onClose={()=>setRecordPanel(null)} onSave={saveRecord} onDelete={deleteRecord} onAdd={record=>{void addRecord(record).catch(()=>setToast('照片读取失败，请重新上传'))}}/>}
-    {memoryPanel&&<MemoryEditor memoryPanel={memoryPanel} kind={kind} selectedItem={selectedItem} draft={draft} setDraft={setDraft} transformItem={transformItem} itemStyles={itemStyles} submitMemory={submitMemory} onClose={()=>{setMemoryPanel(null);setMapPanel(null)}}/>}
+    {library.ready&&recordPanel&&<RecordPanel onBibTemplate={()=>openAdd('bib')} styles={recordPanel.mode==='detail'&&selectedItem?.recordId===recordPanel.id?itemStyles:undefined} item={recordPanel.mode==='detail'&&selectedItem&&selectedItem.recordId===recordPanel.id?selectedItem:undefined} onLayout={transformItem} mode={recordPanel} records={library.records} references={id=>board.items.filter(i=>i.recordId===id).length} threadReferences={id=>recordThreadReferences(board,id)} onMode={setRecordPanel} onClose={()=>setRecordPanel(null)} onSave={saveRecord} onDelete={deleteRecord} onAdd={record=>{void addRecord(record).catch(()=>setToast('照片读取失败，请重新上传'))}}/>}
+    {memoryPanel&&<MemoryEditor onBibUpload={()=>{setMemoryPanel(null);setRecordPanel({mode:'bib'})}} memoryPanel={memoryPanel} kind={kind} selectedItem={selectedItem} draft={draft} setDraft={setDraft} transformItem={transformItem} itemStyles={itemStyles} submitMemory={submitMemory} onClose={()=>{setMemoryPanel(null);setMapPanel(null)}}/>}
     {mapItem&&mapPanel&&<RaceMapEditor key={mapItem.id} item={mapItem} board={board} records={library.records} groups={mapGroups} groupKey={mapPanel.groupKey} choosing={!!mapPanel.choosing&&tool==='connect'} hiddenThreads={hiddenMapThreads} onClose={()=>setMapPanel(null)} onSelectGroup={groupKey=>setMapPanel({...mapPanel,groupKey,choosing:false})} onConnect={raceId=>connectEndpoint({itemId:mapItem.id,raceId})} onRemoveThread={id=>commit({...board,threads:board.threads.filter(t=>t.id!==id)})} onSave={change=>commit({...board,items:board.items.map(i=>i.id===mapItem.id?{...i,...change,x:i.x+(i.w-(change.w??i.w))/2,y:i.y+(i.h-(change.h??i.h))/2}:i)})} onRace={id=>{
       setMapPanel(null)
       const item=board.items.find(i=>i.recordId===id)
@@ -382,7 +389,7 @@ export default function App() {
       </div>
     </main>
     {canvasMenu&&<CanvasContextMenu position={canvasMenu} snapEnabled={snapEnabled} onToggle={toggleSnap} onClose={closeCanvasMenu}/>}
-    <nav className="tool-palette" aria-label="收藏板工具"><button className={tool==='select'?'tool active':'tool'} onClick={()=>{setTool('select');setConnecting(null)}} title="选择 · V"><MousePointer2 size={26} fill={tool==='select'?'currentColor':'none'}/><span>选择</span></button><div className="tool-divider"/>{kinds.slice(0,3).map(({kind:k,label,icon:Icon})=><button key={k} className="tool" onClick={()=>openAdd(k)}><Icon size={25}/><span>添加{label}</span></button>)}<button className="tool" onClick={()=>openAdd("map")}><Route size={25}/><span>添加路线</span></button><button className="tool" onClick={()=>openAdd('race-map')}><Map size={25}/><span>添加地图</span></button><div className="tool-divider"/><button className={`tool connect-tool ${tool==='connect'?'active':''}`} onClick={()=>{setTool(tool==='connect'?'select':'connect');setConnecting(null);setSelected(null);setSelectedThread(null)}} title="添加连线 · C"><Spline size={28}/><span>添加连线</span></button><button className="tool note-tool" onClick={()=>openAdd('note')}><StickyNote size={23}/><span>添加便签</span></button></nav>
+    <ToolPalette tool={tool} onSelect={()=>{setTool('select');setConnecting(null)}} onConnect={()=>{setTool(tool==='connect'?'select':'connect');setConnecting(null);setSelected(null);setSelectedThread(null)}} onAdd={openAdd}/>
     {layerTarget.mode&&<div className="connection-hint layer-target-hint" data-layer-target-hint role="status"><span>{layerTarget.target?`放到「${board.items.find(i=>i.id===layerTarget.target)?.title.replaceAll('\n',' ')||'物件'}」${layerTarget.mode.action==='above'?'上方':'下方'}`:`点击目标物件，放到它的${layerTarget.mode.action==='above'?'上方':'下方'}`}<small>Alt 单击切换重叠目标 · 点击或 Enter 确认 · Esc 取消</small></span><button type="button" onClick={layerTarget.cancel} aria-label="取消指定层级"><X size={16}/></button></div>}
     <div className="history-controls" data-history={historyTick}><button title="撤销 · Ctrl+Z" aria-label="撤销" disabled={!history.canUndo || dragging} onClick={undo}><Undo2 size={17}/></button><span/><button title="重做 · Ctrl+Shift+Z" aria-label="重做" disabled={!history.canRedo || dragging} onClick={redo}><Redo2 size={17}/></button></div>
     {tool==='connect' && <div className="connection-hint"><span className="red-dot"/>{connecting?'选择下一件藏品，串联这段记忆 · 双击结束':'点击藏品或连接点，开始连接记忆 · 双击结束'}<button onClick={()=>{setTool('select');setConnecting(null)}} aria-label="结束连线"><X size={16}/></button></div>}

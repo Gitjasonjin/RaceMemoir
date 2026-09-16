@@ -1,4 +1,6 @@
-<h1 align="center"> 山径线索板 · RaceMemoir </h1>
+<p align="center">
+  <img src="docs/images/readme-banner.png" alt="山径线索板 · RaceMemoir — 用照片、奖牌、号码布与红线串联山野记忆" width="100%" />
+</p>
 
 <p align="center">
   <img alt="React" src="https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB" />
@@ -32,7 +34,7 @@
 ## 功能
 
 - ✅ 收藏奖牌、照片、号码布、便签与路线卡。
-- ✅ 上传照片与奖牌，自动抠图保留绶带，导入 GPX 展示赛事路线。
+- ✅ 上传照片、奖牌与真实号码布，支持奖牌抠图、号码布裁切和透视校正，导入 GPX 展示赛事路线。
 - ✅ 无限画布自由排布，支持分组、锁定、对齐分布、吸附辅助线与撤销重做。
 - ✅ 自定义相纸、展示框与装饰，用可调弧度的红线串联记忆。
 - ✅ 收藏库统一管理与复用，本地自动保存。

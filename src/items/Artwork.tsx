@@ -19,7 +19,7 @@ export default function Artwork({item:instance,tapeStyle='classic',record,raceGr
     case 'race-map':return <RaceMapArtwork item={item} groups={raceGroups}/>
     case 'medal':return <MedalArtwork item={item} record={record}/>
     case 'photo':return <PhotoArtwork item={item} record={record}/>
-    case 'bib':return <BibArtwork item={item} tapeStyle={tapeStyle}/>
+    case 'bib':return <BibArtwork item={item} tapeStyle={tapeStyle} record={record?.kind==='bib'?record:undefined}/>
     case 'note':return <NoteArtwork item={item}/>
     case 'map':return record?.kind==='route'&&record.source==='upload'?<RouteArtwork record={record} compact={resolveStyle('map',item.variant).compact}/>:<DemoRouteArtwork item={item}/>
   }

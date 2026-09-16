@@ -15,15 +15,15 @@ export function createLocationKey(location: RaceLocation) {
   return `${location.name.trim()}::${coarseCoordinate(location.lat).toFixed(2)}::${coarseCoordinate(location.lng).toFixed(2)}`
 }
 export function raceRecords(records: CollectionRecord[]): RaceRecord[] {
-  return records.filter((r): r is RaceRecord => r.kind !== 'photo' && !r.archived)
+  return records.filter((r): r is RaceRecord => (r.kind === 'medal'||r.kind === 'route') && !r.archived)
 }
 export function boardRaceRecords(board:Board,records:CollectionRecord[]):RaceRecord[]{
   const ids=new Set(board.items.filter(i=>i.kind==='medal'||i.kind==='map').map(i=>i.recordId))
-  return records.filter((r):r is RaceRecord=>r.kind!=='photo'&&ids.has(r.id))
+  return records.filter((r):r is RaceRecord=>(r.kind==='medal'||r.kind==='route')&&ids.has(r.id))
 }
 export function groupRaceLocations(records: CollectionRecord[],includeArchived=false): RaceLocationGroup[] {
   const groups = new Map<string, RaceLocationGroup>()
-  for (const race of includeArchived?records.filter((r):r is RaceRecord=>r.kind!=='photo'):raceRecords(records)) {
+  for (const race of includeArchived?records.filter((r):r is RaceRecord=>(r.kind==='medal'||r.kind==='route')):raceRecords(records)) {
     const location = race.location
     if (!location) continue
     if (!validRaceLocation(location)) {

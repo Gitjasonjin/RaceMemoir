@@ -15,7 +15,7 @@ export function localToWorld(item:Memory,p:Point):Point{
   return {x:item.x+item.w/2+dx*Math.cos(a)-dy*Math.sin(a),y:item.y+item.h/2+dx*Math.sin(a)+dy*Math.cos(a)}
 }
 export function racePointOnMap(item:Memory,record:CollectionRecord):Point|null{
-  if(item.kind!=='race-map'||record.kind==='photo'||!validRaceLocation(record.location))return null
+  if(item.kind!=='race-map'||(record.kind!=='medal'&&record.kind!=='route')||!validRaceLocation(record.location))return null
   const projected=mapGeometry.projection([coarseCoordinate(record.location.lng),coarseCoordinate(record.location.lat)])
   if(!projected||!projected.every(Number.isFinite))return null
   const view=item.mapView??{x:0,y:0,scale:1},x=projected[0]*view.scale+view.x,y=projected[1]*view.scale+view.y

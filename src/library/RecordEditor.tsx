@@ -10,11 +10,13 @@ import type { Memory } from '../domain/model'
 import MedalSizing from '../items/medal/MedalSizing'
 import { useMedalImage } from '../items/medal/useMedalImage'
 import { IMAGE_TYPES } from '../domain/records'
-import type { CollectionRecord, MedalRecord, RouteRecord } from '../domain/records'
+import type { CollectionRecord as AnyRecord, MedalRecord, RouteRecord } from '../domain/records'
 import { parseGpx } from '../items/route/gpx'
 import { useBlobUrl } from '../shared/useBlobUrl'
 import { useCutout } from '../items/medal/useCutout'
 import RibbonRepair from '../items/medal/RibbonRepair.tsx'
+
+type CollectionRecord=Exclude<AnyRecord,{kind:'bib'}>
 
 import type {RecordPanelProps} from './types'
 import RaceLocationEditor from '../race-map/RaceLocationEditor'

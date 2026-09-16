@@ -8,7 +8,7 @@
 .race-map-editor-preview{margin:18px 0;border:1px solid #dfe3e8;border-radius:12px;overflow:hidden;background:#fafbfc}.race-map-editor-preview .race-map-canvas>svg{height:220px;min-height:0;max-height:none}.race-map-editor-preview .race-map-tools{bottom:7px;right:7px;transform:scale(.88);transform-origin:bottom right}.race-map-editor-preview .race-map-gesture-hint{display:none}
 .race-map-editor-help{font-size:12px;line-height:1.8;color:#888570}.race-map-editor-races{margin-top:25px;padding-top:12px;border-top:1px solid #dfdac9}.race-map-editor-races h3,.race-map-hidden-threads h3{font-size:14px}.race-map-hidden-threads{border-top:1px solid #ded9c8;margin-top:22px;padding-top:12px}.race-map-hidden-threads>div{display:flex;gap:12px;align-items:center;justify-content:space-between;font-size:12px;padding:10px 0;border-bottom:1px dashed #e1dcca}.race-map-hidden-threads>div>span{min-width:0;overflow-wrap:anywhere}.race-map-hidden-threads button{padding:6px;color:#a65443;flex-shrink:0}
 /* Keep the additional tool reachable on shorter screens. */
-.tool-palette{max-height:calc(100dvh - 185px);overflow-y:auto;scrollbar-width:thin}.history-controls{top:auto;bottom:76px}
+.history-controls{top:auto;bottom:76px}
 
 /* Shared quiet map palette; elevation belongs to the card, not the provinces. */
 :is(.race-map-item-svg,.race-map-editor-preview) .race-map-paper{fill:#fafbfc}

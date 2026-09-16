@@ -80,7 +80,7 @@ export function isBoard(value: unknown): value is Board {
     if (item.image && !['/images/mountain.jpg', '/images/hiking.jpg', '/images/sunrise.jpg'].includes(item.image)) return false
     if (!validStyle(item.pinStyle, PIN_STYLES) || !validStyle(item.tapeStyle, TAPE_STYLES)) return false
     if (item.pinEnabled !== undefined && typeof item.pinEnabled !== 'boolean') return false
-    if (item.recordId !== undefined && (typeof item.recordId !== 'string' || !item.recordId || !['medal','map','photo'].includes(item.kind))) return false
+    if (item.recordId !== undefined && (typeof item.recordId !== 'string' || !item.recordId || !['medal','map','photo','bib'].includes(item.kind))) return false
     if (item.medalScale !== undefined && (!Number.isFinite(item.medalScale) || item.medalScale < .4 || item.medalScale > 1.8)) return false
     if([item.photoPaper,item.medalFrame].some(v=>v!==undefined&&(typeof v!=='string'||v.length>80)))return false
     if(item.shadowDepth!==undefined&&(!Number.isFinite(item.shadowDepth)||item.shadowDepth<0||item.shadowDepth>100))return false

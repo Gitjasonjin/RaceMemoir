@@ -34,3 +34,5 @@
 @import '../shared/surfaceOptions.css';
 @import '../race-map/raceMap.css';
 @import '../items/race-map/artwork.css';
+@import '../board/toolPalette.css';
+@import '../items/bib/upload.css';
