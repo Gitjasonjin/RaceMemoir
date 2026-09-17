@@ -5,6 +5,7 @@ import {displayMemory} from '../domain/records'
 import type {CollectionRecord} from '../domain/records'
 import {resolveStyle} from '../domain/styleCatalog'
 import MedalArtwork from './medal/MedalArtwork'
+import MedalExhibitArtwork from './medal/MedalExhibitArtwork'
 import PhotoArtwork from './photo/PhotoArtwork'
 import BibArtwork from './bib/BibArtwork'
 import NoteArtwork from './note/NoteArtwork'
@@ -12,8 +13,9 @@ import RouteArtwork from './route/RouteArtwork'
 import DemoRouteArtwork from './route/DemoRouteArtwork'
 
 /** Dispatch only: each item owns its rendering and asset hooks. */
-export default function Artwork({item:instance,tapeStyle='classic',record,raceGroups=[]}:{item:Memory;tapeStyle?:TapeStyle;record?:CollectionRecord;raceGroups?:RaceLocationGroup[]}){
+export default function Artwork({item:instance,tapeStyle='classic',record,records=[],raceGroups=[]}:{item:Memory;tapeStyle?:TapeStyle;record?:CollectionRecord;records?:CollectionRecord[];raceGroups?:RaceLocationGroup[]}){
   const item=displayMemory(instance,record)
+  if(item.exhibit)return <MedalExhibitArtwork item={item} records={records}/>
   if(item.recordId&&!record)return <div className="missing-record paper"><strong>记录不可用</strong><span>请从收藏库重新添加，或导入完整备份。</span></div>
   switch(item.kind){
     case 'race-map':return <RaceMapArtwork item={item} groups={raceGroups}/>

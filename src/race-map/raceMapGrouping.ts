@@ -2,6 +2,7 @@ import type {CollectionRecord, MedalRecord, RouteRecord} from '../domain/records
 import {coarseCoordinate, validRaceLocation} from '../domain/raceLocation.ts'
 import type {RaceLocation} from '../domain/raceLocation'
 import type {Board} from '../domain/model'
+import {boardMembers} from '../domain/medalExhibit.ts'
 
 export type RaceRecord = MedalRecord | RouteRecord
 export interface RaceLocationGroup {
@@ -18,7 +19,7 @@ export function raceRecords(records: CollectionRecord[]): RaceRecord[] {
   return records.filter((r): r is RaceRecord => (r.kind === 'medal'||r.kind === 'route') && !r.archived)
 }
 export function boardRaceRecords(board:Board,records:CollectionRecord[]):RaceRecord[]{
-  const ids=new Set(board.items.filter(i=>i.kind==='medal'||i.kind==='map').map(i=>i.recordId))
+  const ids=new Set(boardMembers(board.items).filter(i=>i.kind==='medal'||i.kind==='map').map(i=>i.recordId))
   return records.filter((r):r is RaceRecord=>(r.kind==='medal'||r.kind==='route')&&ids.has(r.id))
 }
 export function groupRaceLocations(records: CollectionRecord[],includeArchived=false): RaceLocationGroup[] {

@@ -144,7 +144,7 @@ test('map themes preview, save independently and survive reload',async({page},in
 test('map size presets and scroll do not conflict with 1000 percent zoom',async({page})=>{
   await prepare(page);await addMap(page);await editor(page)
   await expect(button(page,'地形图')).toHaveCount(0)
-  const panel=page.locator('.race-map-editor'),preview=panel.locator('.race-map-editor-preview'),zoom=preview.locator('.race-map-tools span')
+  const panel=page.locator('.race-map-editor .record-scroll'),preview=panel.locator('.race-map-editor-preview'),zoom=preview.locator('.race-map-tools span')
   await preview.hover();await page.mouse.wheel(0,260)
   await expect.poll(()=>panel.evaluate(el=>el.scrollTop)).toBeGreaterThan(0)
   await expect(zoom).toHaveText('100%')

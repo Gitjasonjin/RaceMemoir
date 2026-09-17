@@ -1,5 +1,7 @@
 import {MAX_MAP_SCALE,MAP_SIZE_OPTIONS} from './mapSettings.ts'
 import { PIN_STYLES, TAPE_STYLES, THREAD_STYLES, resolveStyle } from './styleCatalog.ts'
+import {EXHIBIT_LAYOUTS} from './medalExhibit.ts'
+import type {MedalExhibit} from './medalExhibit'
 export type Kind = 'photo' | 'medal' | 'bib' | 'note' | 'map' | 'race-map'
 export interface MapView {x:number;y:number;scale:number}
 export { PIN_STYLES, TAPE_STYLES, THREAD_STYLES } from './styleCatalog.ts'
@@ -8,7 +10,7 @@ export type TapeStyle = typeof TAPE_STYLES[number]
 export type ThreadStyle = typeof THREAD_STYLES[number]
 export interface Decorations { pin: PinStyle; tape: TapeStyle; thread: ThreadStyle }
 export type DecorationChange = { kind: 'pin'; style: PinStyle | undefined } | { kind: 'tape'; style: TapeStyle | undefined } | { kind: 'thread'; style: ThreadStyle | undefined }
-export interface Memory { id: string; kind: Kind; x: number; y: number; w: number; h: number; rotation: number; title: string; subtitle?: string; image?: string; variant?: string; number?: string; pinStyle?: PinStyle; tapeStyle?: TapeStyle; pinEnabled?: boolean; recordId?: string; medalScale?: number; photoZoom?: number; photoX?: number; photoY?: number; photoPaper?: string; medalFrame?: string; shadowDepth?: number; mapView?: MapView; groupId?:string; locked?:boolean }
+export interface Memory { id: string; kind: Kind; x: number; y: number; w: number; h: number; rotation: number; title: string; subtitle?: string; image?: string; variant?: string; number?: string; pinStyle?: PinStyle; tapeStyle?: TapeStyle; pinEnabled?: boolean; recordId?: string; medalScale?: number; photoZoom?: number; photoX?: number; photoY?: number; photoPaper?: string; medalFrame?: string; shadowDepth?: number; mapView?: MapView; groupId?:string; locked?:boolean; exhibit?:MedalExhibit }
 export interface Thread { id: string; from: string; to: string; fromRaceId?:string; toRaceId?:string; style?: ThreadStyle; curvature?: number }
 export interface Board { title: string; items: Memory[]; threads: Thread[]; decorations?: Partial<Decorations>; backgroundStyle?: string }
 export const DEFAULT_DECORATIONS: Decorations = { pin: 'classic', tape: 'classic', thread: 'classic' }
@@ -73,7 +75,16 @@ export function isBoard(value: unknown): value is Board {
   }
   if(b.backgroundStyle!==undefined&&(typeof b.backgroundStyle!=='string'||b.backgroundStyle.length>100))return false
   const ids = new Set<string>()
-  for (const item of b.items) {
+  const members:Memory[]=[]
+  for(const item of b.items){
+    if(!item)return false
+    if(item.exhibit!==undefined){
+      const e=item.exhibit,layout=EXHIBIT_LAYOUTS.find(l=>l.id===e?.layout)
+      if(item.kind!=='medal'||item.recordId!==undefined||item.w<200||item.h<200||!layout||!Array.isArray(e.medals)||e.medals.length<2||e.medals.length>layout.rows*layout.columns||e.medals.some(m=>!m||m.kind!=='medal'||m.exhibit!==undefined||m.groupId!==undefined||m.locked))return false
+      members.push(...e.medals)
+    }
+  }
+  for (const item of [...b.items,...members]) {
     if (!item || typeof item.id !== 'string' || ids.has(item.id) || !['photo', 'medal', 'bib', 'note', 'map', 'race-map'].includes(item.kind) || typeof item.title !== 'string') return false
     if (![item.x, item.y, item.w, item.h, item.rotation].every(Number.isFinite) || item.w < 30 || item.h < 30 || item.w > WIDTH || item.h > (item.kind==='race-map'?Math.max(HEIGHT,...MAP_SIZE_OPTIONS.map(s=>s.h)):HEIGHT)) return false
     if (['subtitle', 'image', 'variant', 'number'].some(key => item[key as keyof Memory] !== undefined && typeof item[key as keyof Memory] !== 'string')) return false

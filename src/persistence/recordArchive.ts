@@ -2,6 +2,7 @@ import { isBoard } from '../domain/model.ts'
 import type { Board } from '../domain/model.ts'
 import { migrateBoard, validRecord } from '../domain/records.ts'
 import type { CollectionRecord } from '../domain/records.ts'
+import {boardMembers} from '../domain/medalExhibit.ts'
 
 async function encodeBlob(blob:Blob){
   const bytes=new Uint8Array(await blob.arrayBuffer());let binary=''
@@ -20,7 +21,7 @@ function decodeBlob(value:unknown):Blob|undefined{
 export async function makeArchive(board:Board,records:CollectionRecord[]){
   if(!isBoard(board)||records.some(r=>!validRecord(r)))throw new Error('收藏板或记录无效，无法生成完整备份')
   const ids=new Set(records.map(r=>r.id))
-  if(board.items.some(i=>i.recordId&&!ids.has(i.recordId)))throw new Error('存在丢失的收藏记录，请先恢复记录或移除对应物件再备份')
+  if(boardMembers(board.items).some(i=>i.recordId&&!ids.has(i.recordId)))throw new Error('存在丢失的收藏记录，请先恢复记录或移除对应物件再备份')
   const packed=[]
   for(const r of records){
     if(r.kind==='photo')packed.push({...r,image:await encodeBlob(r.image)})
@@ -55,11 +56,12 @@ export function restoreArchive(board:Board,records:CollectionRecord[]){
   if(!isBoard(board)||records.some(r=>!validRecord(r)))throw new Error('收藏板或记录无效')
   const ids=new Map(records.map(r=>[r.id,r]))
   if(ids.size!==records.length)throw new Error('备份存在重复记录 ID')
-  for(const item of board.items){
+  for(const item of boardMembers(board.items)){
     if(item.recordId){const r=ids.get(item.recordId);if(!r||(item.kind==='medal'?r.kind!=='medal':item.kind==='photo'?r.kind!=='photo':item.kind==='bib'?r.kind!=='bib':r.kind!=='route'))throw new Error('备份缺少物件关联的记录')}
   }
   for(const t of board.threads)for(const id of [t.fromRaceId,t.toRaceId]){if(id!==undefined&&(!ids.has(id)||!['medal','route'].includes(ids.get(id)!.kind)))throw new Error('备份缺少地点连线关联的赛事')}
   // Import always allocates new ids; it must not overwrite records used elsewhere.
   const remap=new Map(records.map(r=>[r.id,crypto.randomUUID()]))
-  return {board:{...board,items:board.items.map(i=>i.recordId?{...i,recordId:remap.get(i.recordId)!}:i),threads:board.threads.map(t=>({...t,...(t.fromRaceId?{fromRaceId:remap.get(t.fromRaceId)!}:{}),...(t.toRaceId?{toRaceId:remap.get(t.toRaceId)!}:{})}))},records:records.map(r=>({...r,id:remap.get(r.id)!}))}
+  const remapItem=(i:Board['items'][number])=>i.recordId?{...i,recordId:remap.get(i.recordId)!}:i
+  return {board:{...board,items:board.items.map(i=>i.exhibit?{...i,exhibit:{...i.exhibit,medals:i.exhibit.medals.map(remapItem)}}:remapItem(i)),threads:board.threads.map(t=>({...t,...(t.fromRaceId?{fromRaceId:remap.get(t.fromRaceId)!}:{}),...(t.toRaceId?{toRaceId:remap.get(t.toRaceId)!}:{})}))},records:records.map(r=>({...r,id:remap.get(r.id)!}))}
 }

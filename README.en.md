@@ -36,9 +36,10 @@ Frame your medals, pin up photos, tape down race bibs, and turn GPX tracks into 
 ## Features
 
 - ✅ Collect medals, photos, race bibs, notes, and route cards.
-- ✅ Upload photos, medals, and real race bibs; remove medal backgrounds, crop and rectify bib images, and import GPX routes.
+- ✅ Upload photos (including batches), medals, and real race bibs; remove medal backgrounds, crop and rectify bib images, and import GPX routes.
 - ✅ Arrange items freely on an infinite canvas, with grouping, locking, alignment, equal spacing, snapping guides, and undo/redo.
 - ✅ Customize photo paper, frames, and decorations, and connect memories with adjustable curved threads.
+- ✅ Combine medals into 1×2, 1×4, or 2×4 display cases, reorder them, and split them back into individual medals.
 - ✅ Manage and reuse keepsakes in a collection library, with automatic local saving.
 - ✅ Add paper maps to the canvas, mark race locations with red circles and pins, and connect them to your keepsakes.
 - ✅ Export high-resolution images and complete ZIP backups, restore your board, and import legacy JSON backups.

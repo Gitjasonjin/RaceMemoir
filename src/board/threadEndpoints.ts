@@ -3,6 +3,7 @@ import {pinPosition} from '../domain/model.ts'
 import type {CollectionRecord} from '../domain/records'
 import {coarseCoordinate,validRaceLocation} from '../domain/raceLocation.ts'
 import {mapGeometry} from '../race-map/mapGeometry.ts'
+import {boardMembers,ownerOf,exhibitWorldMedals} from '../domain/medalExhibit.ts'
 
 export interface ThreadEndpoint {itemId:string;raceId?:string}
 export interface Point {x:number;y:number}
@@ -24,10 +25,11 @@ export function racePointOnMap(item:Memory,record:CollectionRecord):Point|null{
   return localToWorld(item,{x:rect.x+x*rect.width/1000,y:rect.y+y*rect.height/700})
 }
 export function resolveEndpoint(board:Board,records:CollectionRecord[],endpoint:ThreadEndpoint,pin:PinStyle='classic'):Point|null{
-  const item=board.items.find(i=>i.id===endpoint.itemId)
+  const owner=ownerOf(board.items,endpoint.itemId)
+  const item=owner?.id===endpoint.itemId?owner:owner?exhibitWorldMedals(owner).find(m=>m.id===endpoint.itemId):undefined
   if(!item)return null
   if(!endpoint.raceId)return pinPosition(item,pin)
-  if(!board.items.some(i=>(i.kind==='medal'||i.kind==='map')&&i.recordId===endpoint.raceId))return null
+  if(!boardMembers(board.items).some(i=>(i.kind==='medal'||i.kind==='map')&&i.recordId===endpoint.raceId))return null
   const record=records.find(r=>r.id===endpoint.raceId)
   return record?racePointOnMap(item,record):null
 }

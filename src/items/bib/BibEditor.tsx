@@ -46,6 +46,7 @@ export default function BibEditor(props:RecordPanelProps&{record?:BibRecord}){
  }
  return <>
   <div className="record-heading"><button type="button" disabled={saving||busy} onClick={()=>props.onMode({mode:'library'})} aria-label="返回收藏库"><ArrowLeft size={19}/></button><div><h2>{record?'编辑':'添加'}号码布</h2></div><button type="button" onClick={props.onClose} aria-label="关闭详情"><X size={20}/></button></div>
+    <div className="record-scroll">
   {!record&&props.onBibTemplate&&<div className="bib-source-tabs" role="group" aria-label="号码布来源"><button type="button" disabled={busy||saving} onClick={props.onBibTemplate}>模板制作</button><button type="button" aria-pressed="true">上传图片</button></div>}
   {erasing?<BibNameEraser record={draft} busy={busy} onApply={erase} onCancel={()=>{pending.current?.abort();setBusy(false);setErasing(false)}}/>:adjusting?<BibImageAdjustment record={draft} busy={busy} onApply={apply} onCancel={()=>{pending.current?.abort();setBusy(false);setAdjusting(false)}}/>:<div className="record-preview bib-image-preview">{url?<img src={url} alt="号码布预览"/>:<div className="upload-placeholder"><ImagePlus size={42}/><span>上传电子号码布或实物照片</span></div>}</div>}
   <form onSubmit={e=>{e.preventDefault();void save()}}>
@@ -58,5 +59,6 @@ export default function BibEditor(props:RecordPanelProps&{record?:BibRecord}){
    {props.styles}
    <button type="submit" className="primary-button full-width" disabled={busy||saving||adjusting||erasing}><Check size={17}/>{saving?'正在保存…':record?'保存修改':'保存并放上画布'}</button>
   </form>
+    </div>
  </>
 }

@@ -1,0 +1,147 @@
+import {test,expect} from '@playwright/test'
+import type {Page} from '@playwright/test'
+import {readFile} from 'node:fs/promises'
+
+async function ready(page:Page){
+  await page.goto('/')
+  await page.locator('.records-loading').waitFor({state:'hidden'})
+}
+async function fixtures(page:Page){
+  const images=await page.evaluate(()=>[ [900,600],[500,800],[600,600] ].map(([w,h],index)=>{
+    const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h
+    const context=canvas.getContext('2d')!
+    context.fillStyle=['#cf6044','#416985','#698651'][index];context.fillRect(0,0,w,h)
+    context.fillStyle='#fff';context.font='50px sans-serif';context.fillText(`Photo ${index+1}`,50,100)
+    return canvas.toDataURL('image/png').split(',')[1]
+  }))
+  return images.map((image,index)=>({name:`photo-${index+1}.png`,mimeType:'image/png',buffer:Buffer.from(image,'base64')}))
+}
+const photos=(page:Page)=>page.evaluate(async()=>{
+  const {readRecords}=await import('/src/persistence/recordStore.ts')
+  return (await readRecords()).filter((record:{kind:string})=>record.kind==='photo').map((record:{id:string;name:string;image:Blob})=>({id:record.id,name:record.name,size:record.image.size}))
+})
+
+test('multiple selection previews, skips corrupt files, saves originals and supports undo and ZIP recovery',async({page},info)=>{
+  await ready(page)
+  const files=await fixtures(page),initial=await page.locator('.scene>.memory').count()
+  await page.getByRole('button',{name:'添加照片',exact:true}).click()
+  await expect(page.getByRole('button',{name:'批量导入图片',exact:true})).toHaveCount(0)
+  await expect(page.locator('.record-upload input')).toHaveAttribute('multiple','')
+  await page.locator('.record-upload input').setInputFiles([...files,{name:'broken.png',mimeType:'image/png',buffer:Buffer.from('invalid')}])
+  await expect(page.getByRole('heading',{name:'批量导入图片'})).toBeVisible()
+  await expect(page.locator('.batch-photo-row')).toHaveCount(3)
+  await expect(page.getByRole('alert')).toContainText('broken.png')
+  await page.getByRole('button',{name:'移除 photo-3',exact:true}).click()
+  await expect(page.locator('.batch-photo-row')).toHaveCount(2)
+  const names=page.getByRole('textbox',{name:'照片名称',exact:true})
+  await names.first().fill('   ')
+  await page.getByRole('button',{name:'导入并放上画布（2）',exact:true}).click()
+  await expect(page.getByRole('alert')).toContainText(['broken.png','请为每张照片填写名称'])
+  await expect(names.first()).toBeFocused()
+  expect(await photos(page)).toHaveLength(0)
+  await names.first().fill('  山野的第一缕晨光  ')
+  await expect(names.nth(1)).toHaveValue('photo-2')
+  await page.screenshot({path:info.outputPath('batch-preview.png')})
+  await page.getByRole('button',{name:'导入并放上画布（2）',exact:true}).click()
+  await expect(page.locator('.record-panel')).toHaveCount(0)
+  await expect(page.locator('.scene>.memory')).toHaveCount(initial+2)
+  await expect(page.locator('.scene>.memory.selected')).toHaveCount(2)
+  const stored=await photos(page)
+  expect(stored.map(r=>r.name).sort()).toEqual(['photo-2','山野的第一缕晨光'])
+  await expect(page.locator('.scene>.memory.selected').filter({hasText:'山野的第一缕晨光'})).toHaveCount(1)
+  expect(stored.map(r=>r.size).sort()).toEqual(files.slice(0,2).map(f=>f.buffer.length).sort())
+  const bytes=await page.evaluate(async()=>{
+    const {readRecords}=await import('/src/persistence/recordStore.ts')
+    const records=(await readRecords()).filter((r:{kind:string})=>r.kind==='photo')
+    return Promise.all(records.map(async(r:{name:string;image:Blob})=>({name:r.name,bytes:Array.from(new Uint8Array(await r.image.arrayBuffer()))})))
+  })
+  for(const row of bytes)expect(Buffer.from(row.bytes)).toEqual(files.find(file=>file.name===(row.name==='山野的第一缕晨光'?'photo-1.png':`${row.name}.png`))!.buffer)
+  await page.getByRole('button',{name:'撤销',exact:true}).click()
+  await expect(page.locator('.scene>.memory')).toHaveCount(initial)
+  expect(await photos(page)).toHaveLength(2)
+  await page.getByRole('button',{name:'重做',exact:true}).click()
+  await expect(page.locator('.scene>.memory')).toHaveCount(initial+2)
+  expect((await photos(page)).map(r=>r.name)).toContain('山野的第一缕晨光')
+  await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('racememoir-board-v1')||'{}').items?.length)).toBe(initial+2)
+  await page.reload();await page.locator('.records-loading').waitFor({state:'hidden'})
+  await expect(page.locator('.scene>.memory')).toHaveCount(initial+2)
+  await page.screenshot({path:info.outputPath('batch-board.png')})
+  await page.locator('.scene>.memory').last().press('Enter')
+  await expect(page.locator('.record-upload input')).not.toHaveAttribute('multiple')
+  await expect(page.getByRole('button',{name:'批量导入图片',exact:true})).toHaveCount(0)
+  await page.getByRole('button',{name:'关闭详情',exact:true}).click()
+  await page.getByRole('button',{name:'分享',exact:true}).click()
+  const download=page.waitForEvent('download')
+  await page.getByRole('button',{name:/导出收藏板文件/}).click()
+  const zip=info.outputPath('photos.zip');await(await download).saveAs(zip)
+  expect((await readFile(zip)).length).toBeGreaterThan(1000)
+  const picker=page.waitForEvent('filechooser')
+  await page.getByRole('button',{name:/导入收藏板文件/}).click();await(await picker).setFiles(zip)
+  await expect(page.locator('dialog.modal')).not.toBeVisible()
+  await expect(page.locator('.scene>.memory')).toHaveCount(initial+2)
+  await page.reload();await page.locator('.records-loading').waitFor({state:'hidden'})
+  await expect(page.locator('.missing-record')).toHaveCount(0)
+  await expect(page.locator('.scene>.memory').filter({hasText:'山野的第一缕晨光'})).toHaveCount(1)
+})
+
+test('batch storage failure leaves canvas intact and same selection can retry without duplicates',async({page})=>{
+  await ready(page)
+  const files=await fixtures(page),initial=await page.locator('.scene>.memory').count()
+  await page.getByRole('button',{name:'打开收藏库',exact:true}).click()
+  await page.getByRole('button',{name:'批量导入图片',exact:true}).click()
+  await page.getByLabel('批量选择图片').setInputFiles(files)
+  await expect(page.locator('.batch-photo-row')).toHaveCount(3)
+  await page.evaluate(()=>{
+    const original=IDBObjectStore.prototype.put
+    IDBObjectStore.prototype.put=function(value,key){
+      if(value.kind==='photo'){IDBObjectStore.prototype.put=original;throw new DOMException('quota','QuotaExceededError')}
+      return key===undefined?original.call(this,value):original.call(this,value,key)
+    }
+  })
+  const submit=page.getByRole('button',{name:'导入并放上画布（3）',exact:true})
+  await submit.click()
+  await expect(page.locator('.record-panel .record-error')).toContainText('保存失败')
+  await expect(page.locator('.scene>.memory')).toHaveCount(initial)
+  expect(await photos(page)).toHaveLength(0)
+  await expect(submit).toBeEnabled()
+  await submit.click()
+  await expect(page.locator('.record-panel')).toHaveCount(0)
+  await expect(page.locator('.scene>.memory')).toHaveCount(initial+3)
+  expect(await photos(page)).toHaveLength(3)
+  await expect(page.locator('.save-failure-banner')).toHaveCount(0)
+})
+
+test('batch size limits and cancelling never save a draft',async({page},info)=>{
+  await ready(page)
+  const files=await fixtures(page)
+  await page.getByRole('button',{name:'添加照片',exact:true}).click()
+  await page.locator('.record-upload input').setInputFiles(Array.from({length:51},(_,index)=>({...files[0],name:`${index}.png`})))
+  await expect(page.getByRole('alert')).toContainText('最多选择 50 张')
+  await expect(page.locator('.batch-photo-row')).toHaveCount(0)
+  await page.getByLabel('批量选择图片').setInputFiles(files)
+  await expect(page.locator('.batch-photo-row')).toHaveCount(3)
+  await page.setViewportSize({width:390,height:640})
+  await page.getByRole('textbox',{name:'照片名称',exact:true}).first().fill('A'.repeat(200))
+  expect(await page.locator('.record-scroll').evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1)
+  await page.screenshot({path:info.outputPath('batch-mobile.png')})
+  await page.getByRole('button',{name:`移除 ${'A'.repeat(200)}`,exact:true}).click()
+  await expect(page.locator('.batch-photo-row')).toHaveCount(2)
+  await page.getByRole('button',{name:'关闭批量导入',exact:true}).click()
+  expect(await photos(page)).toHaveLength(0)
+})
+
+test('board capacity is checked before storing the batch',async({page})=>{
+  await page.addInitScript(()=>{
+    const items=Array.from({length:499},(_,i)=>({id:`note-${i}`,kind:'note',title:'test',variant:'yellow',x:(i%25)*180,y:Math.floor(i/25)*180,w:160,h:150,rotation:0}))
+    localStorage.setItem('racememoir-board-v1',JSON.stringify({title:'capacity',items,threads:[]}))
+  })
+  await ready(page)
+  const files=await fixtures(page)
+  await page.getByRole('button',{name:'添加照片',exact:true}).click()
+  await page.locator('.record-upload input').setInputFiles(files.slice(0,2))
+  await expect(page.locator('.batch-photo-row')).toHaveCount(2)
+  await page.getByRole('button',{name:'导入并放上画布（2）',exact:true}).click()
+  await expect(page.locator('.record-panel .record-error')).toContainText('还可添加 1 件')
+  expect(await photos(page)).toHaveLength(0)
+  await expect(page.locator('.scene>.memory')).toHaveCount(499)
+})

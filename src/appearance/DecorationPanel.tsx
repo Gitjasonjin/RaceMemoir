@@ -21,14 +21,13 @@ interface Props {
   item?: Memory
   thread?: Thread
   scope: 'board' | 'selection'
-  onScope: (scope: 'board' | 'selection') => void
   onChange: (change: DecorationChange) => void
   onPinToggle: (enabled: boolean) => void
   onCurvature: (curvature:number) => void
   onClose: () => void
   onBackground?: (id:BackgroundStyleId) => void
 }
-export default function DecorationPanel({board,item,thread,scope,onScope,onChange,onPinToggle,onClose,onCurvature,onBackground,embedded=false}: Props) {
+export default function DecorationPanel({board,item,thread,scope,onChange,onPinToggle,onClose,onCurvature,onBackground,embedded=false}: Props) {
   const defaults = getDecorations(board)
   const all = scope === 'board'
   const pin = all ? defaults.pin : item?.pinStyle ?? defaults.pin
@@ -43,7 +42,6 @@ export default function DecorationPanel({board,item,thread,scope,onScope,onChang
     {embedded&&<h3>装饰样式</h3>}
     {!embedded&&<>
     <div className="decoration-heading"><span className="decoration-heading-icon"><Palette size={19}/></span><div><h2 id="decoration-title">装饰样式</h2><p>小小细节，也有你的个性</p></div><button type="button" onClick={onClose} aria-label="关闭装饰样式"><X size={19}/></button></div>
-    <div className="decoration-scopes" aria-label="样式应用范围"><button type="button" aria-pressed={all} className={all?'chosen':''} onClick={()=>onScope('board')}>整块收藏板</button>{thread&&<button type="button" aria-pressed={!all} className={!all?'chosen':''} onClick={()=>onScope('selection')}>当前连线</button>}</div>
     <p className="decoration-caption">{all?'统一替换对应装饰，新藏品也会沿用。':item?`正在装饰「${item.title.replace(/\n/g,' ')}」`:thread?'只改变这一段连接，其他红线保持原样。':'在画布上选中一件藏品或一段红线。'}</p>
     </>}
     {all&&onBackground&&<fieldset className="decoration-section"><legend>收藏板背景<span>BACKGROUND</span></legend><div className="decoration-options background-options">{BACKGROUND_STYLES.map(option=><button type="button" key={option.id} aria-pressed={resolveBackground(board.backgroundStyle).id===option.id} className={resolveBackground(board.backgroundStyle).id===option.id?'chosen':''} onClick={()=>onBackground(option.id)}><span className="background-sample" style={backgroundStyle(option.id,.55)}/><span>{option.label}</span>{resolveBackground(board.backgroundStyle).id===option.id&&<Check className="style-check" size={12}/>}</button>)}</div></fieldset>}

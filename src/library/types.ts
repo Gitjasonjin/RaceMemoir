@@ -1,10 +1,14 @@
 import type {ReactNode} from 'react'
 import type {Memory} from '../domain/model'
 import type {CollectionRecord} from '../domain/records'
+import type {BatchPhoto} from '../items/photo/batchPhotos'
 
-export type RecordPanelMode = { mode: 'library' | 'medal' | 'photo' | 'bib' | 'route' | 'detail'; id?: string }
+export type RecordPanelMode = { mode: 'library' | 'medal' | 'photo' | 'photo-batch' | 'bib' | 'route' | 'detail'; id?: string; files?:File[]; exhibitId?:string; medalId?:string }
 export interface RecordPanelProps {
+  onImportPhotos:(photos:BatchPhoto[])=>Promise<void>
   onBibTemplate?:()=>void
+  onBack?:()=>void
+  exhibitMedal?:boolean
   styles?: ReactNode
   item?: Memory; onLayout?: (change: Partial<Memory>) => void
   mode: RecordPanelMode; records: CollectionRecord[]; references: (id: string) => number

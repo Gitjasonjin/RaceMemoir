@@ -15,7 +15,7 @@ export default function LayerMenu({items,ids,onChange,onTarget}:{items:Memory[];
     return()=>{document.removeEventListener('pointerdown',outside);document.removeEventListener('keydown',escape,true)}
   },[open])
   return <div className="layer-control" ref={root}>
-    <button type="button" ref={trigger} title="调整物件层级" aria-label="调整物件层级" aria-expanded={open} onClick={()=>setOpen(v=>!v)}><Layers size={17}/></button>
+    <button type="button" ref={trigger} aria-label="调整物件层级" aria-expanded={open} onClick={()=>setOpen(v=>!v)}><Layers size={17}/></button>
     {open&&<div className="layer-popover layer-target-menu" role="group" aria-label="物件层级">{actions.map(({id,label,Icon})=>{
       const next=reorderItems(items,ids,id),disabled=lockedSelection(items,ids)||next.every((item,i)=>item===items[i])
       return <button type="button" key={id} disabled={disabled} onClick={()=>{onChange(id);setOpen(false);trigger.current?.focus()}}><Icon size={16}/><span>{label}</span></button>

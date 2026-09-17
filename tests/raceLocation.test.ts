@@ -44,7 +44,7 @@ test('legacy records remain valid; local records and ZIP preserve location and r
   await deleteRecord(restored.records[0].id)
   const entries=unzipSync(new Uint8Array(await blob.arrayBuffer()))
   const manifest=JSON.parse(strFromU8(entries['manifest.json']))
-  assert.equal(manifest.version,6)
+  assert.equal(manifest.version,7)
   manifest.version=3;delete manifest.records[0].location
   entries['manifest.json']=strToU8(JSON.stringify(manifest))
   assert.equal(groupRaceLocations((await readBackup(new Blob([zipSync(entries)]))).records).length,0)

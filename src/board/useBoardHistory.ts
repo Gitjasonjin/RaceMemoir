@@ -1,5 +1,6 @@
 import {useCallback,useRef,useState} from 'react'
 import type {Board} from '../domain/model'
+import {boardMembers} from '../domain/medalExhibit'
 
 export function useBoardHistory(initial:()=>Board){
   const [board,setBoard]=useState(initial)
@@ -20,7 +21,7 @@ export function useBoardHistory(initial:()=>Board){
     undoStack.current.push(boardRef.current);boardRef.current=next;setBoard(next);setHistoryTick(n=>n+1);return true
   },[])
   const forgetRecord=useCallback((id:string)=>{
-    const keep=(snapshot:Board)=>!snapshot.items.some(item=>item.recordId===id)&&!snapshot.threads.some(t=>t.fromRaceId===id||t.toRaceId===id)
+    const keep=(snapshot:Board)=>!boardMembers(snapshot.items).some(item=>item.recordId===id)&&!snapshot.threads.some(t=>t.fromRaceId===id||t.toRaceId===id)
     undoStack.current=undoStack.current.filter(keep);redoStack.current=redoStack.current.filter(keep);setHistoryTick(n=>n+1)
   },[])
   return {board,boardRef,setBoard,remember,commit,undo,redo,forgetRecord,historyTick,canUndo:undoStack.current.length>0,canRedo:redoStack.current.length>0}

@@ -8,6 +8,7 @@ import RouteArtwork from '../items/route/RouteArtwork'
 import { createMemory } from '../domain/model'
 import type { Memory } from '../domain/model'
 import MedalSizing from '../items/medal/MedalSizing'
+import {MedalContent} from '../items/medal/MedalArtwork'
 import { useMedalImage } from '../items/medal/useMedalImage'
 import { IMAGE_TYPES } from '../domain/records'
 import type { CollectionRecord as AnyRecord, MedalRecord, RouteRecord } from '../domain/records'
@@ -90,19 +91,20 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
   const kindLabel=draft.kind==='medal'?'奖牌':draft.kind==='photo'?'照片':'路线'
   const demoItem=createMemory(draft.kind==='medal'?'medal':'map',draft.name,draft.kind==='medal'?(draft.variant||'bronze'):'blue','','')
   return <>
-    <div className="record-heading"><button disabled={saving} onClick={() => props.onMode({mode:'library'})} aria-label="返回收藏库"><ArrowLeft size={19}/></button><div><h2>{record?'编辑':'添加'}{kindLabel}</h2></div><button onClick={props.onClose} aria-label="关闭详情"><X size={20}/></button></div>
+    <div className="record-heading"><button disabled={saving} onClick={() => props.onBack?props.onBack():props.onMode({mode:'library'})} aria-label={props.onBack?'返回展览框':'返回收藏库'}><ArrowLeft size={19}/></button><div><h2>{record?'编辑':'添加'}{kindLabel}</h2></div><button onClick={props.onClose} aria-label="关闭详情"><X size={20}/></button></div>
+    <div className="record-scroll">
     {!repairing&&<div ref={preview} className={`record-preview ${draft.kind==='medal'?'medal-preview':''}`}>
       {draft.kind==='photo'&&image?<PhotoCropPreview key={image} item={photoItem} record={draft} onChange={!busy&&(!record||props.item?.kind==='photo')?changePhoto:undefined}/>:draft.kind!=='route' ? image ? <img src={showOriginal?original:image} alt={`${draft.name||kindLabel}预览`}/> : draft.source==='demo'? <div className="demo-record-preview"><Artwork item={demoItem} record={draft}/></div>:<div className="upload-placeholder">{draft.kind==='photo'?<ImagePlus size={42}/>:<Medal size={42}/>}<span>{draft.kind==='photo'?'上传照片，留下你的山野瞬间':'让这块奖牌，成为你的收藏'}</span></div>
         : draft.trackPoints.length ? <RouteArtwork record={draft as RouteRecord}/> : <div className="upload-placeholder"><Route size={42}/><span>{draft.source==='demo'?'示例路线 · 尚无真实轨迹':'导入走过的路'}</span></div>}
     </div>}
     {draft.kind==='photo'&&(!record||props.item?.kind==='photo')&&<PhotoComposition item={photoItem} onChange={changePhoto}/>}
     {draft.kind==='medal'&&(!record||props.item?.kind==='medal')&&!repairing&&<>
-      <div className="medal-layout-preview"><div style={{width:medalItem.w,height:medalItem.h,transform:`scale(${Math.min(260/medalItem.w,300/medalItem.h)})`}}><Artwork item={medalItem} record={draft}/></div></div>
-      <MedalSizing item={medalItem} aspect={aspect} onChange={changeMedal}/>
+      <div className="medal-layout-preview"><div style={{width:medalItem.w,height:medalItem.h,transform:`scale(${Math.min(260/medalItem.w,300/medalItem.h)})`}}><>{props.exhibitMedal?<div className="frame-backing"><MedalContent item={medalItem} record={draft}/></div>:<Artwork item={medalItem} record={draft}/>}</></div></div>
+      {props.exhibitMedal?<section className="medal-sizing"><h3>框内奖牌大小</h3><label className="field-label">显示比例 · {Math.round((medalItem.medalScale??1)*100)}%<input aria-label="框内奖牌大小" type="range" min={40} max={180} step={5} value={(medalItem.medalScale??1)*100} disabled={busy} onChange={e=>changeMedal({medalScale:Number(e.target.value)/100})}/></label><div className="record-actions"><button type="button" disabled={busy} onClick={()=>changeMedal({medalScale:1})}>恢复默认大小</button></div></section>:<MedalSizing item={medalItem} aspect={aspect} onChange={changeMedal}/>}
     </>}
     {repairing&&draft.kind==='medal'&&draft.originalImage&&draft.image&&<RibbonRepair original={draft.originalImage} image={draft.image} onApply={image=>{patch({image,cutout:'done'});setRepairing(false);setShowOriginal(false);setNotice(`绶带修复已应用，点击「${record?'保存修改':'保存并放上画布'}」保存到收藏记录。`)}} onClose={()=>setRepairing(false)}/>}
     <form onSubmit={e=>void save(e)}>
-      <label className="record-upload">{reading?'正在读取文件…':draft.kind!=='route'?`选择 / 更换${kindLabel}图片`:'选择 / 更换 GPX 文件'}<input type="file" disabled={saving||reading||repairing} accept={draft.kind!=='route'?'image/png,image/jpeg,image/webp':'.gpx'} onChange={e=>{void upload(e.target.files?.[0]);e.currentTarget.value=''}}/></label>
+      <label className="record-upload">{reading?'正在读取文件…':draft.kind==='photo'&&!record?'选择照片（可多选）':draft.kind!=='route'?`选择 / 更换${kindLabel}图片`:'选择 / 更换 GPX 文件'}<input type="file" multiple={draft.kind==='photo'&&!record} disabled={saving||reading||repairing} accept={draft.kind!=='route'?'image/png,image/jpeg,image/webp':'.gpx'} onChange={e=>{const files=Array.from(e.currentTarget.files??[]);e.currentTarget.value='';if(draft.kind==='photo'&&!record&&files.length>1)props.onMode({mode:'photo-batch',files});else void upload(files[0])}}/></label>
 
       {cutout.progress&&<div className="record-progress" role="status"><span className="record-spinner"/>{cutout.progress}<button type="button" onClick={()=>{cutout.cancel();setNotice('已取消抠图，使用原图。')}}>取消抠图</button></div>}
       {draft.kind==='medal'&&draft.originalImage&&!cutout.progress&&!repairing&&<div className="record-actions"><button type="button" disabled={busy} onClick={()=>processImage((draft as MedalRecord).originalImage!)}>自动抠图（含绶带）</button>{draft.cutout==='done'&&<><button type="button" disabled={busy} onClick={()=>{setRepairing(true);setNotice('')}}>手动微调</button><button type="button" onClick={()=>setShowOriginal(!showOriginal)}>{showOriginal?'查看抠图':'对比原图'}</button><button type="button" disabled={saving} onClick={()=>{patch({image:draft.originalImage,cutout:'original'});setShowOriginal(false)}}>使用原图</button></>}</div>}
@@ -115,5 +117,6 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
       <button className="primary-button full-width" type="submit" disabled={busy}><Check size={17}/>{saving?'正在保存…':record?'保存修改':'保存并放上画布'}</button>
     </form>
     {record?.archived&&<div className="record-footer"><button type="button" disabled={busy} onClick={async()=>{setSaving(true);setError('');try{await props.onSave({...draft,archived:false},false);if(mounted.current)props.onClose()}catch(e){if(mounted.current){setError(e instanceof Error?e.message:'恢复失败');setSaving(false)}}}}>恢复收藏</button></div>}
+    </div>
   </>
 }

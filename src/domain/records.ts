@@ -5,6 +5,7 @@ import type {Quad} from '../items/bib/bibGeometry'
 import type { Board, Memory } from './model'
 import {validRaceLocation} from './raceLocation.ts'
 import type {RaceLocation} from './raceLocation'
+import {boardMembers} from './medalExhibit.ts'
 
 export interface TrackPoint { lat: number; lon: number; elevation?: number; time?: string; segment: number }
 interface RecordBase { id: string; name: string; note: string; source: 'upload' | 'demo'; archived?: boolean }
@@ -33,8 +34,9 @@ export function validRecord(value: unknown): value is CollectionRecord {
 export function migrateBoard(board: Board, existing: CollectionRecord[]) {
   const available=new Map(existing.map(r=>[r.id,r]))
   const created: CollectionRecord[]=[]
-  const items=board.items.map(item=>{
-    if(!['medal','map'].includes(item.kind)||item.recordId)return item
+  const migrated=new Map(boardMembers(board.items).map(item=>{
+    if(item.exhibit)return [item.id,item] as const
+    if(!['medal','map'].includes(item.kind)||item.recordId)return [item.id,item] as const
     // Stable ids make retries and StrictMode initialization idempotent.
     const id=`legacy-${item.kind}-${item.id}`
     if(!available.has(id)){
@@ -42,8 +44,9 @@ export function migrateBoard(board: Board, existing: CollectionRecord[]) {
       const record:CollectionRecord=item.kind==='medal'?{...base,kind:'medal',date:item.subtitle||'',cutout:'original',variant:item.variant}:{...base,kind:'route',trackPoints:[],date:item.subtitle}
       available.set(id,record);created.push(record)
     }
-    return {...item,recordId:id}
-  })
+    return [item.id,{...item,recordId:id}] as const
+  }))
+  const items=board.items.map(item=>item.exhibit?{...item,exhibit:{...item.exhibit,medals:item.exhibit.medals.map(m=>migrated.get(m.id)!)}}:migrated.get(item.id)!)
   return {board:{...board,items},created}
 }
 export function recordFor(item: Memory, records: CollectionRecord[]) {
