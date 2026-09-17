@@ -1,8 +1,7 @@
 /* Shadow variables apply to both demo artwork and uploaded transparent medals. */
-.medal-frame{box-shadow:inset 2px 2px 1px #ffebbbd9,inset -2px -2px 2px #80552e99,var(--frame-shadow,4px 9px 12px #35251f66)}
 .medal-frame .real-medal,.medal-frame .medal-art{filter:var(--medal-shadow,drop-shadow(2px 4px 3px #0009))}
-.medal-frame-black{background:linear-gradient(120deg,#434641,#171b19 30%,#30342f 70%,#101411);border-color:#131813;box-shadow:inset 2px 2px 1px #747c68,inset -2px -2px 2px #080b08,var(--frame-shadow)}
-.medal-frame-black .frame-mat{background:#dadbd1;border-color:#93998b;box-shadow:inset 2px 2px 5px #414a3c66,0 0 0 2px #090d09}
+.medal-frame-black{--timber-color:#373936;--rail-highlight:#d6dad038;--rail-shade:#030604b3;background:#181b18;border-color:#171a17;box-shadow:0 1px 0 #ffffff18,var(--frame-shadow)}
+.medal-frame-black .frame-mat{background-color:#e0e0d8;border-color:#a5a69c;box-shadow:inset 2px 3px 4px #25292366,0 0 0 1px #090d09}
 .medal-frame-hook{padding:0;background:none;border:0;box-shadow:none}
 .medal-frame-hook .frame-mat{padding:0;background:none;border:0;box-shadow:none}
 .medal-frame-hook .frame-backing{background:none;box-shadow:none}

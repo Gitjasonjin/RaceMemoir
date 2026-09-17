@@ -37,8 +37,14 @@ test('canvas and export backgrounds share texture and respect scale and world or
   const canvas=backgroundStyle(undefined,1,10,-20),exported=backgroundStyle('cork',2,20,-40)
   assert.equal(canvas.backgroundImage,exported.backgroundImage)
   assert.equal(canvas.backgroundColor,exported.backgroundColor)
-  assert.equal(canvas.backgroundSize,'100% 100%, 220px 220px')
-  assert.equal(exported.backgroundSize,'100% 100%, 440px 440px')
+  assert.equal(canvas.backgroundSize,'100% 100%, 384px 256px')
+  assert.equal(exported.backgroundSize,'100% 100%, 768px 512px')
   assert.equal(exported.backgroundPosition,'0 0, 20px -40px')
+  const classic=backgroundStyle('cork-svg',2,20,-40)
+  assert.deepEqual(classic,exported)
+  for(const id of ['cork','dark-wood','kraft','chalkboard']){
+    assert.equal(resolveBackground(`${id}-svg`).id,id)
+    assert.deepEqual(backgroundStyle(`${id}-svg`,2,20,-40),backgroundStyle(id,2,20,-40))
+  }
   assert.equal(isBoard({...seed,backgroundStyle:{id:'cork'}}),false)
 })

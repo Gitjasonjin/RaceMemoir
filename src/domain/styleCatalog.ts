@@ -40,10 +40,10 @@ export const TAPE_STYLES=TAPE_OPTIONS.map(s=>s.id)
 export const THREAD_STYLES=THREAD_OPTIONS.map(s=>s.id)
 
 export const BACKGROUND_STYLES = [
-  {id:'cork',label:'软木板',color:'#b98d60',texture:'/cork.svg',tileSize:220,light:'radial-gradient(ellipse at 42% 33%,#f9d4a33d,transparent 80%)',ink:'#493c2c'},
-  {id:'dark-wood',label:'深色木板',color:'#352923',texture:'/dark-wood.svg',tileSize:480,light:'radial-gradient(ellipse at 42% 33%,#b98a5426,transparent 80%)',ink:'#e6d7bf'},
-  {id:'kraft',label:'牛皮纸',color:'#c5a477',texture:'/kraft.svg',tileSize:320,light:'radial-gradient(ellipse at 42% 33%,#fff2cd29,transparent 80%)',ink:'#493c2c'},
-  {id:'chalkboard',label:'黑板',color:'#28332f',texture:'/chalkboard.svg',tileSize:400,light:'radial-gradient(ellipse at 42% 33%,#c5d3c514,transparent 80%)',ink:'#e3e8db'},
+  {id:'cork',label:'软木板',color:'#bc9267',texture:'/textures/cork-photo.webp',tileSize:384,tileHeight:256,light:'radial-gradient(ellipse at 35% 20%,#fff4df38,#fff4df26 75%)',ink:'#493c2c'},
+  {id:'dark-wood',label:'深色木板',color:'#392b22',texture:'/textures/dark-wood-photo.webp',tileSize:768,light:'radial-gradient(ellipse at 35% 20%,#e9c59a12,transparent 75%)',ink:'#e6d7bf'},
+  {id:'kraft',label:'牛皮纸',color:'#c5a477',texture:'/textures/kraft-photo.webp',tileSize:576,light:'radial-gradient(ellipse at 35% 20%,#fff4d51a,transparent 75%)',ink:'#493c2c'},
+  {id:'chalkboard',label:'黑板',color:'#293531',texture:'/textures/chalkboard-photo.webp',tileSize:640,light:'radial-gradient(ellipse at 35% 20%,#d5e1dd0c,transparent 75%)',ink:'#e3e8db'},
 ] as const
 export const PHOTO_PAPERS = [
   {id:'polaroid',label:'Polaroid',caption:'footer'},
@@ -56,10 +56,14 @@ export const MEDAL_FRAMES = [
 export function resolvePhotoPaper(id?:string,variant?:string){return PHOTO_PAPERS.find(s=>s.id===id)??PHOTO_PAPERS[variant==='landscape'?1:0]}
 export function resolveMedalFrame(id?:string){return MEDAL_FRAMES.find(s=>s.id===id)??MEDAL_FRAMES[0]}
 export type BackgroundStyleId=typeof BACKGROUND_STYLES[number]['id']
-export function resolveBackground(id?:string){return BACKGROUND_STYLES.find(s=>s.id===id)??BACKGROUND_STYLES[0]}
+// Old saved boards and imported backups keep their material after SVG retirement.
+const LEGACY_BACKGROUNDS:Readonly<Record<string,string>>={'cork-svg':'cork','dark-wood-svg':'dark-wood','kraft-svg':'kraft','chalkboard-svg':'chalkboard'}
+export function resolveBackground(id?:string){const current=LEGACY_BACKGROUNDS[id??'']??id;return BACKGROUND_STYLES.find(s=>s.id===current)??BACKGROUND_STYLES[0]}
 
 /** Both live canvas and PNG export use the same world-aligned texture. */
 export function backgroundStyle(id:string|undefined,scale:number,x=0,y=0){
   const style=resolveBackground(id)
-  return {backgroundColor:style.color,backgroundImage:`${style.light},url("${style.texture}")`,backgroundSize:`100% 100%, ${style.tileSize*scale}px ${style.tileSize*scale}px`,backgroundPosition:`0 0, ${x}px ${y}px`}
+  // Photographic tiles retain their aspect ratio in the canvas, swatches and exports.
+  const height='tileHeight' in style?style.tileHeight:style.tileSize
+  return {backgroundColor:style.color,backgroundImage:`${style.light},url("${style.texture}")`,backgroundSize:`100% 100%, ${style.tileSize*scale}px ${height*scale}px`,backgroundPosition:`0 0, ${x}px ${y}px`}
 }
