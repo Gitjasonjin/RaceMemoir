@@ -3,6 +3,7 @@
 </p>
 
 <p align="center">
+  <a href="https://app.racememoir.com"><img alt="在线体验 RaceMemoir" src="https://img.shields.io/badge/在线体验-RaceMemoir-F38020?logo=cloudflare&logoColor=white" /></a>
   <img alt="React" src="https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" />
   <img alt="Vite" src="https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white" />

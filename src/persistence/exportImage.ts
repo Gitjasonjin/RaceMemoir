@@ -33,6 +33,8 @@ export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:
         clonedSvg[index].style.setProperty(property,value)
       }
     })
+    // A snapshot must not capture a lift or a settling animation.
+    clone.querySelectorAll<HTMLElement>('.memory-artwork').forEach(el=>{el.classList.remove('is-lifted');Object.assign(el.style,{transform:'none',filter:'none',transition:'none'})})
     clone.style.transform=`translate(${-bounds.x*size.scale}px,${-bounds.y*size.scale}px) scale(${size.scale})`
     clone.querySelectorAll('.snap-guide,.thread-hit,.marquee-selection,.photo-resize-handle,.selection-outline,.thread-selection,.draft-thread,.connection-anchor,.empty-board').forEach(node=>node.remove())
     wrapper.append(clone);document.body.append(wrapper)
