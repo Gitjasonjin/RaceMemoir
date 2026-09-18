@@ -32,7 +32,7 @@ export default function RaceMapDrawing({theme,view,groups=[],selected,onSelect,l
         if(!p||!p.every(Number.isFinite))return null
         const x=p[0]*view.scale+view.x,y=p[1]*view.scale+view.y
         if(x<0||x>MAP_WIDTH||y<0||y>MAP_HEIGHT)return null
-        return <RaceMapMarker key={group.key} x={p[0]} y={p[1]} name={group.name} count={group.races.length} scale={view.scale} selected={group.key===selected} onClick={onSelect?()=>onSelect(group.key):undefined}/>
+        return <RaceMapMarker key={group.key} groupKey={group.key} x={p[0]} y={p[1]} name={group.name} count={group.races.length} scale={view.scale} selected={group.key===selected} onClick={onSelect?()=>onSelect(group.key):undefined}/>
       })}
       {picked&&picked.every(Number.isFinite)&&<RaceMapMarker x={picked[0]} y={picked[1]} name={location?.name||'待命名地点'} count={1} scale={view.scale} selected/>}
     </g>

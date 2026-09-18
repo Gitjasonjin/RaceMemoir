@@ -1,9 +1,9 @@
 interface Props {
   x: number; y: number; name: string; count: number; scale: number
-  selected?: boolean; onClick?: () => void
+  groupKey?:string; selected?: boolean; onClick?: () => void
 }
-export default function RaceMapMarker({x,y,name,count,scale,selected,onClick}: Props) {
-  return <g className={`race-marker ${selected ? 'is-selected' : ''}`} transform={`translate(${x},${y}) scale(${1/scale})`}
+export default function RaceMapMarker({x,y,name,count,scale,selected,onClick,groupKey}: Props) {
+  return <g data-map-group={groupKey} className={`race-marker ${selected ? 'is-selected' : ''}`} transform={`translate(${x},${y}) scale(${1/scale})`}
     role={onClick ? 'button' : undefined} tabIndex={onClick ? 0 : undefined}
     aria-label={`${name}，${count} 场赛事`} aria-pressed={onClick ? !!selected : undefined}
     onClick={e => {e.stopPropagation();onClick?.()}}

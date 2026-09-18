@@ -24,7 +24,7 @@ export default function RaceMapEditor({item,board,records,groups,groupKey,choosi
     <form onSubmit={e=>{e.preventDefault();onSave(draft);onClose()}}>
       <div className="race-map-editor-preview"><RaceMapCanvas theme={draft.variant} value={draft.mapView} onViewChange={mapView=>setDraft(d=>({...d,mapView}))} groups={groups} selected={groupKey} onSelect={onSelectGroup}/></div>
       <fieldset className="decoration-section"><legend>地图尺寸</legend><div className="map-size-options">{MAP_SIZE_OPTIONS.map(size=><button type="button" key={size.label} aria-pressed={draft.w===size.w&&draft.h===size.h} onClick={()=>setDraft(d=>({...d,w:size.w,h:size.h}))}><strong>{size.label}</strong><small>{size.w} × {size.h}</small></button>)}</div></fieldset>
-      <p className="race-map-editor-help">Ctrl / ⌘ + 滚轮缩放取景 · 拖动平移 · 修改后点击保存</p>
+      <p className="race-map-editor-help">拖动平移 · 双指或 Ctrl / ⌘ + 滚轮缩放 · 修改后点击保存</p>
       <fieldset className="decoration-section"><legend>地图样式</legend><div className="map-style-options">{RACE_MAP_STYLES.map(style=><button type="button" key={style.id} aria-pressed={draft.variant===style.id} className={draft.variant===style.id?'chosen':''} onClick={()=>setDraft(d=>({...d,variant:style.id}))}><svg viewBox="0 0 1000 700" aria-hidden="true"><RaceMapDrawing theme={style.id} view={{x:0,y:0,scale:1}}/></svg><span>{style.label}</span>{draft.variant===style.id&&<Check size={14}/>}</button>)}</div></fieldset>
       <DecorationPanel embedded board={board} item={{...item,...draft}} scope="selection" onChange={change=>{if(change.kind==='pin')setDraft(d=>({...d,pinStyle:change.style}))}} onPinToggle={()=>{}} onCurvature={()=>{}} onClose={()=>{}}/>
       <button type="submit" className="primary-button full-width"><Check size={17}/>保存修改</button>
