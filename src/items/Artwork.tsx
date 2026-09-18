@@ -20,7 +20,7 @@ function Artwork({item:instance,tapeStyle='classic',record,records=[],raceGroups
   if(item.exhibit)return <MedalExhibitArtwork item={item} records={records}/>
   if(item.recordId&&!record)return <div className="missing-record paper"><strong>记录不可用</strong><span>请从收藏库重新添加，或导入完整备份。</span></div>
   switch(item.kind){
-    case 'sticker':return record?.kind==='sticker'?<StickerArtwork record={record} border={item.stickerBorder}/>:null
+    case 'sticker':return record?.kind==='sticker'?<StickerArtwork record={record} border={item.stickerBorder} style={item.stickerStyle}/>:null
     case 'race-map':return <RaceMapArtwork item={item} groups={raceGroups}/>
     case 'medal':return <MedalArtwork item={item} record={record}/>
     case 'photo':return <PhotoArtwork item={item} record={record}/>

@@ -26,6 +26,65 @@ async function range(page:Page,label:string,value:string){
 const stored=(page:Page)=>page.evaluate(()=>JSON.parse(localStorage.getItem('racememoir-board-v1')!))
 const workerResult=(delay=0,empty=false)=>`self.onmessage=async e=>{const source=await createImageBitmap(e.data.blob);const canvas=new OffscreenCanvas(source.width,source.height);const ctx=canvas.getContext('2d');${empty?'':"ctx.drawImage(source,0,0);ctx.globalCompositeOperation='destination-in';ctx.fillRect(100,60,200,180);"}source.close();const image=await canvas.convertToBlob({type:'image/png'});setTimeout(()=>self.postMessage({type:'done',image}),${delay})}`
 
+test('torn collage changes instance style, keeps originals and survives undo, reload and ZIP/PNG export',async({page},info)=>{
+  let workers=0
+  await page.route('**/cutout.worker.ts*',route=>{workers++;return route.abort()})
+  await ready(page);await upload(page)
+  await page.getByRole('button',{name:'撕纸拼贴',exact:true}).click()
+  await range(page,'贴纸撕边宽度','3');await range(page,'贴纸大小','360')
+  await expect(page.locator('.sticker-preview .sticker-torn')).toHaveAttribute('data-sticker-state','ready')
+  await page.screenshot({path:info.outputPath('torn-sticker-editor.png')})
+  await page.setViewportSize({width:390,height:844})
+  expect(await page.locator('.record-scroll').evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1)
+  await page.getByRole('button',{name:'撕纸拼贴',exact:true}).scrollIntoViewIfNeeded()
+  await page.screenshot({path:info.outputPath('torn-sticker-mobile.png')})
+  await page.setViewportSize({width:1440,height:1000})
+  await page.getByRole('button',{name:'保存并放上画布',exact:true}).click()
+  await expect.poll(async()=>(await stored(page)).items[0]?.stickerStyle).toBe('torn')
+  const before=(await stored(page)).items[0]
+  await page.getByRole('button',{name:'打开收藏库',exact:true}).click()
+  await page.getByRole('button',{name:'将 trail 放上画布',exact:true}).click()
+  await page.getByRole('button',{name:'关闭收藏库',exact:true}).click()
+  const items=page.locator('.scene>.memory-sticker');await expect(items).toHaveCount(2)
+  await expect(items.last().locator('.sticker-contour')).toHaveAttribute('data-sticker-state','ready')
+  await items.first().press('Enter');await page.getByRole('button',{name:'轮廓贴纸',exact:true}).click()
+  await page.getByRole('button',{name:'保存修改',exact:true}).click()
+  await expect.poll(async()=>(await stored(page)).items[0].stickerStyle).toBe('contour')
+  const changed=(await stored(page)).items[0]
+  expect(changed.x+changed.w/2).toBeCloseTo(before.x+before.w/2);expect(changed.y+changed.h/2).toBeCloseTo(before.y+before.h/2)
+  expect(Math.max(changed.w,changed.h)).toBe(360)
+  await page.getByRole('button',{name:'撤销',exact:true}).click()
+  await expect.poll(async()=>(await stored(page)).items[0].stickerStyle).toBe('torn')
+  await page.reload();await page.locator('.records-loading').waitFor({state:'hidden'})
+  await expect(items.first().locator('.sticker-torn')).toHaveAttribute('data-sticker-state','ready')
+  const second=(await items.last().boundingBox())!,oldX=(await stored(page)).items[1].x
+  await page.mouse.move(second.x+second.width/2,second.y+second.height/2);await page.mouse.down();await page.mouse.move(second.x+second.width/2+420,second.y+second.height/2,{steps:8});await page.mouse.up()
+  await expect.poll(async()=>(await stored(page)).items[1].x).not.toBe(oldX)
+  const result=await page.evaluate(async()=>{
+    const {readRecords,putRecords}=await import('/src/persistence/recordStore.ts')
+    const {makeZipArchive,readBackup}=await import('/src/persistence/zipArchive.ts')
+    const {prepareSticker}=await import('/src/items/sticker/stickerImage.ts')
+    const {exportBoardImage}=await import('/src/persistence/exportImage.ts')
+    const records=await readRecords(),board=JSON.parse(localStorage.getItem('racememoir-board-v1')!),r=records.find((r:any)=>r.kind==='sticker')
+    const derived=await prepareSticker(r.originalImage,3,'torn'),bitmap=await createImageBitmap(derived.blob),canvas=new OffscreenCanvas(bitmap.width,bitmap.height),ctx=canvas.getContext('2d')!
+    ctx.drawImage(bitmap,0,0);bitmap.close()
+    const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data
+    let transparent=0,paper=0;for(let i=0;i<pixels.length;i+=4){if(!pixels[i+3])transparent++;if(pixels[i]>220&&pixels[i+1]>210&&pixels[i+2]>190&&pixels[i+3]>240)paper++}
+    const restored=await readBackup(await makeZipArchive(board,records))
+    await putRecords(restored.records);localStorage.setItem('sticker-restored',JSON.stringify(restored.board))
+    const png=await exportBoardImage(document.querySelector('.scene')!,board,records)
+    const base64=await new Promise<string>(resolve=>{const reader=new FileReader();reader.onload=()=>resolve((reader.result as string).split(',')[1]);reader.readAsDataURL(png)})
+    return {transparent,paper,total:pixels.length/4,style:restored.board.items[0].stickerStyle,adhesion:restored.board.items[0].stickerAdhesion,originalSize:r.originalImage.size,restoredSize:restored.records[0].originalImage.size,png:base64}
+  })
+  expect(result.style).toBe('torn');expect(result.transparent).toBeGreaterThan(result.total*.35);expect(result.paper).toBeGreaterThan(result.total*.03)
+  expect(result.originalSize).toBe(result.restoredSize);expect(workers).toBe(0)
+  const {writeFile}=await import('node:fs/promises');await writeFile(info.outputPath('torn-stickers.png'),Buffer.from(result.png,'base64'))
+  await page.addInitScript(()=>{const board=localStorage.getItem('sticker-restored');if(board){localStorage.setItem('racememoir-board-v1',board);localStorage.removeItem('sticker-restored')}})
+  await page.reload();await page.locator('.records-loading').waitFor({state:'hidden'})
+  await expect(items.first().locator('.sticker-torn')).toHaveAttribute('data-sticker-state','ready')
+  await expect(items.last().locator('.sticker-contour')).toHaveAttribute('data-sticker-state','ready')
+})
+
 test('transparent sticker retains pixels, adjusts outline and size, reuses assets and round-trips PNG/ZIP',async({page},info)=>{
   let workers=0
   await page.route('**/cutout.worker.ts*',route=>{workers++;return route.abort()})
@@ -128,4 +187,45 @@ test('failed and cancelled cutouts preserve originals, reject empty output and c
   await page.getByRole('button',{name:'重新抠图',exact:true}).click();await page.getByRole('button',{name:'关闭贴纸编辑',exact:true}).click()
   await page.waitForTimeout(2200);await expect(page.locator('.memory-sticker')).toHaveCount(0)
   expect(await page.evaluate(async()=>{const {readRecords}=await import('/src/persistence/recordStore.ts');return (await readRecords()).length})).toBe(0)
+})
+
+test('sketch and washi apply to cutouts, persist independently and export all four styles',async({page},info)=>{
+  await ready(page);await upload(page)
+  await expect(page.getByRole('group',{name:'粘贴状态',exact:true})).toHaveCount(0)
+  for(const [label,style] of [['手绘描边','sketch'],['和纸贴纸','washi']]){
+    await page.getByRole('button',{name:label,exact:true}).click()
+    await expect(page.locator(`.sticker-preview .sticker-${style}`)).toHaveAttribute('data-sticker-state','ready')
+    await page.locator('.record-scroll').evaluate(el=>el.scrollTop=0)
+    await page.screenshot({path:info.outputPath(`${style}-editor.png`)})
+  }
+  await page.getByRole('button',{name:'保存并放上画布',exact:true}).click()
+  await expect.poll(async()=>(await stored(page)).items[0]?.stickerStyle).toBe('washi')
+  await page.reload();await page.locator('.records-loading').waitFor({state:'hidden'})
+  await expect(page.locator('.scene .sticker-washi')).toHaveAttribute('data-sticker-state','ready')
+  const result=await page.evaluate(async()=>{
+    const {readRecords}=await import('/src/persistence/recordStore.ts')
+    const {prepareSticker}=await import('/src/items/sticker/stickerImage.ts')
+    const {makeZipArchive,readBackup}=await import('/src/persistence/zipArchive.ts')
+    const {exportBoardImage}=await import('/src/persistence/exportImage.ts')
+    const records=await readRecords(),record=records.find((r:any)=>r.kind==='sticker'),board=JSON.parse(localStorage.getItem('racememoir-board-v1')!)
+    const canvas=new OffscreenCanvas(1200,360),ctx=canvas.getContext('2d')!
+    ctx.fillStyle='#cfbc93';ctx.fillRect(0,0,1200,360)
+    const styles=['contour','torn','sketch','washi'],stats=[]
+    for(const [index,style] of styles.entries()){
+      const derived=await prepareSticker(record.originalImage,3,style),bitmap=await createImageBitmap(derived.blob)
+      const test=new OffscreenCanvas(bitmap.width,bitmap.height),pixels=test.getContext('2d')!;pixels.drawImage(bitmap,0,0)
+      const data=pixels.getImageData(0,0,bitmap.width,bitmap.height).data
+      stats.push({corner:data[3],center:data[(Math.floor(bitmap.height/2)*bitmap.width+Math.floor(bitmap.width/2))*4+3]})
+      ctx.drawImage(bitmap,index*300+20,45,260,260*bitmap.height/bitmap.width);bitmap.close()
+      ctx.fillStyle='#332f27';ctx.font='18px sans-serif';ctx.fillText(style,index*300+20,330)
+    }
+    const encode=(blob:Blob)=>new Promise<string>(resolve=>{const r=new FileReader();r.onload=()=>resolve((r.result as string).split(',')[1]);r.readAsDataURL(blob)})
+    const restored=await readBackup(await makeZipArchive(board,records))
+    return {stats,style:restored.board.items[0].stickerStyle,comparison:await encode(await canvas.convertToBlob()),png:await encode(await exportBoardImage(document.querySelector('.scene')!,board,records))}
+  })
+  expect(result.style).toBe('washi');expect(result.stats.every(s=>s.corner===0)).toBe(true)
+  expect(result.stats[0].center).toBe(255);expect(result.stats[3].center).toBeLessThan(255)
+  const {writeFile}=await import('node:fs/promises')
+  await writeFile(info.outputPath('style-comparison.png'),Buffer.from(result.comparison,'base64'))
+  await writeFile(info.outputPath('washi-export.png'),Buffer.from(result.png,'base64'))
 })

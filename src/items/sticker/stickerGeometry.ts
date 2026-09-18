@@ -1,4 +1,4 @@
-import type {Memory} from '../../domain/model'
+import type {Memory,StickerStyle} from '../../domain/model'
 
 export interface AlphaBounds {x:number;y:number;width:number;height:number}
 export function alphaBounds(data:Uint8ClampedArray,width:number,height:number):AlphaBounds|null {
@@ -14,17 +14,20 @@ export function transparentBackground(data:Uint8ClampedArray,width:number,height
 export function borderPadding(width:number,height:number,border=2){
   return border>0?Math.ceil(Math.max(width,height)*border/100/(1-2*border/100))+1:0
 }
-export function stickerSize(width:number,height:number,border=2,longEdge=240){
-  const padding=borderPadding(width,height,border),w=width+2*padding,h=height+2*padding
+export function stickerPadding(width:number,height:number,border=2,style:StickerStyle='contour'){
+  return style==='torn'&&border>0?Math.ceil(Math.max(width,height)*border/100*1.9)+2:borderPadding(width,height,border)
+}
+export function stickerSize(width:number,height:number,border=2,longEdge=240,style:StickerStyle='contour'){
+  const padding=stickerPadding(width,height,border,style),w=width+2*padding,h=height+2*padding
   const scale=longEdge/Math.max(w,h)
   return {w:Math.max(30,w*scale),h:Math.max(30,h*scale)}
 }
-export function resizeSticker(item:Memory,width:number,height:number,border=item.stickerBorder??2,longEdge=Math.max(item.w,item.h)){
-  const size=stickerSize(width,height,border,longEdge)
-  return {...size,stickerBorder:border,x:item.x+(item.w-size.w)/2,y:item.y+(item.h-size.h)/2}
+export function resizeSticker(item:Memory,width:number,height:number,border=item.stickerBorder??2,longEdge=Math.max(item.w,item.h),style:StickerStyle=item.stickerStyle??'contour'){
+  const size=stickerSize(width,height,border,longEdge,style)
+  return {...size,stickerBorder:border,stickerStyle:style,x:item.x+(item.w-size.w)/2,y:item.y+(item.h-size.h)/2}
 }
 /** Linear-time chamfer distance creates a rounded, antialiased outer contour. */
-export function outlineAlpha(alpha:Uint8Array,width:number,height:number,radius:number){
+export function outlineAlpha(alpha:Uint8Array,width:number,height:number,radius:number,radiusAt?:(x:number,y:number)=>number){
   const distance=new Float32Array(alpha.length),diagonal=Math.SQRT2
   for(let i=0;i<alpha.length;i++)distance[i]=alpha[i]>16?0:1e6
   for(let y=0;y<height;y++)for(let x=0;x<width;x++){
@@ -37,5 +40,5 @@ export function outlineAlpha(alpha:Uint8Array,width:number,height:number,radius:
     if(x+1<width)distance[i]=Math.min(distance[i],distance[i+1]+1)
     if(y+1<height){distance[i]=Math.min(distance[i],distance[i+width]+1);if(x)distance[i]=Math.min(distance[i],distance[i+width-1]+diagonal);if(x+1<width)distance[i]=Math.min(distance[i],distance[i+width+1]+diagonal)}
   }
-  return Uint8ClampedArray.from(distance,d=>Math.max(0,Math.min(255,(radius+.5-d)*255)))
+  return Uint8ClampedArray.from(distance,(d,i)=>Math.max(0,Math.min(255,((radiusAt?.(i%width,Math.floor(i/width))??radius)+.5-d)*255)))
 }

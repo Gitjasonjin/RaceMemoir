@@ -357,8 +357,8 @@ export default function App() {
       const current=boardRef.current
       const items=current.items.map(item=>{
         if(item.recordId!==record.id)return item
-        const change=resizeSticker(item,record.width,record.height,item.id===selected?layout?.stickerBorder??item.stickerBorder??2:item.stickerBorder??2,item.id===selected&&layout?.w&&layout?.h?Math.max(layout.w,layout.h):Math.max(item.w,item.h))
-        return change.w===item.w&&change.h===item.h&&change.stickerBorder===(item.stickerBorder??2)?item:{...item,...change}
+        const change=resizeSticker(item,record.width,record.height,item.id===selected?layout?.stickerBorder??item.stickerBorder??2:item.stickerBorder??2,item.id===selected&&layout?.w&&layout?.h?Math.max(layout.w,layout.h):Math.max(item.w,item.h),item.id===selected?layout?.stickerStyle??item.stickerStyle:item.stickerStyle)
+        return change.w===item.w&&change.h===item.h&&change.stickerBorder===(item.stickerBorder??2)&&change.stickerStyle===(item.stickerStyle??'contour')?item:{...item,...change}
       })
       if(items.some((item,index)=>item!==current.items[index]))commit({...current,items})
     }

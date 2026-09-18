@@ -23,6 +23,15 @@
 .batch-photo-name input:hover:not(:disabled){border-color:#a5af92}
 .batch-photo-name input:focus{outline:none;border-color:#7c8c63;box-shadow:0 0 0 2px #7c8c6326}
 .batch-photo-name input:disabled{opacity:.6}
+.record-panel input[type=range]{appearance:none;-webkit-appearance:none;display:block;width:100%;height:28px;min-height:28px;padding:0;border:0;border-radius:5px;background:transparent;box-shadow:none;accent-color:#71845d;cursor:pointer}
+.record-panel input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:#cdd4bf}
+.record-panel input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-6px;border:2px solid #faf9f2;border-radius:50%;background:#71845d;box-shadow:0 0 0 1px #71845d55;transition:background .15s,box-shadow .15s}
+.record-panel input[type=range]::-moz-range-track{height:4px;border-radius:4px;background:#cdd4bf}
+.record-panel input[type=range]::-moz-range-thumb{width:12px;height:12px;border:2px solid #faf9f2;border-radius:50%;background:#71845d;box-shadow:0 0 0 1px #71845d55}
+.record-panel input[type=range]:hover:not(:disabled)::-webkit-slider-thumb{background:#566747;box-shadow:0 0 0 4px #71845d20}
+.record-panel input[type=range]:hover:not(:disabled)::-moz-range-thumb{background:#566747;box-shadow:0 0 0 4px #71845d20}
+.record-panel input[type=range]:focus-visible{outline:2px solid #71845d;outline-offset:3px;box-shadow:none}
+.record-panel input[type=range]:disabled{opacity:.45;cursor:default}
 .batch-photo-row small{display:block;color:#969b88;font-size:10px;margin-top:6px}
 .batch-photo-row>button{display:flex;flex-shrink:0;padding:7px;border-radius:4px;color:#8a7e6c}
 .batch-photo-row>button:hover{background:#f1e0d7;color:#b45142}

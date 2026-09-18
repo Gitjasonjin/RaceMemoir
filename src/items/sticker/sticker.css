@@ -8,3 +8,22 @@
 .sticker-modes button{flex:1;border:1px solid #d2d6c7;border-radius:6px;padding:8px;font-size:12px}
 .sticker-modes button[aria-pressed=true]{background:#e6eadb;border-color:#717c56;color:#47532d}
 .sticker-preview-empty{color:#858978;font-size:13px}
+.sticker-style-options{margin:0 0 18px;padding:0;border:0}
+.sticker-style-options legend{font-size:12px;color:#606d50;margin-bottom:9px}
+.sticker-style-options>div{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.sticker-style-options button{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;border:1px solid #dddccd;border-radius:9px;padding:12px 8px;background:#faf8f0}
+.sticker-style-options button:hover{background:#f0eee2;border-color:#aaa98f}
+.sticker-style-options button[aria-pressed=true]{background:#eef0e2;border-color:#82916a}
+.sticker-style-options strong{font-size:12px;font-weight:550}.sticker-style-options small{font-size:10px;color:#959780}
+.sticker-style-options button>svg{position:absolute;top:8px;right:8px;color:#718158}
+.sticker-style-sample{position:relative;display:block;width:62px;height:46px;filter:drop-shadow(0 1px 1px #493f302b)}
+.sticker-style-sample i{position:absolute;inset:8px 13px;background:#7d9373;clip-path:polygon(0 100%,38% 9%,59% 54%,75% 27%,100% 100%)}
+.sticker-style-contour{background:#fffdf5;clip-path:polygon(8% 92%,36% 4%,48% 4%,61% 40%,72% 18%,84% 20%,100% 92%,98% 100%,6% 100%)}
+ .sticker-style-torn{background:#fffaf0;clip-path:polygon(4% 95%,9% 84%,8% 79%,15% 76%,16% 65%,21% 63%,24% 51%,30% 44%,30% 38%,36% 31%,37% 22%,43% 12%,48% 17%,49% 27%,56% 35%,57% 45%,62% 48%,68% 35%,71% 35%,75% 25%,79% 30%,81% 40%,86% 46%,86% 57%,91% 66%,91% 76%,98% 88%,97% 96%,88% 100%,78% 96%,64% 100%,48% 97%,36% 100%,23% 97%,12% 100%)}
+.sticker-style-sketch{background:#fffdf5;clip-path:polygon(8% 92%,36% 4%,48% 4%,61% 40%,72% 18%,84% 20%,100% 92%,98% 100%,6% 100%)}
+.sticker-style-sketch i{background:#687563;filter:drop-shadow(1px 1px 0 #383d34)}
+.sticker-style-sketch:after{content:'';position:absolute;inset:5px 7px 2px;border-bottom:2px solid #4a5142;transform:rotate(-3deg)}
+.sticker-style-washi{background:repeating-linear-gradient(115deg,#f1e6cb88 0 1px,#f9f0dbaa 1px 4px);clip-path:polygon(8% 92%,36% 4%,48% 4%,61% 40%,72% 18%,84% 20%,100% 92%,98% 100%,6% 100%)}
+.sticker-style-washi i{opacity:.65;background:repeating-linear-gradient(110deg,#8eaa8a 0 2px,#bac6a0 2px 3px)}
+.sticker-washi img{filter:drop-shadow(0 .4px .25px #30201433)}
+.sticker-style-options button:focus-visible{outline:2px solid #718158;outline-offset:2px}

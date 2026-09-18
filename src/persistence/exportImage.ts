@@ -13,7 +13,7 @@ export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:
     await Promise.all(board.items.filter(i=>i.kind==='sticker').map(item=>{
       const record=records.find(r=>r.id===item.recordId)
       if(record?.kind!=='sticker')throw new Error('贴纸记录丢失，无法导出')
-      return prepareSticker(stickerSource(record),item.stickerBorder??2)
+      return prepareSticker(stickerSource(record),item.stickerBorder??2,item.stickerStyle)
     }))
     const deadline=performance.now()+10000
     while(scene.querySelector('[data-sticker-state="loading"]')){
