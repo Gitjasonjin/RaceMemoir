@@ -1,3 +1,4 @@
+import {memo} from 'react'
 import StickerArtwork from './sticker/StickerArtwork'
 import RaceMapArtwork from './race-map/RaceMapArtwork'
 import type {RaceLocationGroup} from '../race-map/raceMapGrouping'
@@ -14,7 +15,7 @@ import RouteArtwork from './route/RouteArtwork'
 import DemoRouteArtwork from './route/DemoRouteArtwork'
 
 /** Dispatch only: each item owns its rendering and asset hooks. */
-export default function Artwork({item:instance,tapeStyle='classic',record,records=[],raceGroups=[]}:{item:Memory;tapeStyle?:TapeStyle;record?:CollectionRecord;records?:CollectionRecord[];raceGroups?:RaceLocationGroup[]}){
+function Artwork({item:instance,tapeStyle='classic',record,records=[],raceGroups=[]}:{item:Memory;tapeStyle?:TapeStyle;record?:CollectionRecord;records?:CollectionRecord[];raceGroups?:RaceLocationGroup[]}){
   const item=displayMemory(instance,record)
   if(item.exhibit)return <MedalExhibitArtwork item={item} records={records}/>
   if(item.recordId&&!record)return <div className="missing-record paper"><strong>记录不可用</strong><span>请从收藏库重新添加，或导入完整备份。</span></div>
@@ -28,3 +29,5 @@ export default function Artwork({item:instance,tapeStyle='classic',record,record
     case 'map':return record?.kind==='route'&&record.source==='upload'?<RouteArtwork record={record} compact={resolveStyle('map',item.variant).compact}/>:<DemoRouteArtwork item={item}/>
   }
 }
+// Camera movement changes the parent transform, not the contents of each keepsake.
+export default memo(Artwork)

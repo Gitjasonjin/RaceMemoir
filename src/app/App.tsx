@@ -1,3 +1,4 @@
+import CanvasBackground from '../board/CanvasBackground'
 import {useCanvasTouch} from '../board/useCanvasTouch'
 import {useTouchLayout} from '../shared/useTouchLayout'
 import {canConnect} from '../domain/model'
@@ -27,7 +28,7 @@ import Clothespin from '../appearance/Clothespin'
 import { hangPhotos } from '../board/photoLine'
 import { threadCurve } from '../board/threadCurve'
 import { useBoardSave } from '../persistence/useBoardSave'
-import { resolveStyle, backgroundStyle, resolveBackground } from '../domain/styleCatalog'
+import { resolveStyle, resolveBackground } from '../domain/styleCatalog'
 import { selectionBounds, intersectsSelection } from '../board/selection'
 import type { Bounds } from '../board/canvas'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -454,7 +455,8 @@ export default function App() {
   }
   const startPin = connecting?pointFor(connecting):null
   const visible=visibleBounds(view,viewportSize.width,viewportSize.height)
-  const overview=unionBounds(contentBounds(board.items,60,board.threads,decorations.pin,library.records),visible)
+  const boardBounds=useMemo(()=>contentBounds(board.items,60,board.threads,decorations.pin,library.records),[board.items,board.threads,decorations.pin,library.records])
+  const overview=unionBounds(boardBounds,visible)
 
   const itemStyles=selectedItem?<DecorationPanel embedded board={board} item={selectedItem} scope="selection" onClose={()=>{}} onCurvature={()=>{}} onPinToggle={enabled=>commit(setTapePin(boardRef.current,selectedItem.id,enabled))} onChange={change=>commit(changeDecoration(boardRef.current,change,selectedItem.id))}/>:null
   return <div className={`app-shell ${touchLayout?'is-touch':''} ${recordPanel||memoryPanel||mapPanel||exhibitPanel||decorationOpen?'has-editor':''}`}>
@@ -475,7 +477,8 @@ export default function App() {
       if(decorationScope==='selection' && !target) return
       commit(changeDecoration(board,change,target??undefined))
     }}/>}
-    <main onContextMenu={e=>{e.preventDefault();if(gesture.current||touchGestures.active()||(e.nativeEvent as PointerEvent).pointerType==='touch')return;layerTarget.cancel();setCanvasMenu({x:e.clientX,y:e.clientY})}} className={`board-viewport ${space?'space-mode':''} ${dragging?'is-dragging':''} ${tool==='connect'?'connect-mode':''} ${layerTarget.mode?'layer-target-mode':''}`} ref={viewport} onDoubleClickCapture={e=>{if(tool==='connect'){e.preventDefault();e.stopPropagation();setTool('select');setConnecting(null);setToast('已结束连线')}}} style={backgroundStyle(board.backgroundStyle,view.scale,view.x,view.y)} onPointerMoveCapture={e=>{if(!touchGestures.move(e))layerTarget.onMove(e)}} onPointerUpCapture={e=>touchGestures.up(e)} onPointerCancelCapture={e=>touchGestures.up(e,true)} onLostPointerCaptureCapture={e=>touchGestures.lost(e)} onPointerLeave={()=>{if(layerTarget.mode)layerTarget.clearHover()}} onPointerDownCapture={e=>{if(touchGestures.down(e))return;if(e.button===2){e.stopPropagation();return}if(layerTarget.mode){layerTarget.onDown(e);return}if(e.ctrlKey&&e.button===0&&tool==='select'&&!space)startGesture(e)}} onPointerDown={e=>startGesture(e)} onPointerMove={moveGesture} onPointerUp={()=>endGesture()} onPointerCancel={()=>endGesture(true)} onLostPointerCapture={()=>endGesture()}>
+    <main onContextMenu={e=>{e.preventDefault();if(gesture.current||touchGestures.active()||(e.nativeEvent as PointerEvent).pointerType==='touch')return;layerTarget.cancel();setCanvasMenu({x:e.clientX,y:e.clientY})}} className={`board-viewport ${space?'space-mode':''} ${dragging?'is-dragging':''} ${tool==='connect'?'connect-mode':''} ${layerTarget.mode?'layer-target-mode':''}`} ref={viewport} onDoubleClickCapture={e=>{if(tool==='connect'){e.preventDefault();e.stopPropagation();setTool('select');setConnecting(null);setToast('已结束连线')}}}  onPointerMoveCapture={e=>{if(!touchGestures.move(e))layerTarget.onMove(e)}} onPointerUpCapture={e=>touchGestures.up(e)} onPointerCancelCapture={e=>touchGestures.up(e,true)} onLostPointerCaptureCapture={e=>touchGestures.lost(e)} onPointerLeave={()=>{if(layerTarget.mode)layerTarget.clearHover()}} onPointerDownCapture={e=>{if(touchGestures.down(e))return;if(e.button===2){e.stopPropagation();return}if(layerTarget.mode){layerTarget.onDown(e);return}if(e.ctrlKey&&e.button===0&&tool==='select'&&!space)startGesture(e)}} onPointerDown={e=>startGesture(e)} onPointerMove={moveGesture} onPointerUp={()=>endGesture()} onPointerCancel={()=>endGesture(true)} onLostPointerCapture={()=>endGesture()}>
+      <CanvasBackground id={board.backgroundStyle} view={view}/>
       <div className="scene cork" ref={scene} style={{width:1,height:1,transform:`translate(${view.x}px,${view.y}px) scale(${view.scale})`}}>
         {board.items.map(item=><div key={item.id} data-board-item={item.id} role="button" tabIndex={0} aria-label={`${item.exhibit?'奖牌展览框':item.kind==='sticker'?'贴纸':item.kind==='medal'?'奖牌':item.kind==='photo'?'照片':item.kind==='bib'?'号码布':item.kind==='note'?'便签':item.kind==='race-map'?'赛事地图':'路线卡'}：${displayMemory(item,recordFor(item,library.records)).title}`} aria-pressed={selectedIds.includes(item.id)} className={`memory memory-${item.kind} ${item.exhibit?'memory-exhibit':''} ${selectedIds.includes(item.id)?'selected':''} ${item.locked?'is-locked':''} ${item.groupId?'is-grouped':''} ${layerTarget.highlightIds.includes(item.id)?'layer-target-highlight':''} ${connecting?.itemId===item.id?'connection-source':''}`} style={{left:item.x,top:item.y,width:item.w,height:item.h,transform:`rotate(${item.rotation}deg)`}} onPointerDown={e=>startGesture(e,item)} onDoubleClick={e=>{if(!touchLayout&&tool!=='connect'&&!e.ctrlKey&&selectedIds.length<2)editItem(item)}} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();if(tool==='connect')connectItem(item.id);else{setSelected(item.id);setSelectedThread(null);editItem(item)}}}}><ItemMotion item={item} pin={decorations.pin} lifted={dragging&&gesture.current?.type==='item'&&!!gesture.current.ids?.includes(item.id)}><Artwork records={library.records} raceGroups={mapGroups} item={item} record={recordFor(item,library.records)} tapeStyle={item.tapeStyle??decorations.tape}/></ItemMotion><div className="selection-outline"/></div>)}
         <svg className="threads" width={1} height={1} aria-label="赛事记忆连接线">

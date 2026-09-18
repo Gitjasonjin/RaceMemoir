@@ -4,7 +4,10 @@
   .tool{width:44px;height:44px}
   .tool-palette{width:58px}
   .app-shell .selection-bar button,.history-controls button,.zoom-controls button{min-width:44px;min-height:44px}
-  .record-heading>button,.decoration-heading>button,.modal-close,.race-map-tools button{min-width:44px;min-height:44px;align-items:center;justify-content:center}
+  .record-heading>button,.decoration-heading>button,.race-map-tools button{min-width:44px;min-height:44px;align-items:center;justify-content:center}
+  .modal .modal-close{width:32px;height:32px;min-width:0;min-height:0;padding:6px;align-items:center;justify-content:center}
+  .modal .modal-close::after{content:'';position:absolute;inset:-6px}
+  .modal .modal-close svg{width:18px;height:18px}
   .record-scroll button,.decoration-panel button{min-height:44px}
   .record-scroll input:not([type=range]):not([type=file]),.record-scroll textarea,.record-scroll select,.board-title-input{font-size:16px}
   .record-scroll,.decoration-panel,.modal-scroll{overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}

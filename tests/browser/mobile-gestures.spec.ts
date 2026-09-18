@@ -92,6 +92,30 @@ test('mobile hint icon is centered and decoration samples stay inside the scroll
   await button(page,'关闭装饰样式').tap();await expect(page.locator('.decoration-panel')).toHaveCount(0)
 })
 
+test('help close stays compact and background pan keeps the buffered texture aligned',async({page},info)=>{
+  const cdp=await setup(page)
+  await button(page,'快捷键与帮助').tap()
+  const close=page.getByRole('dialog',{name:'使用指南'}).getByRole('button',{name:'关闭',exact:true})
+  await expect(close).toHaveCSS('width','32px');await expect(close).toHaveCSS('height','32px')
+  await expect(close.locator('svg')).toHaveCSS('width','18px')
+  await page.screenshot({path:info.outputPath('mobile-help.png')});await close.tap()
+  const texture=page.locator('.board-material-texture')
+  const start=(await camera(page)),position=await texture.evaluate(el=>(el as HTMLElement).style.backgroundPosition)
+  await drag(cdp,15,195,20,20)
+  // Small pans reuse painted pixels, rather than changing CSS background-position.
+  expect(await texture.evaluate(el=>(el as HTMLElement).style.backgroundPosition)).toBe(position)
+  await expect.poll(async()=>(await camera(page)).x).toBeCloseTo(start.x+20,1)
+  for(let i=0;i<4;i++)await drag(cdp,15,195,90,30)
+  const view=await camera(page),phase=await texture.evaluate(el=>{
+    const s=getComputedStyle(el),m=new DOMMatrix(s.transform),p=s.backgroundPosition.split(' ').map(parseFloat),r=el.getBoundingClientRect()
+    return {x:p[0]+m.e+parseFloat(s.left),y:p[1]+m.f+parseFloat(s.top),width:r.width,height:r.height}
+  })
+  expect(phase.x).toBeCloseTo(view.x,1);expect(phase.y).toBeCloseTo(view.y,1)
+  expect(phase.width).toBe(390+512);expect(phase.height).toBeLessThanOrEqual(844+512)
+  await expect(button(page,'撤销')).toBeDisabled()
+  await page.screenshot({path:info.outputPath('mobile-background-pan.png')})
+})
+
 test('map preview pinch and pan stay independent of board camera and sidebar scrolling',async({page},info)=>{
   const cdp=await setup(page)
   await button(page,'添加地图').scrollIntoViewIfNeeded();await button(page,'添加地图').tap()
