@@ -1,5 +1,5 @@
 import type {Board,Memory,PinStyle,Thread} from '../domain/model'
-import {pinPosition} from '../domain/model.ts'
+import {pinPosition,canConnect} from '../domain/model.ts'
 import type {CollectionRecord} from '../domain/records'
 import {coarseCoordinate,validRaceLocation} from '../domain/raceLocation.ts'
 import {mapGeometry} from '../race-map/mapGeometry.ts'
@@ -27,7 +27,7 @@ export function racePointOnMap(item:Memory,record:CollectionRecord):Point|null{
 export function resolveEndpoint(board:Board,records:CollectionRecord[],endpoint:ThreadEndpoint,pin:PinStyle='classic'):Point|null{
   const owner=ownerOf(board.items,endpoint.itemId)
   const item=owner?.id===endpoint.itemId?owner:owner?exhibitWorldMedals(owner).find(m=>m.id===endpoint.itemId):undefined
-  if(!item)return null
+  if(!item||!canConnect(item))return null
   if(!endpoint.raceId)return pinPosition(item,pin)
   if(!boardMembers(board.items).some(i=>(i.kind==='medal'||i.kind==='map')&&i.recordId===endpoint.raceId))return null
   const record=records.find(r=>r.id===endpoint.raceId)

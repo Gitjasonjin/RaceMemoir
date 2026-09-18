@@ -25,7 +25,7 @@ export async function makeArchive(board:Board,records:CollectionRecord[]){
   const packed=[]
   for(const r of records){
     if(r.kind==='photo')packed.push({...r,image:await encodeBlob(r.image)})
-    else if((r.kind==='medal'||r.kind==='bib'))packed.push({...r,image:r.image?await encodeBlob(r.image):undefined,originalImage:r.originalImage?await encodeBlob(r.originalImage):undefined})
+    else if((r.kind==='medal'||r.kind==='bib'||r.kind==='sticker'))packed.push({...r,image:r.image?await encodeBlob(r.image):undefined,originalImage:r.originalImage?await encodeBlob(r.originalImage):undefined})
     else packed.push({...r,gpx:r.gpx?await encodeBlob(r.gpx):undefined})
   }
   const json=JSON.stringify({format:'racememoir',version:2,board,records:packed})
@@ -45,7 +45,7 @@ export function readArchive(text:string):{board:Board;records:CollectionRecord[]
     records=a.records.map(value=>{
       if(!value||typeof value!=='object')throw new Error('记录格式无效')
       const r=value as Record<string,unknown>
-      const decoded=r.kind==='photo'?{...r,image:decodeBlob(r.image)}:(r.kind==='medal'||r.kind==='bib')?{...r,image:decodeBlob(r.image),originalImage:decodeBlob(r.originalImage)}:{...r,gpx:decodeBlob(r.gpx)}
+      const decoded=r.kind==='photo'?{...r,image:decodeBlob(r.image)}:(r.kind==='medal'||r.kind==='bib'||r.kind==='sticker')?{...r,image:decodeBlob(r.image),originalImage:decodeBlob(r.originalImage)}:{...r,gpx:decodeBlob(r.gpx)}
       if(!validRecord(decoded))throw new Error('备份中的奖牌或路线数据无效')
       return decoded
     })
@@ -57,7 +57,7 @@ export function restoreArchive(board:Board,records:CollectionRecord[]){
   const ids=new Map(records.map(r=>[r.id,r]))
   if(ids.size!==records.length)throw new Error('备份存在重复记录 ID')
   for(const item of boardMembers(board.items)){
-    if(item.recordId){const r=ids.get(item.recordId);if(!r||(item.kind==='medal'?r.kind!=='medal':item.kind==='photo'?r.kind!=='photo':item.kind==='bib'?r.kind!=='bib':r.kind!=='route'))throw new Error('备份缺少物件关联的记录')}
+    if(item.recordId){const r=ids.get(item.recordId);if(!r||(item.kind==='medal'?r.kind!=='medal':item.kind==='photo'?r.kind!=='photo':item.kind==='bib'?r.kind!=='bib':item.kind==='sticker'?r.kind!=='sticker':r.kind!=='route'))throw new Error('备份缺少物件关联的记录')}
   }
   for(const t of board.threads)for(const id of [t.fromRaceId,t.toRaceId]){if(id!==undefined&&(!ids.has(id)||!['medal','route'].includes(ids.get(id)!.kind)))throw new Error('备份缺少地点连线关联的赛事')}
   // Import always allocates new ids; it must not overwrite records used elsewhere.

@@ -3,7 +3,7 @@ import type {Memory} from '../domain/model'
 import type {CollectionRecord} from '../domain/records'
 import type {BatchPhoto} from '../items/photo/batchPhotos'
 
-export type RecordPanelMode = { mode: 'library' | 'medal' | 'photo' | 'photo-batch' | 'bib' | 'route' | 'detail' | 'exhibit-add'; id?: string; files?:File[]; exhibitId?:string; medalId?:string; exhibitSlot?:number }
+export type RecordPanelMode = { mode: 'library' | 'medal' | 'photo' | 'photo-batch' | 'bib' | 'route' | 'detail' | 'exhibit-add' | 'sticker'; id?: string; files?:File[]; exhibitId?:string; medalId?:string; exhibitSlot?:number }
 export interface RecordPanelProps {
   onImportPhotos:(photos:BatchPhoto[])=>Promise<void>
   onBibTemplate?:()=>void

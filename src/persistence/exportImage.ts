@@ -4,11 +4,23 @@ import type {Board} from '../domain/model'
 import {getDecorations} from '../domain/model'
 import {backgroundStyle} from '../domain/styleCatalog'
 import {contentBounds,exportSize} from '../board/canvas'
+import {prepareSticker,stickerSource} from '../items/sticker/stickerImage'
 
 /** Render a detached snapshot; export fixes stay shared across every item type. */
 export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:CollectionRecord[]=[]):Promise<Blob>{
   const wrapper=document.createElement('div')
   try{
+    await Promise.all(board.items.filter(i=>i.kind==='sticker').map(item=>{
+      const record=records.find(r=>r.id===item.recordId)
+      if(record?.kind!=='sticker')throw new Error('贴纸记录丢失，无法导出')
+      return prepareSticker(stickerSource(record),item.stickerBorder??2)
+    }))
+    const deadline=performance.now()+10000
+    while(scene.querySelector('[data-sticker-state="loading"]')){
+      if(performance.now()>deadline)throw new Error('贴纸尚未生成，请稍后重试导出')
+      await new Promise<void>(resolve=>setTimeout(resolve,30))
+    }
+    if(scene.querySelector('[data-sticker-state="error"]'))throw new Error('贴纸图片不可用，请重新上传后再导出')
     await document.fonts.ready;await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()))
     await Promise.all(Array.from(scene.querySelectorAll('img')).map(img=>img.decode()))
     const bounds=contentBounds(board.items,60,board.threads,getDecorations(board).pin,records), size=exportSize(bounds)

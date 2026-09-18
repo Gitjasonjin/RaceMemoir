@@ -11,6 +11,7 @@ test('every registered item style resolves to its own definition and default siz
     for(const style of styles){
       assert.equal(resolveStyle(kind,style.id),style)
       const item=createMemory(kind,'test',style.id,'/images/mountain.jpg','A123')
+      if(kind==='sticker')item.recordId='test-sticker'
       assert.equal(item.w,style.w);assert.equal(item.h,style.h)
       assert.ok(isBoard({title:'test',items:[item],threads:[]}))
     }

@@ -19,7 +19,7 @@ import { useCutout } from '../items/medal/useCutout'
 import RibbonRepair from '../items/medal/RibbonRepair.tsx'
 import MedalCropEditor from '../items/medal/MedalCropEditor'
 
-type CollectionRecord=Exclude<AnyRecord,{kind:'bib'}>
+type CollectionRecord=Exclude<AnyRecord,{kind:'bib'|'sticker'}>
 
 import type {RecordPanelProps} from './types'
 import RaceLocationEditor from '../race-map/RaceLocationEditor'

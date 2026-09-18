@@ -22,7 +22,7 @@ export const ROUTE_STYLES = [
   {id:'green',label:'简洁路线卡',w:245,h:365,compact:true},
 ] as const
 export const RACE_MAP_STYLES = [{id:'travel',label:'旅行折叠图',w:700,h:520},{id:'survey',label:'测绘蓝图',w:700,h:520},{id:'vintage',label:'复古地图',w:700,h:520}] as const
-export const ITEM_STYLES = {photo:PHOTO_STYLES,note:NOTE_STYLES,bib:BIB_STYLES,medal:MEDAL_STYLES,map:ROUTE_STYLES,'race-map':RACE_MAP_STYLES}
+export const ITEM_STYLES = {sticker:[{id:"contour",label:"轮廓贴纸",w:240,h:240}] as const,photo:PHOTO_STYLES,note:NOTE_STYLES,bib:BIB_STYLES,medal:MEDAL_STYLES,map:ROUTE_STYLES,'race-map':RACE_MAP_STYLES}
 export type StyledKind = keyof typeof ITEM_STYLES
 export type ItemStyleId<K extends StyledKind> = (typeof ITEM_STYLES)[K][number]['id']
 

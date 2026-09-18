@@ -1,9 +1,9 @@
 import {useEffect,useId,useState} from 'react'
 import {createPortal} from 'react-dom'
-import {MousePointer2,ImagePlus,Medal,RectangleEllipsis,Route,Map,Spline,StickyNote} from 'lucide-react'
+import {Sticker,MousePointer2,ImagePlus,Medal,RectangleEllipsis,Route,Map,Spline,StickyNote} from 'lucide-react'
 import type {Kind} from '../domain/model'
 
-const additions=[{kind:'photo',label:'添加照片',icon:ImagePlus},{kind:'medal',label:'添加奖牌',icon:Medal},{kind:'bib',label:'添加号码布',icon:RectangleEllipsis},{kind:'map',label:'添加路线',icon:Route},{kind:'race-map',label:'添加地图',icon:Map}] as const
+const additions=[{kind:'sticker',label:'添加贴纸',icon:Sticker},{kind:'photo',label:'添加照片',icon:ImagePlus},{kind:'medal',label:'添加奖牌',icon:Medal},{kind:'bib',label:'添加号码布',icon:RectangleEllipsis},{kind:'map',label:'添加路线',icon:Route},{kind:'race-map',label:'添加地图',icon:Map}] as const
 
 export default function ToolPalette({tool,onSelect,onConnect,onAdd}:{tool:'select'|'connect';onSelect:()=>void;onConnect:()=>void;onAdd:(kind:Kind)=>void}){
  const id=useId()

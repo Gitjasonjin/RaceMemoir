@@ -3,6 +3,7 @@
 @import 'chrome.css';
 @import '../board/canvas.css';
 @import '../items/common.css';
+@import '../items/sticker/sticker.css';
 @import '../items/photo/artwork.css';
 @import '../items/bib/artwork.css';
 @import '../appearance/tape.css';

@@ -26,10 +26,10 @@ export async function makeZipArchive(board:Board,records:CollectionRecord[]):Pro
   }
   for(const record of records){
     if(record.kind==='photo')packed.push({...record,image:await add(record.image)})
-    else if((record.kind==='medal'||record.kind==='bib'))packed.push({...record,image:await add(record.image),originalImage:await add(record.originalImage)})
+    else if((record.kind==='medal'||record.kind==='bib'||record.kind==='sticker'))packed.push({...record,image:await add(record.image),originalImage:await add(record.originalImage)})
     else packed.push({...record,gpx:await add(record.gpx)})
   }
-  const metadata=strToU8(JSON.stringify({format:'racememoir',version:7,board,records:packed},null,2))
+  const metadata=strToU8(JSON.stringify({format:'racememoir',version:8,board,records:packed},null,2))
   if(metadata.length>META_LIMIT||total+metadata.length>LIMIT)throw new Error('完整备份超过 80 MB')
   entries['manifest.json']=metadata
   const bytes=await new Promise<Uint8Array<ArrayBuffer>>((resolve,reject)=>zip(entries,{level:6},(error,data)=>error?reject(error):resolve(data)))
@@ -50,7 +50,7 @@ export async function readBackup(file:Blob){
   }},(error,result)=>error?reject(new Error('压缩包损坏，无法读取')):resolve(result)))
   if(invalid||!entries['manifest.json'])throw new Error('压缩包内容无效或解压后超过 80 MB')
   const manifest=JSON.parse(strFromU8(entries['manifest.json']))
-  if(!manifest||manifest.format!=='racememoir'||![3,4,5,6,7].includes(manifest.version)||!isBoard(manifest.board)||!Array.isArray(manifest.records)||manifest.records.length>10000)throw new Error('不支持的备份格式')
+  if(!manifest||manifest.format!=='racememoir'||![3,4,5,6,7,8].includes(manifest.version)||!isBoard(manifest.board)||!Array.isArray(manifest.records)||manifest.records.length>10000)throw new Error('不支持的备份格式')
   const cache=new Map<string,Blob>()
   const read=async(value:unknown):Promise<Blob|undefined>=>{
     if(value===undefined)return undefined
@@ -69,7 +69,7 @@ export async function readBackup(file:Blob){
   const records:CollectionRecord[]=[]
   for(const r of manifest.records){
     if(!r||typeof r!=='object')throw new Error('记录无效')
-    const decoded=r.kind==='photo'?{...r,image:await read(r.image)}:(r.kind==='medal'||r.kind==='bib')?{...r,image:await read(r.image),originalImage:await read(r.originalImage)}:{...r,gpx:await read(r.gpx)}
+    const decoded=r.kind==='photo'?{...r,image:await read(r.image)}:(r.kind==='medal'||r.kind==='bib'||r.kind==='sticker')?{...r,image:await read(r.image),originalImage:await read(r.originalImage)}:{...r,gpx:await read(r.gpx)}
     if(!validRecord(decoded))throw new Error('附件或收藏记录无效')
     records.push(decoded)
   }

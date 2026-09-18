@@ -17,7 +17,8 @@ export interface MedalRecord extends RecordBase { kind: 'medal'; date: string; o
 export interface RouteRecord extends RecordBase { kind: 'route'; trackPoints: TrackPoint[]; gpx?: Blob; date?: string; location?: RaceLocation }
 export interface PhotoRecord extends RecordBase { kind: 'photo'; image: Blob; date?: string }
 export interface BibRecord extends RecordBase {kind:'bib';erasures?:BibErasure[];originalImage:Blob;image:Blob;originalWidth:number;originalHeight:number;width:number;height:number;number?:string;quad?:Quad;processing?:'crop'|'perspective';date?:string}
-export type CollectionRecord = MedalRecord | RouteRecord | PhotoRecord | BibRecord
+export interface StickerRecord extends RecordBase {kind:'sticker';originalImage:Blob;image?:Blob;imageMode:'original'|'cutout';width:number;height:number}
+export type CollectionRecord = MedalRecord | RouteRecord | PhotoRecord | BibRecord | StickerRecord
 export const MAX_POINTS = 100_000
 export function validRecord(value: unknown): value is CollectionRecord {
   if(!value || typeof value!=='object')return false
@@ -26,6 +27,7 @@ export function validRecord(value: unknown): value is CollectionRecord {
   if(r.archived!==undefined&&typeof r.archived!=='boolean')return false
   if((r.kind==='medal'||r.kind==='route')&&r.location!==undefined&&!validRaceLocation(r.location))return false
   if(r.kind==='bib')return (r.erasures===undefined||validErasures(r.erasures))&&r.source==='upload'&&[r.image,r.originalImage].every(validImageBlob)&&[r.width,r.height,r.originalWidth,r.originalHeight].every(n=>Number.isInteger(n)&&n>=16&&n<=25000)&&r.width*r.height<=MAX_IMAGE_PIXELS&&r.width/r.height<=10&&r.height/r.width<=10&&r.originalWidth/r.originalHeight<=10&&r.originalHeight/r.originalWidth<=10&&r.originalWidth*r.originalHeight<=MAX_IMAGE_PIXELS&&(r.number===undefined||(typeof r.number==='string'&&r.number.length<=30))&&(r.quad===undefined||validQuad(r.quad))&&(r.processing===undefined||['crop','perspective'].includes(r.processing))&&(r.date===undefined||typeof r.date==='string')
+  if(r.kind==='sticker')return r.source==='upload'&&validImageBlob(r.originalImage)&&(r.image===undefined||validImageBlob(r.image))&&['original','cutout'].includes(r.imageMode)&&(r.imageMode!=='cutout'||!!r.image)&&[r.width,r.height].every(n=>Number.isInteger(n)&&n>0&&n<=MAX_IMAGE_PIXELS)&&r.width*r.height<=MAX_IMAGE_PIXELS
   if(r.kind==='photo')return r.source==='upload'&&validImageBlob(r.image)&&(r.date===undefined||typeof r.date==='string')
   if(r.kind==='medal')return (r.crop===undefined||validMedalCrop(r.crop))&&typeof r.date==='string'&&r.date.length<=30&&['original','done'].includes(r.cutout)&&[r.image,r.originalImage].every(b=>b===undefined||validImageBlob(b))&&(r.source==='demo'||(r.image instanceof Blob&&r.originalImage instanceof Blob))&&(r.variant===undefined||typeof r.variant==='string')
   if(r.kind!=='route'||!Array.isArray(r.trackPoints)||r.trackPoints.length>MAX_POINTS||(r.source==='upload'&&r.trackPoints.length<2))return false
@@ -53,9 +55,9 @@ export function migrateBoard(board: Board, existing: CollectionRecord[]) {
   return {board:{...board,items},created}
 }
 export function recordFor(item: Memory, records: CollectionRecord[]) {
-  return records.find(r=>r.id===item.recordId&&((item.kind==='medal'&&r.kind==='medal')||(item.kind==='map'&&r.kind==='route')||(item.kind==='photo'&&r.kind==='photo')||(item.kind==='bib'&&r.kind==='bib')))
+  return records.find(r=>r.id===item.recordId&&((item.kind==='medal'&&r.kind==='medal')||(item.kind==='map'&&r.kind==='route')||(item.kind==='photo'&&r.kind==='photo')||(item.kind==='bib'&&r.kind==='bib')||(item.kind==='sticker'&&r.kind==='sticker')))
 }
 export function displayMemory(item: Memory, record?: CollectionRecord): Memory {
   if(!record)return item
-  return {...item,title:record.name,...(record.kind==='bib'?{number:record.number}:{}),subtitle:record.date||'',variant:record.kind==='medal'?record.variant:item.variant}
+  return {...item,title:record.name,...(record.kind==='bib'?{number:record.number}:{}),subtitle:('date' in record?record.date:'')||'',variant:record.kind==='medal'?record.variant:item.variant}
 }

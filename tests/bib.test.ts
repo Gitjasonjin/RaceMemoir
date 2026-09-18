@@ -38,7 +38,7 @@ test('bib ZIP stores original and processed files separately and remaps shared r
  const item={...createMemory('bib','测试','green','','174'),recordId:record.id}
  const board={title:'真实号码布',items:[item,{...item,id:'second'}],threads:[]}
  const zip=await makeZipArchive(board,[record]),entries=unzipSync(new Uint8Array(await zip.arrayBuffer())),manifest=JSON.parse(strFromU8(entries['manifest.json']))
- assert.equal(manifest.version,7);assert.equal(Object.keys(entries).length,3);assert.notEqual(manifest.records[0].image.path,manifest.records[0].originalImage.path)
+ assert.equal(manifest.version,8);assert.equal(Object.keys(entries).length,3);assert.notEqual(manifest.records[0].image.path,manifest.records[0].originalImage.path)
  const restored=await readBackup(zip),bib=restored.records[0] as BibRecord
  assert.deepEqual(await bib.image.text(),await image.text());assert.equal(await bib.originalImage.text(),await originalImage.text());assert.deepEqual(bib.quad,record.quad)
  assert.notEqual(bib.id,record.id);assert.ok(restored.board.items.every(i=>i.recordId===bib.id))
