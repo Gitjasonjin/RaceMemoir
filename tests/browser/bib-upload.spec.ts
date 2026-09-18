@@ -10,7 +10,7 @@ test('upload bib, correct corners, restore original, reuse, recycle and round-tr
  await button('添加号码布').click();await expect(button('模板制作')).toHaveAttribute('aria-pressed','true')
  await button('上传图片').click()
  await page.locator('.record-upload input').setInputFiles({name:'race-bib.png',mimeType:'image/png',buffer:Buffer.from(base64,'base64')})
- await expect(page.getByAltText('号码布预览')).toBeVisible();await page.getByLabel('赛事名称',{exact:true}).fill('真实号码布');await page.getByLabel('参赛号码',{exact:true}).fill('A174')
+ await expect(page.getByAltText('号码布预览')).toBeVisible();await page.getByLabel('赛事名称',{exact:true}).fill('真实号码布');await expect(page.getByLabel('参赛号码',{exact:true})).toHaveCount(0)
  await button('裁切 / 四角校正').click();await button('四角校正').click()
  const area=(await page.locator('.bib-adjust-area').boundingBox())!
  const move=async(name:string,x:number,y:number)=>{const box=(await button(name).boundingBox())!;await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(area.x+area.width*x,area.y+area.height*y,{steps:6});await page.mouse.up()}
@@ -20,7 +20,7 @@ test('upload bib, correct corners, restore original, reuse, recycle and round-tr
  await page.getByRole('slider',{name:'号码布展示尺寸'}).fill('420')
  await button('保存并放上画布').click();await expect(page.locator('.bib-upload>img')).toHaveCount(1)
  await expect(page.locator('.bib-brand,.bib-number,.bib-trees')).toHaveCount(0)
- const corrected=(await readBib())!;expect(corrected.quad).toHaveLength(4);expect(corrected.same).toBe(false);expect(corrected.number).toBe('A174')
+ const corrected=(await readBib())!;expect(corrected.quad).toHaveLength(4);expect(corrected.same).toBe(false);expect(corrected.number).toBe('')
  const node=button('号码布：真实号码布');await node.click()
  await expect(button('恢复原图')).toBeEnabled();await button('恢复原图').click();await button('保存修改').click()
  const restored=(await readBib())!;expect(restored.same).toBe(true);expect(restored.width).toBe(1200);expect(restored.height).toBe(800)

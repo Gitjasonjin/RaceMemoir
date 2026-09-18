@@ -1,6 +1,14 @@
 .medal-exhibit-grid{display:grid;width:100%;height:100%}
 .medal-exhibit-cell{position:relative;min-width:0;min-height:0;overflow:hidden;box-shadow:inset 1px 0 0 #ffffff09,inset 0 1px 0 #ffffff09}
-.medal-exhibit-cell.is-empty:after{content:"";position:absolute;inset:20%;border:1px dashed #ffffff10;border-radius:4px}
+.medal-exhibit-cell.is-empty:after{content:"";position:absolute;inset:20%;border:1px dashed #ffffff10;border-radius:4px;pointer-events:none}
+.exhibit-add-slot{position:absolute;inset:12%;width:76%;height:76%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;border:1px dashed #cbd8c561;border-radius:5px;color:#d9e2d0;font-size:14px;cursor:pointer;pointer-events:auto}
+.exhibit-add-slot svg{width:28px;height:28px;flex-shrink:0}
+.exhibit-add-slot:hover,.exhibit-add-slot:focus-visible{background:#d5e7c91a;border-color:#d9e2d0}
+.exhibit-preview .exhibit-add-slot{font-size:10px;gap:3px;inset:5%;width:90%;height:90%;padding:3px;white-space:nowrap}
+.exhibit-preview .exhibit-add-slot svg{width:18px;height:18px}
+.exhibit-picker-list{display:grid;gap:8px;margin:16px 0}
+.exhibit-picker-list button{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d7dccb;border-radius:6px;background:#eeefe6;text-align:left}
+.exhibit-picker-list button span{flex:1;min-width:0;overflow-wrap:anywhere}
 .exhibit-layouts{display:flex;gap:8px;margin:12px 0 20px}
 .exhibit-layouts button{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 5px;border:1px solid #dddccf;border-radius:6px;color:#747861}
 .exhibit-layouts button[aria-pressed=true]{border-color:#68794e;background:#eaf0df;color:#465835}

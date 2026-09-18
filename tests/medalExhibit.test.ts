@@ -2,7 +2,7 @@ import {test} from 'node:test'
 import assert from 'node:assert/strict'
 import {seed,isBoard,pinPosition} from '../src/domain/model.ts'
 import type {Board} from '../src/domain/model.ts'
-import {EXHIBIT_LAYOUTS,mergeMedals,splitMedals,boardMembers,exhibitCells,exhibitWorldMedals} from '../src/domain/medalExhibit.ts'
+import {EXHIBIT_LAYOUTS,mergeMedals,splitMedals,boardMembers,exhibitCells,exhibitWorldMedals,addMedalToExhibit,exhibitSlots} from '../src/domain/medalExhibit.ts'
 import {migrateBoard} from '../src/domain/records.ts'
 import {resolveEndpoint} from '../src/board/threadEndpoints.ts'
 import {boardRaceRecords} from '../src/race-map/raceMapGrouping.ts'
@@ -11,6 +11,34 @@ import {restoreArchive} from '../src/persistence/recordArchive.ts'
 
 const source:Board={title:'展览',items:[seed.items[0],seed.items[6],seed.items[1]],threads:[{id:'a',from:seed.items[0].id,to:seed.items[1].id},{id:'b',from:seed.items[0].id,to:seed.items[6].id}]}
 const ids=source.items.slice(0,2).map(i=>i.id)
+
+test('adding into a chosen empty slot preserves existing geometry and threads, and survives backup and split',async()=>{
+  const migrated=migrateBoard(source,[]),{board,item}=mergeMedals(migrated.board,ids,'2x4'),before=structuredClone(board)
+  item.rotation=15;before.items.find(i=>i.id===item.id)!.rotation=15
+  const medal={...item.exhibit!.medals[0],id:'new-medal'}
+  const next=addMedalToExhibit(board,item.id,7,medal),frame=next.items.find(i=>i.id===item.id)!
+  assert.deepEqual(board,before);assert.ok(isBoard(next));assert.equal(next.items.length,board.items.length)
+  assert.deepEqual(next.threads,board.threads);assert.deepEqual(exhibitCells(frame).slice(0,2),exhibitCells(item))
+  assert.deepEqual(exhibitSlots(frame.exhibit!),[0,1,7]);assert.deepEqual(exhibitCells(frame)[2],{...medal,x:682,y:322,w:220,h:300,rotation:0})
+  const withLine={...next,threads:[...next.threads,{id:'new-thread',from:medal.id,to:ids[0]}]}
+  assert.deepEqual(resolveEndpoint(withLine,[],{itemId:medal.id}),pinPosition(exhibitWorldMedals(frame)[2]))
+  const restored=await readBackup(await makeZipArchive(withLine,migrated.created)),restoredFrame=restored.board.items.find(i=>i.id===item.id)!
+  assert.ok(isBoard(restored.board));assert.deepEqual(restoredFrame.exhibit!.slots,[0,1,7])
+  const split=splitMedals(restored.board,item.id)
+  assert.ok(isBoard(split.board));assert.deepEqual(split.board.threads,withLine.threads)
+  assert.equal(split.items[2].id,medal.id)
+  const inserted=addMedalToExhibit(next,item.id,3,{...medal,id:'fourth'})
+  assert.deepEqual(inserted.items.find(i=>i.id===item.id)!.exhibit!.slots,[0,1,3,7])
+})
+
+test('occupied, missing, locked and invalid exhibit slots cannot be overwritten',()=>{
+  const {board,item}=mergeMedals(source,ids,'1x4'),medal={...item.exhibit!.medals[0],id:'new'}
+  for(const slot of [0,1,-1,4,.5,NaN])assert.throws(()=>addMedalToExhibit(board,item.id,slot,medal))
+  assert.throws(()=>addMedalToExhibit(board,'missing',2,medal))
+  for(const change of [{locked:true},{groupId:'group'}])assert.throws(()=>addMedalToExhibit({...board,items:board.items.map(i=>i.id===item.id?{...i,...change}:i)},item.id,2,medal))
+  assert.throws(()=>addMedalToExhibit(board,item.id,2,item.exhibit!.medals[0]))
+  for(const slots of [[0],[0,0],[0,4],[0,-1],[0,.5]])assert.equal(isBoard({...board,items:board.items.map(i=>i.id===item.id?{...i,exhibit:{...item.exhibit!,slots}}:i)}),false)
+})
 test('all exhibit layouts retain originals, record links, threads and immutable source data',()=>{
   const original=structuredClone(source)
   for(const layout of EXHIBIT_LAYOUTS){

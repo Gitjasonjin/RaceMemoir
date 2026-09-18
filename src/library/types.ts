@@ -3,7 +3,7 @@ import type {Memory} from '../domain/model'
 import type {CollectionRecord} from '../domain/records'
 import type {BatchPhoto} from '../items/photo/batchPhotos'
 
-export type RecordPanelMode = { mode: 'library' | 'medal' | 'photo' | 'photo-batch' | 'bib' | 'route' | 'detail'; id?: string; files?:File[]; exhibitId?:string; medalId?:string }
+export type RecordPanelMode = { mode: 'library' | 'medal' | 'photo' | 'photo-batch' | 'bib' | 'route' | 'detail' | 'exhibit-add'; id?: string; files?:File[]; exhibitId?:string; medalId?:string; exhibitSlot?:number }
 export interface RecordPanelProps {
   onImportPhotos:(photos:BatchPhoto[])=>Promise<void>
   onBibTemplate?:()=>void
@@ -15,6 +15,6 @@ export interface RecordPanelProps {
   threadReferences?: (id:string)=>number
   onMode: (mode: RecordPanelMode) => void; onClose: () => void
   onSave: (record: CollectionRecord, add: boolean, layout?: Partial<Memory>) => Promise<void>
-  onAdd: (record: CollectionRecord) => void
+  onAdd: (record: CollectionRecord) => void | Promise<void>
   onDelete: (id: string) => Promise<void>
 }

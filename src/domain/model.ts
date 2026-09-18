@@ -81,6 +81,7 @@ export function isBoard(value: unknown): value is Board {
     if(item.exhibit!==undefined){
       const e=item.exhibit,layout=EXHIBIT_LAYOUTS.find(l=>l.id===e?.layout)
       if(item.kind!=='medal'||item.recordId!==undefined||item.w<200||item.h<200||!layout||!Array.isArray(e.medals)||e.medals.length<2||e.medals.length>layout.rows*layout.columns||e.medals.some(m=>!m||m.kind!=='medal'||m.exhibit!==undefined||m.groupId!==undefined||m.locked))return false
+      if(e.slots!==undefined&&(!Array.isArray(e.slots)||e.slots.length!==e.medals.length||new Set(e.slots).size!==e.slots.length||e.slots.some(slot=>!Number.isInteger(slot)||slot<0||slot>=layout.rows*layout.columns)))return false
       members.push(...e.medals)
     }
   }

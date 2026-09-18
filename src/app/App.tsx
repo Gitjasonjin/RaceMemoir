@@ -1,5 +1,5 @@
 import SelectionToolbar from '../board/SelectionToolbar'
-import {boardMembers,boardWorldItems,ownerOf,mergeMedals,splitMedals,exhibitCells} from '../domain/medalExhibit'
+import {boardMembers,boardWorldItems,ownerOf,mergeMedals,splitMedals,exhibitCells,availableExhibitSlot,addMedalToExhibit} from '../domain/medalExhibit'
 import type {ExhibitLayout} from '../domain/medalExhibit'
 import {MedalMergeMenu,MedalSplitButton,MedalExhibitEditor} from '../items/medal/MedalExhibitControls'
 import {layoutBatchPhotos,MAX_BATCH_PHOTOS} from '../items/photo/batchPhotos'
@@ -42,7 +42,7 @@ import { recordFor, displayMemory } from '../domain/records'
 import type { CollectionRecord } from '../domain/records'
 import { makeZipArchive, readBackup } from '../persistence/zipArchive'
 import RecordPanel from '../library/RecordPanel'
-import type { RecordPanelMode } from '../library/types'
+import {useEditorPanel} from './useEditorPanel'
 import type {Gesture} from '../board/types'
 import BoardDialog from './BoardDialog'
 import type {BoardModal} from './BoardDialog'
@@ -58,8 +58,7 @@ export default function App() {
   const history=useBoardHistory(loadBoard)
   const {board,boardRef,setBoard,remember,commit,historyTick}=history
   const library = useRecords(board, next => {boardRef.current=next;setBoard(next)})
-  const [recordPanel,setRecordPanel] = useState<RecordPanelMode|null>(null)
-  const [memoryPanel,setMemoryPanel] = useState<'add'|'edit'|null>(null)
+  const {recordPanel,memoryPanel,mapPanel,exhibitPanel,decorationOpen,decorationScope,closePanel,openRecord,openMemory,openMap,openExhibit,openDecoration}=useEditorPanel()
   const memoryEditingId = useRef<string|null>(null)
   const fileOperation = useRef(false)
   const gesture = useRef<Gesture | null>(null)
@@ -77,23 +76,19 @@ export default function App() {
   const selected=selectedIds.length===1?selectedIds[0]:null
   const setSelected=useCallback((id:string|null)=>setSelectedIds(id?expandGroups(boardRef.current.items,[id]):[]),[boardRef])
   const [selectedThread, setSelectedThread] = useState<string | null>(null)
-  const [decorationOpen, setDecorationOpen] = useState(false)
-  const [decorationScope, setDecorationScope] = useState<'board' | 'selection'>('board')
   const [tool, setTool] = useState<'select'|'connect'>('select')
   const [connecting, setConnecting] = useState<ThreadEndpoint | null>(null)
   const [cursor, setCursor] = useState<{x:number;y:number}|null>(null)
   const [space, setSpace] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [modal, setModal] = useState<BoardModal>(null)
-  const [mapPanel,setMapPanel]=useState<{id:string;groupKey?:string;choosing?:boolean}|null>(null)
-  const [exhibitPanel,setExhibitPanel]=useState<string|null>(null)
   const [kind, setKind] = useState<Kind>('photo')
   const [draft, setDraft] = useState({title:'',variant:'',image:samplePhotos[0],number:'0826',date:''})
   const [toast, setToast] = useState('')
   const boardSave=useBoardSave(board,library.ready&&!dragging)
   const saveError=library.error||library.saveError||boardSave.error
   const saved=!library.ready?'正在读取收藏…':saveError?'保存失败':library.saving||boardSave.saving||dragging?'保存中…':`已保存到本机 ${[boardSave.time,library.savedAt].sort().at(-1)}`
-  const layerTarget=useLayerTarget({board,selectedIds,viewport,view,commit,onBegin:()=>{setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);setDecorationOpen(false);setSelectedThread(null);setTool('select');setConnecting(null)},onDone:()=>setToast('物件层级已调整')})
+  const layerTarget=useLayerTarget({board,selectedIds,viewport,view,commit,onBegin:()=>{closePanel();setSelectedThread(null);setTool('select');setConnecting(null)},onDone:()=>setToast('物件层级已调整')})
   const [exporting, setExporting] = useState(false)
   const inputFile = useRef<HTMLInputElement>(null)
   const selectedPhotos=board.items.filter(item=>selectedIds.includes(item.id)&&item.kind==='photo')
@@ -120,14 +115,14 @@ export default function App() {
     if(lockedSelection(current.items,selectedIds)){setToast('请先解锁物件');return}
     if (selectedIds.length) {const removed=new Set(boardMembers(current.items.filter(i=>selectedIds.includes(i.id))).map(i=>i.id));commit({...current,items:current.items.filter(i=>!selectedIds.includes(i.id)),threads:current.threads.filter(t=>!removed.has(t.from)&&!removed.has(t.to))})}
     else if (selectedThread) commit({...current,threads:current.threads.filter(t=>t.id!==selectedThread)})
-    setSelected(null); setSelectedThread(null);setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null)
-  }, [commit, selectedIds, selectedThread])
+    setSelected(null); setSelectedThread(null);closePanel()
+  }, [commit, selectedIds, selectedThread, closePanel])
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (!library.ready || fileOperation.current || (e.target instanceof HTMLElement && (e.target.closest('input,textarea,select,[contenteditable],[data-record-panel]') || modal))) return
       if (e.code === 'Space' && !(e.target instanceof HTMLElement && e.target.closest('button,[data-decoration-panel]'))) { e.preventDefault(); setSpace(true) }
-      if (e.key === 'Escape') { if(gesture.current?.type==='marquee'){gesture.current=null;setMarquee(null)} setConnecting(null); setTool('select'); setSelected(null); setSelectedThread(null);  setDecorationOpen(false);setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null) }
+      if (e.key === 'Escape') { if(gesture.current?.type==='marquee'){gesture.current=null;setMarquee(null)} setConnecting(null); setTool('select'); setSelected(null); setSelectedThread(null);  closePanel() }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); if(e.shiftKey) redo(); else undo() }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); redo() }
       if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeSelected() }
@@ -174,7 +169,7 @@ export default function App() {
 
   const connectEndpoint = (endpoint:ThreadEndpoint) => {
     if(!pointFor(endpoint)){setToast('这个地点暂时不在地图取景内');return}
-    setSelected(null);setSelectedThread(null);setMapPanel(null);setExhibitPanel(null)
+    setSelected(null);setSelectedThread(null);closePanel()
     if(!connecting){setConnecting(endpoint);return}
     if(sameEndpoint(connecting,endpoint)){setConnecting(null);return}
     if(!pointFor(connecting)){setConnecting(endpoint);return}
@@ -184,9 +179,9 @@ export default function App() {
   }
   const connectItem=(id:string)=>connectEndpoint({itemId:board.items.find(i=>i.id===id)?.exhibit?.medals[0].id??id})
   const openMapEditor=(item:Memory,groupKey?:string,choosing=false)=>{
-    if(!choosing&&(item.locked||item.groupId)){setSelected(item.id);setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);return}
-    setSelected(item.id);setSelectedThread(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);setRecordPanel(null);setDecorationOpen(false)
-    setMapPanel({id:item.id,groupKey,choosing})
+    if(!choosing&&(item.locked||item.groupId)){setSelected(item.id);closePanel();return}
+    setSelected(item.id);setSelectedThread(null);closePanel()
+    openMap({id:item.id,groupKey,choosing})
   }
   const startGesture = (e: ReactPointerEvent, item?: Memory) => {
     if (e.button !== 0 && e.button !== 1) return
@@ -195,20 +190,20 @@ export default function App() {
       e.stopPropagation();e.preventDefault()
       const r=viewport.current!.getBoundingClientRect(),p=screenToWorld(e.clientX-r.left,e.clientY-r.top,viewRef.current)
       const hits=boardRef.current.items.filter(i=>intersectsSelection(i,{x:p.x,y:p.y,width:0,height:0})).reverse()
-      if(hits.length){const previous=overlap.current,repeat=previous&&Math.hypot(p.x-previous.x,p.y-previous.y)<5/view.scale,index=repeat?hits.findIndex(i=>i.id===previous.id):-1,target=hits[(index+1)%hits.length];overlap.current={...p,id:target.id};setSelected(target.id);setSelectedThread(null);setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);if(!target.groupId&&!target.locked)editItem(target);setToast(`已选择：${target.title.replaceAll('\n',' ')} · Alt 单击切换重叠物件`)}return
+      if(hits.length){const previous=overlap.current,repeat=previous&&Math.hypot(p.x-previous.x,p.y-previous.y)<5/view.scale,index=repeat?hits.findIndex(i=>i.id===previous.id):-1,target=hits[(index+1)%hits.length];overlap.current={...p,id:target.id};setSelected(target.id);setSelectedThread(null);closePanel();if(!target.groupId&&!target.locked)editItem(target);setToast(`已选择：${target.title.replaceAll('\n',' ')} · Alt 单击切换重叠物件`)}return
     }
     if(e.ctrlKey&&e.button===0&&tool==='select'&&!space){
       e.stopPropagation();e.preventDefault()
       const rect=viewport.current!.getBoundingClientRect(),point=screenToWorld(e.clientX-rect.left,e.clientY-rect.top,viewRef.current)
       gesture.current={type:'marquee',ids:selectedIds,pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,x:point.x,y:point.y,cameraX:view.x,cameraY:view.y,before:boardRef.current,moved:false}
-      setMarquee({x:point.x,y:point.y,width:0,height:0});setSelected(null);setSelectedThread(null);setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);setDecorationOpen(false)
+      setMarquee({x:point.x,y:point.y,width:0,height:0});setSelected(null);setSelectedThread(null);closePanel()
       viewport.current?.setPointerCapture(e.pointerId);return
     }
     if (tool === 'connect' && item && !space) {e.stopPropagation(); connectItem(item.id); return}
     e.stopPropagation(); e.preventDefault()
     const isPan = !item || space || e.button === 1
     const gestureIds=item?(selectedIds.includes(item.id)?selectedIds:expandGroups(boardRef.current.items,[item.id])):[]
-    if (!isPan && item) {if(!selectedIds.includes(item.id))setSelected(item.id); setSelectedThread(null);if(gestureIds.length>1||lockedSelection(boardRef.current.items,gestureIds)){setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null)}if(lockedSelection(boardRef.current.items,gestureIds)){setToast('物件已锁定，可在底部工具栏解锁');return}}
+    if (!isPan && item) {if(!selectedIds.includes(item.id))setSelected(item.id); setSelectedThread(null);if(gestureIds.length>1||lockedSelection(boardRef.current.items,gestureIds)){closePanel()}if(lockedSelection(boardRef.current.items,gestureIds)){setToast('物件已锁定，可在底部工具栏解锁');return}}
     else if(!space) {setSelected(null); setSelectedThread(null)}
     pointer.current={x:e.clientX,y:e.clientY}
     gesture.current = {type:isPan?'pan':'item',id:item?.id,ids:gestureIds,pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,x:isPan?view.x:item!.x,y:isPan?view.y:item!.y,cameraX:view.x,cameraY:view.y,before:structuredClone(board),moved:false}
@@ -226,7 +221,7 @@ export default function App() {
       const point=screenToWorld(e.clientX-rect.left,e.clientY-rect.top,viewRef.current),box=selectionBounds(g.x,g.y,point.x,point.y)
       setMarquee(box);setSelectedIds(expandGroups(boardRef.current.items,boardRef.current.items.filter(i=>intersectsSelection(i,box)).map(i=>i.id)));return
     }
-    g.moved=true; setDragging(true);if(g.type==='item'){setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null)}
+    g.moved=true; setDragging(true);if(g.type==='item'){closePanel()}
     if(g.type==='pan') setView(v=>({...v,x:g.x+dx,y:g.y+dy}))
     else {const v=viewRef.current,dxWorld=(dx+g.cameraX-v.x)/v.scale,dyWorld=(dy+g.cameraY-v.y)/v.scale
       const snap=!snapEnabled||e.altKey?{dx:dxWorld,dy:dyWorld,guides:[]}:snapMove(g.before.items,g.ids??[],dxWorld,dyWorld,6/v.scale)
@@ -240,12 +235,12 @@ export default function App() {
       const item=boardRef.current.items.find(i=>i.id===g.id)
       if(item){if(g.mapGroupKey)openMapEditor(item,g.mapGroupKey);else editItem(item)}
     }
-    if(g.type==='pan'&&!g.moved&&!cancel){setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);setDecorationOpen(false)}
+    if(g.type==='pan'&&!g.moved&&!cancel){closePanel()}
     gesture.current=null; setDragging(false);setGuides([])
   }
 
   const openAdd = (nextKind: Kind) => {
-    setModal(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);setRecordPanel(null);setDecorationOpen(false)
+    setModal(null);closePanel()
     if(nextKind==='race-map'){
       if(board.items.length>=500){setToast('每块收藏板最多放置 500 件藏品');return}
       const item=createMemory('race-map','我的赛事地图','paper','',''),el=viewport.current
@@ -253,29 +248,36 @@ export default function App() {
       if(el){const center=screenToWorld(el.clientWidth/2,el.clientHeight/2,viewRef.current);item.x=center.x-item.w/2;item.y=center.y-item.h/2}
       commit({...board,items:[...board.items,item]});setTool('select');setConnecting(null);openMapEditor(item);return
     }
-    if(nextKind==='medal'||nextKind==='map'||nextKind==='photo'){setModal(null);setDecorationOpen(false);setRecordPanel({mode:nextKind==='map'?'route':nextKind==='photo'?'photo':'medal'});return}
-    setKind(nextKind);setDraft({title:'',variant:resolveStyle(nextKind).id,image:samplePhotos[0],number:'0826',date:''});setMemoryPanel('add')
+    if(nextKind==='medal'||nextKind==='map'||nextKind==='photo'){setModal(null);openRecord({mode:nextKind==='map'?'route':nextKind==='photo'?'photo':'medal'});return}
+    setKind(nextKind);setDraft({title:'',variant:resolveStyle(nextKind).id,image:samplePhotos[0],number:'0826',date:''});openMemory('add')
   }
   const editItem = (item: Memory) => {
-    if(item.groupId||item.locked){setSelected(item.id);setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);return}
+    if(item.groupId||item.locked){setSelected(item.id);closePanel();return}
     if(item.kind==='race-map'){openMapEditor(item);return}
     if((item.recordId&&recordPanel?.mode==='detail'&&recordPanel.id===item.recordId)||(!item.recordId&&memoryPanel==='edit'&&memoryEditingId.current===item.id))return
-    setSelected(item.id);memoryEditingId.current=item.id;setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);setRecordPanel(null);setDecorationOpen(false)
-    if(item.exhibit){setExhibitPanel(item.id);return}
-    if(item.recordId){setRecordPanel({mode:'detail',id:item.recordId});setDecorationOpen(false);return}
-    setKind(item.kind);setDraft({title:item.title,variant:item.variant||'',image:item.image||samplePhotos[0],number:item.number||'0826',date:(item.subtitle||'').replaceAll('.','-')});setMemoryPanel('edit')
+    setSelected(item.id);memoryEditingId.current=item.id;closePanel()
+    if(item.exhibit){openExhibit(item.id);return}
+    if(item.recordId){openRecord({mode:'detail',id:item.recordId});return}
+    setKind(item.kind);setDraft({title:item.title,variant:item.variant||'',image:item.image||samplePhotos[0],number:item.number||'0826',date:(item.subtitle||'').replaceAll('.','-')});openMemory('edit')
   }
-  const arrangePhotoLine=()=>{if(lockedSelection(boardRef.current.items,selectedIds))return;try{const next=hangPhotos(boardRef.current,selectedIds);if(next===boardRef.current)return;commit(next);setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);setDecorationOpen(false);fit();setToast('照片已挂成绳串，可拖动照片继续调整')}catch(e){setToast(e instanceof Error?e.message:'照片绳创建失败')}}
+  const arrangePhotoLine=()=>{if(lockedSelection(boardRef.current.items,selectedIds))return;try{const next=hangPhotos(boardRef.current,selectedIds);if(next===boardRef.current)return;commit(next);closePanel();fit();setToast('照片已挂成绳串，可拖动照片继续调整')}catch(e){setToast(e instanceof Error?e.message:'照片绳创建失败')}}
   const mergeSelection=(layout:ExhibitLayout)=>{
     try{
       const result=mergeMedals(boardRef.current,selectedIds,layout)
-      commit(result.board);setSelectedIds([result.item.id]);setSelectedThread(null);setConnecting(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);setRecordPanel(null);setDecorationOpen(false);setExhibitPanel(result.item.id)
+      commit(result.board);setSelectedIds([result.item.id]);setSelectedThread(null);setConnecting(null);openExhibit(result.item.id)
       setToast(`已将 ${result.item.exhibit!.medals.length} 块奖牌合并为展览框`)
     }catch(e){setToast(e instanceof Error?e.message:'无法合并奖牌')}
   }
   const splitSelection=()=>{
     if(!selected)return
-    try{const result=splitMedals(boardRef.current,selected);commit(result.board);setSelectedIds(result.items.map(i=>i.id));setConnecting(null);setExhibitPanel(null);setToast('展览框已拆分，奖牌和红线关联已保留')}catch(e){setToast(e instanceof Error?e.message:'无法拆分展览框')}
+    try{const result=splitMedals(boardRef.current,selected);commit(result.board);setSelectedIds(result.items.map(i=>i.id));setConnecting(null);closePanel();setToast('展览框已拆分，奖牌和红线关联已保留')}catch(e){setToast(e instanceof Error?e.message:'无法拆分展览框')}
+  }
+  const openExhibitSlot=(item:Memory,slot:number)=>{
+    try{
+      availableExhibitSlot(boardRef.current,item.id,slot)
+      setSelected(item.id);setSelectedThread(null);setTool('select');setConnecting(null);closePanel()
+      openRecord({mode:'exhibit-add',exhibitId:item.id,exhibitSlot:slot})
+    }catch(e){setToast(e instanceof Error?e.message:'无法添加奖牌')}
   }
   const changeLayer = (action:LayerAction) => {
     if(lockedSelection(boardRef.current.items,selectedIds))return
@@ -283,11 +285,18 @@ export default function App() {
     if(items.some((item,i)=>item!==current.items[i]))commit({...current,items})
   }
   const arrangeSelection=(action:LayoutAction)=>{const current=boardRef.current,items=arrangeItems(current.items,selectedIds,action);if(items.some((i,n)=>i!==current.items[n]))commit({...current,items})}
-  const groupSelection=(ungroup:boolean)=>{const current=boardRef.current;if(lockedSelection(current.items,selectedIds))return;const groupId=ungroup?undefined:crypto.randomUUID();commit({...current,items:current.items.map(i=>selectedIds.includes(i.id)?{...i,groupId}:i)});setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null)}
-  const lockSelection=()=>{const current=boardRef.current,locked=!lockedSelection(current.items,selectedIds);commit({...current,items:current.items.map(i=>selectedIds.includes(i.id)?{...i,locked}:i)});setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null)}
+  const groupSelection=(ungroup:boolean)=>{const current=boardRef.current;if(lockedSelection(current.items,selectedIds))return;const groupId=ungroup?undefined:crypto.randomUUID();commit({...current,items:current.items.map(i=>selectedIds.includes(i.id)?{...i,groupId}:i)});closePanel()}
+  const lockSelection=()=>{const current=boardRef.current,locked=!lockedSelection(current.items,selectedIds);commit({...current,items:current.items.map(i=>selectedIds.includes(i.id)?{...i,locked}:i)});closePanel()}
   const layoutControls=<LayoutMenu key={'layout:'+selectedIds.join(',')} items={board.items} ids={selectedIds} onArrange={arrangeSelection} onGroup={groupSelection} onLock={lockSelection}/>
   const addRecord = async (record: CollectionRecord,layout?:Partial<Memory>) => {
     const current=boardRef.current
+    if(recordPanel?.exhibitId&&recordPanel.exhibitSlot!==undefined){
+      if(record.kind!=='medal')throw new Error('展览框只能添加奖牌')
+      const medal={...createMemory('medal',record.name,record.variant||'bronze','',''),...layout,recordId:record.id}
+      commit(addMedalToExhibit(current,recordPanel.exhibitId,recordPanel.exhibitSlot,medal))
+      setSelected(recordPanel.exhibitId);setSelectedThread(null);setTool('select');setConnecting(null);setToast(`奖牌已放入空位 ${recordPanel.exhibitSlot+1}`)
+      return
+    }
     if(current.items.length>=500){setToast('每块收藏板最多放置 500 件藏品');return}
     const item=createMemory(record.kind==='medal'?'medal':record.kind==='photo'?'photo':record.kind==='bib'?'bib':'map',record.name,record.kind==='medal'?(record.variant||'bronze'):'blue','','')
     item.recordId=record.id
@@ -298,6 +307,7 @@ export default function App() {
     commit({...current,items:[...current.items,item]});setSelected(item.id);setSelectedThread(null);setTool('select');setConnecting(null);setToast('收藏已放上画布')
   }
   const saveRecord = async (record:CollectionRecord,add:boolean,layout?:Partial<Memory>) => {
+    if(add&&recordPanel?.exhibitId&&recordPanel.exhibitSlot!==undefined)availableExhibitSlot(boardRef.current,recordPanel.exhibitId,recordPanel.exhibitSlot)
     await library.save([record])
     if(add)await addRecord(record,layout)
     else if(record.kind==='bib'){
@@ -320,7 +330,7 @@ export default function App() {
       await library.save(photos.map(photo=>photo.record))
       commit({...boardRef.current,items:[...boardRef.current.items,...items]})
       setSelectedIds(items.map(item=>item.id));setSelectedThread(null);setConnecting(null);setTool('select')
-      setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);setDecorationOpen(false)
+      closePanel()
       if(el)setView(fitCamera(contentBounds(items,60),el.clientWidth,el.clientHeight))
       setToast(`已导入 ${items.length} 张照片，可批量移动或逐张调整取景`)
     }finally{fileOperation.current=false;setExporting(false)}
@@ -343,19 +353,21 @@ export default function App() {
     const title=draft.title.trim() || {photo:'山野，留下了答案',medal:'RIDGE 50K',bib:'RIDGE 50K',note:'记住这一刻',map:'走过的每一段路','race-map':'我的赛事地图'}[kind]
     if(memoryPanel==='edit') {
       const current=boardRef.current
-      if(!current.items.some(i=>i.id===memoryEditingId.current)){setToast('该藏品已被移除');setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);return}
+      if(!current.items.some(i=>i.id===memoryEditingId.current)){setToast('该藏品已被移除');closePanel();return}
       commit({...current,items:current.items.map(i=>i.id===memoryEditingId.current?{...i,title,variant:draft.variant,image:i.kind==='photo'?draft.image:i.image,number:draft.number,subtitle:i.kind==='photo'?draft.date:i.subtitle}:i)})
       setToast('藏品已保存')
     }
     else {const item=createMemory(kind,title,draft.variant,draft.image,draft.number);if(kind==='photo')item.subtitle=draft.date;const el=viewport.current;if(el){const center=screenToWorld(el.clientWidth/2,el.clientHeight/2,view);item.x=center.x-item.w/2;item.y=center.y-item.h/2}commit({...board,items:[...board.items,item]});setSelected(item.id);setToast('新的记忆，已放上收藏板')}
-    setTool('select');setConnecting(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null)
+    setTool('select');setConnecting(null);closePanel()
   }
   const transformItem = (change: Partial<Memory>) => { if(selected&&!selectedItem?.locked) commit({...board,items:board.items.map(i=>i.id===selected?{...i,...change}:i)}) }
   const editingExhibit=recordPanel?.mode==='detail'&&selectedItem&&selectedItem.id===recordPanel.exhibitId&&!selectedItem.locked&&!selectedItem.groupId?selectedItem:undefined
   const editingExhibitMedal=editingExhibit?exhibitCells(editingExhibit).find(m=>m.id===recordPanel?.medalId&&m.recordId===recordPanel.id):undefined
+  const addingExhibitMedal=!!recordPanel?.exhibitId&&recordPanel.exhibitSlot!==undefined
   const returnToExhibit=()=>{
-    setRecordPanel(null)
-    if(editingExhibit?.exhibit)setExhibitPanel(editingExhibit.id)
+    closePanel()
+    const item=boardRef.current.items.find(i=>i.id===recordPanel?.exhibitId)
+    if(item?.exhibit&&!item.locked&&!item.groupId){setSelected(item.id);openExhibit(item.id)}
   }
   const transformExhibitMedal=(change:Partial<Memory>)=>{
     if(!editingExhibitMedal||!editingExhibit||change.medalScale===undefined||!Number.isFinite(change.medalScale))return
@@ -385,7 +397,7 @@ export default function App() {
     try{
       if(file.size>80*1024*1024)throw new Error('备份文件不能超过 80 MB')
       const data=await readBackup(file);await library.save(data.records)
-      commit(data.board);setSelected(null);setSelectedThread(null);setConnecting(null);setRecordPanel(null);setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);setModal(null);fit();setToast('收藏板及关联文件已导入')
+      commit(data.board);setSelected(null);setSelectedThread(null);setConnecting(null);closePanel();setModal(null);fit();setToast('收藏板及关联文件已导入')
     }catch(e){setToast(e instanceof Error?e.message:'无法导入，请选择有效的收藏板文件')}
     finally{fileOperation.current=false;setExporting(false);if(inputFile.current)inputFile.current.value=''}
   }
@@ -395,19 +407,19 @@ export default function App() {
 
   const itemStyles=selectedItem?<DecorationPanel embedded board={board} item={selectedItem} scope="selection" onClose={()=>{}} onCurvature={()=>{}} onPinToggle={enabled=>commit(setTapePin(boardRef.current,selectedItem.id,enabled))} onChange={change=>commit(changeDecoration(boardRef.current,change,selectedItem.id))}/>:null
   return <div className="app-shell">
-    {selectedItem?.exhibit&&exhibitPanel===selectedItem.id&&!selectedItem.locked&&!selectedItem.groupId&&<MedalExhibitEditor item={selectedItem} records={library.records} onChange={transformItem} onClose={()=>setExhibitPanel(null)} onSplit={splitSelection} onEdit={medal=>{setExhibitPanel(null);setRecordPanel({mode:'detail',id:medal.recordId,exhibitId:selectedItem.id,medalId:medal.id})}}/>}
+    {selectedItem?.exhibit&&exhibitPanel===selectedItem.id&&!selectedItem.locked&&!selectedItem.groupId&&<MedalExhibitEditor item={selectedItem} records={library.records} onAdd={slot=>openExhibitSlot(selectedItem,slot)} onChange={transformItem} onClose={()=>closePanel()} onSplit={splitSelection} onEdit={medal=>{openRecord({mode:'detail',id:medal.recordId,exhibitId:selectedItem.id,medalId:medal.id})}}/>}
     {(!library.ready||exporting)&&<div className="records-loading" role="status"><div><h2>{exporting?'正在处理收藏板文件…':library.error?'收藏库暂不可用':'正在载入你的收藏…'}</h2>{library.error&&<><p>{library.error}</p><button className="primary-button" onClick={library.retry}>重试</button></>}</div></div>}
     {saveError&&<div className="save-failure-banner" role="alert">{saveError}。当前修改仍在此页面中，请勿刷新。{boardSave.error&&<button onClick={boardSave.retry}>重试画布保存</button>}<button onClick={()=>setModal('share')}>导出已提交内容</button></div>}
-    {library.ready&&recordPanel&&<RecordPanel exhibitMedal={!!editingExhibitMedal} onBack={editingExhibitMedal?returnToExhibit:undefined} onImportPhotos={importPhotos} onBibTemplate={()=>openAdd('bib')} styles={recordPanel.mode==='detail'&&selectedItem?.recordId===recordPanel.id?itemStyles:undefined} item={editingExhibitMedal??(recordPanel.mode==='detail'&&selectedItem&&selectedItem.recordId===recordPanel.id?selectedItem:undefined)} onLayout={editingExhibitMedal?transformExhibitMedal:transformItem} mode={recordPanel} records={library.records} references={id=>boardMembers(board.items).filter(i=>i.recordId===id).length} threadReferences={id=>recordThreadReferences(board,id)} onMode={setRecordPanel} onClose={()=>setRecordPanel(null)} onSave={saveRecord} onDelete={deleteRecord} onAdd={record=>{void addRecord(record).catch(()=>setToast('照片读取失败，请重新上传'))}}/>}
-    {memoryPanel&&<MemoryEditor onBibUpload={()=>{setMemoryPanel(null);setRecordPanel({mode:'bib'})}} memoryPanel={memoryPanel} kind={kind} selectedItem={selectedItem} draft={draft} setDraft={setDraft} transformItem={transformItem} itemStyles={itemStyles} submitMemory={submitMemory} onClose={()=>{setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null)}}/>}
-    {mapItem&&mapPanel&&<RaceMapEditor key={mapItem.id} item={mapItem} board={board} records={library.records} groups={mapGroups} groupKey={mapPanel.groupKey} choosing={!!mapPanel.choosing&&tool==='connect'} hiddenThreads={hiddenMapThreads} onClose={()=>{setMapPanel(null);setExhibitPanel(null)}} onSelectGroup={groupKey=>setMapPanel({...mapPanel,groupKey,choosing:false})} onConnect={raceId=>connectEndpoint({itemId:mapItem.id,raceId})} onRemoveThread={id=>commit({...board,threads:board.threads.filter(t=>t.id!==id)})} onSave={change=>commit({...board,items:board.items.map(i=>i.id===mapItem.id?{...i,...change,x:i.x+(i.w-(change.w??i.w))/2,y:i.y+(i.h-(change.h??i.h))/2}:i)})} onRace={id=>{
-      setMapPanel(null);setExhibitPanel(null)
+    {library.ready&&recordPanel&&<RecordPanel exhibitMedal={!!editingExhibitMedal||addingExhibitMedal} onBack={addingExhibitMedal?(recordPanel.mode==='medal'?()=>openRecord({...recordPanel,mode:'exhibit-add'}):returnToExhibit):editingExhibitMedal?returnToExhibit:undefined} onImportPhotos={importPhotos} onBibTemplate={()=>openAdd('bib')} styles={recordPanel.mode==='detail'&&selectedItem?.recordId===recordPanel.id?itemStyles:undefined} item={editingExhibitMedal??(recordPanel.mode==='detail'&&selectedItem&&selectedItem.recordId===recordPanel.id?selectedItem:undefined)} onLayout={editingExhibitMedal?transformExhibitMedal:transformItem} mode={recordPanel} records={library.records} references={id=>boardMembers(board.items).filter(i=>i.recordId===id).length} threadReferences={id=>recordThreadReferences(board,id)} onMode={openRecord} onClose={addingExhibitMedal?returnToExhibit:()=>closePanel()} onSave={saveRecord} onDelete={deleteRecord} onAdd={addingExhibitMedal?record=>addRecord(record):record=>{void addRecord(record).catch(()=>setToast('照片读取失败，请重新上传'))}}/>}
+    {memoryPanel&&<MemoryEditor onBibUpload={()=>{openRecord({mode:'bib'})}} memoryPanel={memoryPanel} kind={kind} selectedItem={selectedItem} draft={draft} setDraft={setDraft} transformItem={transformItem} itemStyles={itemStyles} submitMemory={submitMemory} onClose={()=>{closePanel()}}/>}
+    {mapItem&&mapPanel&&<RaceMapEditor key={mapItem.id} item={mapItem} board={board} records={library.records} groups={mapGroups} groupKey={mapPanel.groupKey} choosing={!!mapPanel.choosing&&tool==='connect'} hiddenThreads={hiddenMapThreads} onClose={()=>{closePanel()}} onSelectGroup={groupKey=>openMap({...mapPanel,groupKey,choosing:false})} onConnect={raceId=>connectEndpoint({itemId:mapItem.id,raceId})} onRemoveThread={id=>commit({...board,threads:board.threads.filter(t=>t.id!==id)})} onSave={change=>commit({...board,items:board.items.map(i=>i.id===mapItem.id?{...i,...change,x:i.x+(i.w-(change.w??i.w))/2,y:i.y+(i.h-(change.h??i.h))/2}:i)})} onRace={id=>{
+      closePanel()
       const member=boardMembers(board.items).find(i=>i.recordId===id),item=member?ownerOf(board.items,member.id):undefined
-      if(item){const el=viewport.current;if(el)setView(v=>({...v,x:el.clientWidth/2-(item.x+item.w/2)*v.scale,y:el.clientHeight/2-(item.y+item.h/2)*v.scale}));editItem(item)}else{setSelected(null);setRecordPanel({mode:'detail',id})}
+      if(item){const el=viewport.current;if(el)setView(v=>({...v,x:el.clientWidth/2-(item.x+item.w/2)*v.scale,y:el.clientHeight/2-(item.y+item.h/2)*v.scale}));editItem(item)}else{setSelected(null);openRecord({mode:'detail',id})}
     }}/>}
-    <Topbar board={board} saved={saved} saveError={saveError} saveFailed={!!boardSave.error} onRetry={boardSave.retry} onRename={title=>commit({...board,title})} onLibrary={()=>{setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);setRecordPanel({mode:'library'});setDecorationOpen(false)}} onShare={()=>setModal('share')} onHelp={()=>setModal('help')}/>
-    <button className={`decoration-toggle ${decorationOpen?'active':''}`} aria-label="装饰样式" aria-expanded={decorationOpen} onClick={()=>{setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);setRecordPanel(null);setDecorationOpen(!decorationOpen);setDecorationScope('board')}}><Palette size={18}/><span>装饰样式</span></button>
-    {decorationOpen && <DecorationPanel onBackground={id=>{if(resolveBackground(boardRef.current.backgroundStyle).id!==id)commit({...boardRef.current,backgroundStyle:id})}} onCurvature={curvature=>{const current=boardRef.current;commit({...current,threads:current.threads.map(t=>t.id===selectedThread?{...t,curvature}:t)})}} board={board} thread={board.threads.find(t=>t.id===selectedThread)} scope={decorationScope} onClose={()=>setDecorationOpen(false)} onPinToggle={enabled=>{if(selected)commit(setTapePin(board,selected,enabled))}} onChange={change=>{
+    <Topbar board={board} saved={saved} saveError={saveError} saveFailed={!!boardSave.error} onRetry={boardSave.retry} onRename={title=>commit({...board,title})} onLibrary={()=>{openRecord({mode:'library'})}} onShare={()=>setModal('share')} onHelp={()=>setModal('help')}/>
+    <button className={`decoration-toggle ${decorationOpen?'active':''}`} aria-label="装饰样式" aria-expanded={decorationOpen} onClick={()=>{closePanel();decorationOpen?closePanel():openDecoration('board')}}><Palette size={18}/><span>装饰样式</span></button>
+    {decorationOpen && <DecorationPanel onBackground={id=>{if(resolveBackground(boardRef.current.backgroundStyle).id!==id)commit({...boardRef.current,backgroundStyle:id})}} onCurvature={curvature=>{const current=boardRef.current;commit({...current,threads:current.threads.map(t=>t.id===selectedThread?{...t,curvature}:t)})}} board={board} thread={board.threads.find(t=>t.id===selectedThread)} scope={decorationScope} onClose={()=>closePanel()} onPinToggle={enabled=>{if(selected)commit(setTapePin(board,selected,enabled))}} onChange={change=>{
       const target = decorationScope==='selection' ? (change.kind==='thread'?selectedThread:selected) : undefined
       if(decorationScope==='selection' && !target) return
       commit(changeDecoration(board,change,target??undefined))
@@ -446,7 +458,7 @@ export default function App() {
     <div className="history-controls" data-history={historyTick}><button title="撤销 · Ctrl+Z" aria-label="撤销" disabled={!history.canUndo || dragging} onClick={undo}><Undo2 size={17}/></button><span/><button title="重做 · Ctrl+Shift+Z" aria-label="重做" disabled={!history.canRedo || dragging} onClick={redo}><Redo2 size={17}/></button></div>
     {tool==='connect' && <div className="connection-hint"><span className="red-dot"/>{connecting?'选择下一件藏品，串联这段记忆 · 双击结束':'点击藏品或连接点，开始连接记忆 · 双击结束'}<button onClick={()=>{setTool('select');setConnecting(null)}} aria-label="结束连线"><X size={16}/></button></div>}
     {!layerTarget.mode&&selectedIds.length>1&&tool==='select'&&<SelectionToolbar>{selectedMedals.length===selectedIds.length&&<MedalMergeMenu count={selectedMedals.length} disabled={selectedMedals.length>8||lockedSelection(board.items,selectedIds)} onMerge={mergeSelection}/>} {layoutControls}<LayerMenu key={selectedIds.join(',')} items={board.items} ids={selectedIds} onChange={changeLayer} onTarget={layerTarget.begin}/><button className="photo-line-action" onClick={arrangePhotoLine} disabled={selectedPhotos.length<2||lockedSelection(board.items,selectedIds)} aria-label="挂成照片绳"><Spline size={17}/><span>挂成照片绳</span></button><button disabled={lockedSelection(board.items,selectedIds)} className="delete-button" onClick={removeSelected} aria-label="删除选中藏品" data-tooltip="删除 · Delete"><Trash2 size={17}/></button><button onClick={()=>setSelected(null)} aria-label="取消批量选择"><X size={16}/></button></SelectionToolbar>}
-    {!layerTarget.mode&&(selectedItem || selectedThread) && tool==='select' && <SelectionToolbar>{selectedItem ? <><span className="selection-label">{selectedItem.exhibit?'奖牌展览框':selectedItem.kind==='photo'?'照片':selectedItem.kind==='medal'?'奖牌':selectedItem.kind==='bib'?'号码布':selectedItem.kind==='note'?'便签':selectedItem.kind==='race-map'?'赛事地图':'路线卡'}</span>{selectedItem.exhibit&&<MedalSplitButton disabled={!!selectedItem.locked||!!selectedItem.groupId} onSplit={splitSelection}/>} {layoutControls}<LayerMenu key={selectedItem.id} items={board.items} ids={selectedIds} onChange={changeLayer} onTarget={layerTarget.begin}/><span className="bar-divider"/><button disabled={!!selectedItem.locked} onClick={()=>transformItem({rotation:selectedItem.rotation-5})} aria-label="向左旋转"><RotateCcw size={17}/></button><button disabled={!!selectedItem.locked} onClick={()=>transformItem({rotation:selectedItem.rotation+5})} aria-label="向右旋转"><RotateCw size={17}/></button></> : <span className="selection-label">记忆连线</span>}{!selectedItem&&<button onClick={()=>{setMemoryPanel(null);setMapPanel(null);setExhibitPanel(null);setRecordPanel(null);setDecorationScope('selection');setDecorationOpen(true)}} aria-label="更换连线样式"><Palette size={17}/></button>}<button disabled={lockedSelection(board.items,selectedIds)} className="delete-button" onClick={removeSelected} aria-label="删除选中项" data-tooltip="删除 · Delete"><Trash2 size={17}/></button><button onClick={()=>{setSelected(null);setSelectedThread(null)}} aria-label="取消选择"><X size={16}/></button></SelectionToolbar>}
+    {!layerTarget.mode&&(selectedItem || selectedThread) && tool==='select' && <SelectionToolbar>{selectedItem ? <><span className="selection-label">{selectedItem.exhibit?'奖牌展览框':selectedItem.kind==='photo'?'照片':selectedItem.kind==='medal'?'奖牌':selectedItem.kind==='bib'?'号码布':selectedItem.kind==='note'?'便签':selectedItem.kind==='race-map'?'赛事地图':'路线卡'}</span>{selectedItem.exhibit&&<MedalSplitButton disabled={!!selectedItem.locked||!!selectedItem.groupId} onSplit={splitSelection}/>} {layoutControls}<LayerMenu key={selectedItem.id} items={board.items} ids={selectedIds} onChange={changeLayer} onTarget={layerTarget.begin}/><span className="bar-divider"/><button disabled={!!selectedItem.locked} onClick={()=>transformItem({rotation:selectedItem.rotation-5})} aria-label="向左旋转"><RotateCcw size={17}/></button><button disabled={!!selectedItem.locked} onClick={()=>transformItem({rotation:selectedItem.rotation+5})} aria-label="向右旋转"><RotateCw size={17}/></button></> : <span className="selection-label">记忆连线</span>}{!selectedItem&&<button onClick={()=>{openDecoration('selection')}} aria-label="更换连线样式"><Palette size={17}/></button>}<button disabled={lockedSelection(board.items,selectedIds)} className="delete-button" onClick={removeSelected} aria-label="删除选中项" data-tooltip="删除 · Delete"><Trash2 size={17}/></button><button onClick={()=>{setSelected(null);setSelectedThread(null)}} aria-label="取消选择"><X size={16}/></button></SelectionToolbar>}
     <div className="bottom-hint"><Move size={13}/><span>无限画布 · 拖动藏品<span className="hint-dot">·</span>滚轮缩放<span className="hint-dot">·</span>空格平移</span><button onClick={()=>setModal('help')} aria-label="快捷键与帮助"><Keyboard size={15}/></button></div>
     <div className="board-signature" style={{color:resolveBackground(board.backgroundStyle).ink}}>每一步，都算数。<span>EVERY TRAIL TELLS A STORY</span></div>
     <div className="zoom-controls"><button aria-label="放大" onClick={()=>zoom(1.2)}><Plus size={21}/></button><button aria-label="缩小" onClick={()=>zoom(1/1.2)}><Minus size={21}/></button><span/><button aria-label="适应画布" title="适应画布 · 0" onClick={fit}><Maximize size={18}/></button><button className="zoom-value" title="恢复 100%" onClick={()=>{const el=viewport.current;if(el)zoomAt(1,el.clientWidth/2,el.clientHeight/2)}}>{Math.round(view.scale*100)}%</button></div>

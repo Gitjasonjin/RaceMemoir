@@ -3,7 +3,7 @@ import type {BibErasure} from './bibErasure'
 import {useEffect,useRef,useState} from 'react'
 import {ArrowLeft,Check,ImagePlus,X} from 'lucide-react'
 import type {BibRecord} from '../../domain/records'
-import {IMAGE_TYPES} from '../../domain/records'
+import {readImageSize} from '../../shared/readImageSize'
 import type {RecordPanelProps} from '../../library/types'
 import {useBlobUrl} from '../../shared/useBlobUrl'
 import {bibLayout,fullQuad} from './bibGeometry'
@@ -25,9 +25,8 @@ export default function BibEditor(props:RecordPanelProps&{record?:BibRecord}){
   finally{if(mounted.current&&pending.current===controller)setBusy(false)}
  }
  const upload=(file?:File)=>{if(!file)return;void run(async signal=>{
-  if(!IMAGE_TYPES.includes(file.type)||!file.size||file.size>20*1024*1024)throw new Error('请选择不超过 20 MB 的 PNG、JPG 或 WebP 图片')
-  const image=await createImageBitmap(file),w=image.width,h=image.height;image.close();signal.throwIfAborted()
-  if(w<16||h<16||w*h>25_000_000||w/h>10||h/w>10)throw new Error('图片需在 2500 万像素以内，长宽比不超过 10:1')
+  const {width:w,height:h}=await readImageSize(file);signal.throwIfAborted()
+  if(w<16||h<16||w/h>10||h/w>10)throw new Error('图片需在 2500 万像素以内，长宽比不超过 10:1')
   patch({image:file,originalImage:file,width:w,height:h,originalWidth:w,originalHeight:h,quad:undefined,processing:undefined,erasures:undefined,...(!draft.name?{name:file.name.replace(/\.[^.]+$/,'').slice(0,200)}:{})});setAdjusting(false)
  })}
  const apply=(quad:Quad,mode:'crop'|'perspective')=>void run(async signal=>{const result=await processBibImage(draft.originalImage,quad,signal,draft.erasures);if(result.width/result.height>10||result.height/result.width>10)throw new Error('选区长宽比不能超过 10:1');patch({...result,quad,processing:mode});setAdjusting(false)})
@@ -53,7 +52,6 @@ export default function BibEditor(props:RecordPanelProps&{record?:BibRecord}){
    <label className="record-upload">{busy?'正在处理图片…':'选择 / 更换号码布图片'}<input type="file" accept="image/png,image/jpeg,image/webp" disabled={busy||saving||adjusting||erasing} onChange={e=>{upload(e.target.files?.[0]);e.currentTarget.value=''}}/></label>
    {!!draft.image.size&&!adjusting&&!erasing&&<div className="record-actions"><button type="button" disabled={busy||saving} onClick={()=>setAdjusting(true)}>裁切 / 四角校正</button><button type="button" disabled={busy||saving} onClick={()=>setErasing(true)}>姓名抹除</button><button type="button" disabled={busy||saving||(!draft.quad&&!draft.erasures?.length)} onClick={()=>patch({image:draft.originalImage,width:draft.originalWidth,height:draft.originalHeight,quad:undefined,processing:undefined,erasures:undefined})}>恢复原图</button></div>}
    <label className="field-label">赛事名称<input maxLength={200} value={draft.name} disabled={busy||saving} onChange={e=>patch({name:e.target.value})} placeholder="可选，用于收藏库展示"/></label>
-   <label className="field-label">参赛号码<input maxLength={30} value={draft.number||''} disabled={busy||saving} onChange={e=>patch({number:e.target.value})} placeholder="可选，不修改图片上的文字"/></label>
    {(!record||props.item?.kind==='bib')&&<label className="field-label">展示尺寸 · {Math.round(layout.w)} × {Math.round(layout.h)}<input type="range" aria-label="号码布展示尺寸" min="120" max="700" step="10" value={width} disabled={busy||saving} onChange={e=>setWidth(Number(e.target.value))}/></label>}
    {error&&<p className="record-error" role="alert">{error}</p>}
    {props.styles}

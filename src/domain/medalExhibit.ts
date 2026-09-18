@@ -6,8 +6,24 @@ export const EXHIBIT_LAYOUTS=[
   {id:'2x4',label:'2 × 4',rows:2,columns:4},
 ] as const
 export type ExhibitLayout=typeof EXHIBIT_LAYOUTS[number]['id']
-export interface MedalExhibit {layout:ExhibitLayout;medals:Memory[]}
+export interface MedalExhibit {layout:ExhibitLayout;medals:Memory[];slots?:number[]}
 export function exhibitLayout(id?:string){return EXHIBIT_LAYOUTS.find(l=>l.id===id)??EXHIBIT_LAYOUTS[0]}
+export function exhibitSlots(exhibit:MedalExhibit){return exhibit.slots??exhibit.medals.map((_,index)=>index)}
+export function availableExhibitSlot(board:Board,id:string,slot:number){
+  const item=board.items.find(i=>i.id===id)
+  if(!item?.exhibit)throw new Error('该展览框已不存在，请重新选择')
+  if(item.locked||item.groupId)throw new Error('请先解锁或取消展览框的组合')
+  const {rows,columns}=exhibitLayout(item.exhibit.layout)
+  if(!Number.isInteger(slot)||slot<0||slot>=rows*columns||exhibitSlots(item.exhibit).includes(slot))throw new Error('该位置已被占用或布局已变化，请重新选择空位')
+  return item
+}
+export function addMedalToExhibit(board:Board,id:string,slot:number,medal:Memory):Board{
+  const item=availableExhibitSlot(board,id,slot),exhibit=item.exhibit!
+  if(medal.kind!=='medal'||medal.exhibit||medal.groupId||medal.locked||boardMembers(board.items).some(m=>m.id===medal.id))throw new Error('请选择可添加的奖牌')
+  const entries=exhibit.medals.map((m,index)=>({medal:m,slot:exhibitSlots(exhibit)[index]}))
+  entries.push({medal,slot});entries.sort((a,b)=>a.slot-b.slot)
+  return {...board,items:board.items.map(i=>i.id===id?{...i,exhibit:{...exhibit,medals:entries.map(e=>e.medal),slots:entries.map(e=>e.slot)}}:i)}
+}
 export function exhibitSize(layout:ExhibitLayout){
   const {rows,columns}=exhibitLayout(layout)
   return {w:columns*220+44,h:rows*300+44}
@@ -16,7 +32,8 @@ export function exhibitSize(layout:ExhibitLayout){
 export function exhibitCells(item:Memory){
   if(!item.exhibit)return []
   const {rows,columns}=exhibitLayout(item.exhibit.layout),w=(item.w-44)/columns,h=(item.h-44)/rows
-  return item.exhibit.medals.map((medal,index)=>({...medal,x:22+(index%columns)*w,y:22+Math.floor(index/columns)*h,w,h,rotation:0}))
+  const slots=exhibitSlots(item.exhibit)
+  return item.exhibit.medals.map((medal,index)=>({...medal,x:22+(slots[index]%columns)*w,y:22+Math.floor(slots[index]/columns)*h,w,h,rotation:0}))
 }
 export function exhibitWorldMedals(item:Memory){
   const angle=item.rotation*Math.PI/180

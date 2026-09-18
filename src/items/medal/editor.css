@@ -1,1 +1,23 @@
 .medal-sizing{padding:12px 0;border-top:1px solid #d7dccb}.medal-sizing h3{font-size:14px;margin:8px 0}.medal-sizing input[type=range]{width:100%;accent-color:#71845d;padding:0}.medal-layout-preview{height:320px;display:flex;justify-content:center;align-items:center;overflow:hidden;background:#e8e9df;border-radius:8px;margin-top:14px}.medal-layout-preview>div{position:relative;flex-shrink:0}.real-medal{transform-origin:center}
+
+/* Follow the medal's display bounds and scale without changing its layout. */
+.medal-layout-preview .real-medal,
+.medal-layout-preview .medal-art{
+  outline:2px dashed #8fd5d0;
+  outline-offset:-2px;
+}
+
+.medal-crop-editor h3{font-size:14px;margin:12px 0}
+.medal-crop-workspace{padding:14px;display:flex;justify-content:center;overflow:hidden;border-radius:8px}
+.medal-crop-area{position:relative;max-width:100%;touch-action:none;user-select:none}
+.medal-crop-area>img{display:block;width:100%;height:100%;pointer-events:none}
+.medal-crop-selection{position:absolute;outline:2px dashed #8fd5d0;outline-offset:-2px;box-shadow:0 0 0 1000px #0007}
+.medal-crop-move{position:absolute;inset:0;width:100%;height:100%;cursor:move;touch-action:none}
+.medal-crop-handle{position:absolute;width:20px;height:20px!important;padding:0!important;border:2px solid #285e5a!important;border-radius:50%;background:#bceee9!important;touch-action:none}
+.medal-crop-nw{left:-10px;top:-10px;cursor:nwse-resize}
+.medal-crop-ne{right:-10px;top:-10px;cursor:nesw-resize}
+.medal-crop-sw{left:-10px;bottom:-10px;cursor:nesw-resize}
+.medal-crop-se{right:-10px;bottom:-10px;cursor:nwse-resize}
+.medal-crop-move:focus-visible,.medal-crop-handle:focus-visible{outline:3px solid #e4b744;outline-offset:2px}
+.medal-crop-result{position:relative;max-width:100%;overflow:hidden;margin:auto}
+.medal-crop-result>img{position:absolute;max-width:none;pointer-events:none}
