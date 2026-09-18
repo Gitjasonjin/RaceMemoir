@@ -33,12 +33,14 @@ test('native two-finger pinch and pan cancel item movement without creating edit
   await expect.poll(async()=>(await camera(page)).y).toBeCloseTo(pinched.y+40,1)
 })
 
-test('single touch drags and undoes, tap opens bottom sheet and long press enables multi-select',async({page},info)=>{
+test('single touch selects without editing, explicit edit opens bottom sheet and long press enables multi-select',async({page},info)=>{
   const cdp=await setup(page),item=page.locator('[data-board-item=n1]'),before=(await board(page)).items[0],box=(await item.boundingBox())!
   await drag(cdp,box.x+box.width/2,box.y+box.height/2,30,24)
   await expect.poll(async()=>(await board(page)).items[0].x).not.toBe(before.x)
   await button(page,'撤销').tap();await expect.poll(async()=>(await board(page)).items[0].x).toBe(before.x)
-  await item.tap();await expect(page.locator('.record-panel')).toBeVisible()
+  await item.tap();await expect(page.locator('.record-panel')).toHaveCount(0)
+  await expect(item).toHaveAttribute('aria-pressed','true')
+  await button(page,'编辑物件').tap();await expect(page.locator('.record-panel')).toBeVisible()
   const panel=(await page.locator('.record-panel').boundingBox())!
   expect(panel.x).toBe(0);expect(panel.width).toBe(390);expect(panel.y).toBeGreaterThan(150)
   expect(await page.locator('textarea').evaluate(el=>document.activeElement===el)).toBe(false)
@@ -62,6 +64,32 @@ test('single touch drags and undoes, tap opens bottom sheet and long press enabl
   await button(page,'调整物件层级').tap()
   await page.screenshot({path:info.outputPath('mobile-board.png')})
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0)
+})
+
+test('touch drag responds to a small initial movement and cancelling keeps undo clean',async({page})=>{
+  const cdp=await setup(page),item=page.locator('[data-board-item=n1]'),before=(await item.boundingBox())!
+  const x=before.x+before.width/2,y=before.y+before.height/2
+  await send(cdp,'touchStart',[{id:1,x,y}]);await send(cdp,'touchMove',[{id:1,x:x+4,y}])
+  await expect.poll(async()=>(await item.boundingBox())!.x-before.x).toBeCloseTo(4,0)
+  await expect(item.locator('.memory-artwork')).toHaveCSS('filter','none')
+  await send(cdp,'touchCancel',[])
+  await expect.poll(async()=>(await item.boundingBox())!.x).toBeCloseTo(before.x,0)
+  await expect(button(page,'撤销')).toBeDisabled();await expect(page.locator('.record-panel')).toHaveCount(0)
+})
+
+test('mobile hint icon is centered and decoration samples stay inside the scrolling body',async({page},info)=>{
+  await setup(page)
+  const text=(await page.locator('.bottom-hint>span').boundingBox())!,icon=(await button(page,'快捷键与帮助').locator('svg').boundingBox())!
+  expect(Math.abs(text.y+text.height/2-icon.y-icon.height/2)).toBeLessThan(2)
+  await button(page,'装饰样式').tap()
+  const heading=page.locator('.decoration-panel>.decoration-heading'),scroll=page.locator('.decoration-panel>.decoration-scroll'),before=(await heading.boundingBox())!
+  await scroll.evaluate(el=>{const pin=el.querySelector('.pin-sample')!;el.scrollTop+=pin.getBoundingClientRect().top-el.getBoundingClientRect().top+25})
+  await expect.poll(()=>scroll.evaluate(el=>el.scrollTop)).toBeGreaterThan(200)
+  expect(await heading.boundingBox()).toEqual(before)
+  const body=(await scroll.boundingBox())!;expect(body.y).toBeGreaterThanOrEqual(before.y+before.height-1)
+  expect(await heading.evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+10))})).toBe(true)
+  await page.screenshot({path:info.outputPath('mobile-decoration-scroll.png')})
+  await button(page,'关闭装饰样式').tap();await expect(page.locator('.decoration-panel')).toHaveCount(0)
 })
 
 test('map preview pinch and pan stay independent of board camera and sidebar scrolling',async({page},info)=>{

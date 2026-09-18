@@ -52,7 +52,7 @@ export function useCanvasTouch(options:Options){
         const a=points.current.get(p.ids[0]),b=points.current.get(p.ids[1]);if(a&&b){const config=latest.current,value=pinchCamera(p.view,p.pair,touchPair(a,b),config.minScale,config.maxScale),next=config.normalizeView?.(value)??value;config.view.current=next;config.setView(next)}
       }else if(!multi.current&&single.current&&!single.current.held){
         const g=single.current
-        if(!g.dragging&&Math.hypot(event.clientX-g.event.clientX,event.clientY-g.event.clientY)>=8){clearTimer();g.dragging=true;latest.current.onDragStart(g.event)}
+        if(!g.dragging&&Math.hypot(event.clientX-g.event.clientX,event.clientY-g.event.clientY)>=3){clearTimer();g.dragging=true;latest.current.onDragStart(g.event)}
         if(g.dragging)latest.current.onDragMove(event)
       }
       return true

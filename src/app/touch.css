@@ -9,6 +9,9 @@
   .record-scroll input:not([type=range]):not([type=file]),.record-scroll textarea,.record-scroll select,.board-title-input{font-size:16px}
   .record-scroll,.decoration-panel,.modal-scroll{overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
   .board-viewport{-webkit-touch-callout:none}
+  /* Avoid rasterizing a full-image animated shadow on the first drag frame. */
+  .memory-artwork,.memory-artwork.is-lifted{filter:none;transition-property:transform}
+  .memory-artwork.is-lifted{transition-duration:80ms}
 }
 @media(max-width:700px), (pointer:coarse) and (max-height:500px){
   .app-shell{position:fixed;inset-inline:0;top:var(--visual-top,0px);height:var(--visual-height,100dvh);min-height:0;overscroll-behavior:none}
@@ -27,7 +30,7 @@
   .zoom-controls{top:calc(66px + env(safe-area-inset-top));left:8px;right:auto;bottom:auto;width:auto;flex-direction:row;padding:0;height:44px}
   .zoom-controls button{width:44px;height:44px}.zoom-controls .zoom-value{height:44px}
   .zoom-controls>span,.zoom-controls button[aria-label=放大],.zoom-controls button[aria-label=缩小]{display:none}
-  .bottom-hint{top:calc(118px + env(safe-area-inset-top));bottom:auto;left:8px;max-width:calc(100% - 16px);padding:0 8px;font-size:10px;gap:0;min-height:34px}.bottom-hint button{width:36px;height:36px;justify-content:center;padding:0}
+  .bottom-hint{top:calc(118px + env(safe-area-inset-top));bottom:auto;left:8px;max-width:calc(100% - 16px);padding:0 8px;font-size:10px;gap:0;min-height:34px}.bottom-hint>span{line-height:18px}.bottom-hint button{width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
   .app-shell .selection-bar{bottom:calc(72px + env(safe-area-inset-bottom));left:8px;right:8px;transform:none;max-width:none;padding:4px;gap:2px;flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}
   .app-shell .selection-bar>*,.app-shell .selection-bar button{flex-shrink:0}.app-shell .selection-bar button{width:44px;height:44px}.selection-label{display:none}
   .app-shell .selection-bar .photo-line-action span{display:none}
@@ -36,7 +39,9 @@
   .record-panel,.decoration-panel{top:auto;left:0;right:0;bottom:0;width:100%;height:min(72dvh,calc(var(--visual-height,100dvh) - 62px - env(safe-area-inset-top)));max-height:calc(var(--visual-height,100dvh) - 62px - env(safe-area-inset-top));border-radius:18px 18px 0 0;z-index:40;box-shadow:0 -8px 32px #32281d28;padding-bottom:env(safe-area-inset-bottom)}
   .record-heading{padding:8px 12px;min-height:58px;gap:8px}.record-heading>button{width:44px;height:44px;justify-content:center;align-items:center}.record-heading h2{font-size:18px}
   .record-scroll{padding:8px 16px 24px;scroll-padding-block:16px;overscroll-behavior:contain}.record-scroll input:not([type=range]):not([type=file]),.record-scroll textarea,.record-scroll select{font-size:16px}
-  .decoration-panel{padding:16px 16px max(16px,env(safe-area-inset-bottom))}.decoration-heading{position:sticky;top:-16px;padding:8px 0;background:#fcfaf2;z-index:1}
+  .app-shell .decoration-panel{display:flex;flex-direction:column;overflow:hidden;padding:0 0 env(safe-area-inset-bottom)}
+  .decoration-panel>.decoration-heading{position:relative;flex-shrink:0;margin:0;padding:16px;background:#fcfaf2;z-index:1}
+  .decoration-panel>.decoration-scroll{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 16px;isolation:isolate;-webkit-overflow-scrolling:touch}
   .has-editor .tool-palette,.has-editor .selection-bar,.has-editor .decoration-toggle,.has-editor .bottom-hint{visibility:hidden;pointer-events:none}
   .connection-hint{top:calc(159px + env(safe-area-inset-top));left:8px;right:8px;max-width:none;transform:none;white-space:normal;justify-content:space-between;font-size:12px}.connection-hint button{min-width:44px;min-height:44px;justify-content:center}
   .toast{top:calc(65px + env(safe-area-inset-top));z-index:60;max-width:calc(100% - 16px);font-size:12px}
