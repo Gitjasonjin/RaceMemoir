@@ -58,9 +58,9 @@ test('single touch selects without editing, explicit edit opens bottom sheet and
   await button(page,'取消组合').tap();await button(page,'结束多选').tap()
   await expect(page.locator('.selection-bar')).toHaveCSS('flex-wrap','nowrap')
   await button(page,'调整物件层级').tap()
-  const menu=page.getByRole('group',{name:'物件层级'}),mb=(await menu.boundingBox())!
+  const menu=page.getByRole('menu',{name:'调整物件层级'}),mb=(await menu.boundingBox())!
   expect(mb.x).toBeGreaterThanOrEqual(0);expect(mb.x+mb.width).toBeLessThanOrEqual(390)
-  await expect(menu.getByRole('button',{name:'上移一层'})).toBeInViewport()
+  await expect(menu.getByRole('menuitem',{name:'上移一层'})).toBeInViewport()
   await button(page,'调整物件层级').tap()
   await page.screenshot({path:info.outputPath('mobile-board.png')})
   expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0)
@@ -95,7 +95,7 @@ test('mobile hint icon is centered and decoration samples stay inside the scroll
 test('help close stays compact and background pan keeps the buffered texture aligned',async({page},info)=>{
   const cdp=await setup(page)
   await button(page,'快捷键与帮助').tap()
-  const close=page.getByRole('dialog',{name:'使用指南'}).getByRole('button',{name:'关闭',exact:true})
+  const close=page.getByRole('dialog',{name:'你的山野记忆，由你摆放'}).getByRole('button',{name:'关闭',exact:true})
   await expect(close).toHaveCSS('width','32px');await expect(close).toHaveCSS('height','32px')
   await expect(close.locator('svg')).toHaveCSS('width','18px')
   await page.screenshot({path:info.outputPath('mobile-help.png')});await close.tap()

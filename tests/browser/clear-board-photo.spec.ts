@@ -23,7 +23,7 @@ const openClear=async(page:Page)=>{
 
 test('clear requires confirmation, preserves records/settings, and undo restores locked items and threads',async({page},info)=>{
   await setup(page)
-  const before=await board(page),dialog=page.getByRole('dialog',{name:'清空画布确认'})
+  const before=await board(page),dialog=page.getByRole('dialog',{name:'清空当前画布？'})
   await openClear(page);await expect(dialog).toBeVisible()
   await page.screenshot({path:info.outputPath('clear-confirm.png')})
   await dialog.getByRole('button',{name:'取消',exact:true}).click()
@@ -83,7 +83,7 @@ test.describe('mobile clear',()=>{
     await expect(page.getByRole('menu',{name:'画布菜单'})).toBeVisible()
     await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]})
     await page.getByRole('menuitem',{name:'清空画布'}).tap()
-    const dialog=page.getByRole('dialog',{name:'清空画布确认'})
+    const dialog=page.getByRole('dialog',{name:'清空当前画布？'})
     await expect(dialog).toBeVisible();await expect(page.locator('[data-board-item]')).toHaveCount(2)
     await dialog.getByRole('button',{name:'确认清空'}).tap()
     await expect(page.locator('[data-board-item]')).toHaveCount(0)

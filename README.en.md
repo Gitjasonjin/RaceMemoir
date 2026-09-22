@@ -48,6 +48,8 @@ Frame your medals, pin up photos, tape down race bibs, and turn GPX tracks into 
 
 ## Getting Started
 
+Core interactions use [Base UI](https://base-ui.com/) for dialog, menu, tooltip, and switch keyboard behavior, focus management, and popup positioning.
+
 Requires Node.js 22.18+ (Node.js 24 recommended).
 
 ```bash

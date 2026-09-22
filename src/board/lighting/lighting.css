@@ -1,0 +1,24 @@
+/* Viewport lighting stays separate from the moving canvas and from UI chrome. */
+.board-light-fixtures{position:absolute;inset:66px 0 0;z-index:18;pointer-events:none;overflow:hidden}
+.pendant-lamp{position:absolute;top:0;left:50%;width:clamp(280px,42vw,660px);height:auto;aspect-ratio:600/54;transform:translateX(-50%);filter:drop-shadow(0 5px 4px #211e2140)}
+.lamp-reflector,.lamp-bulb{opacity:.08;transition:opacity .45s ease}
+[data-light=on] .lamp-reflector,[data-light=on] .lamp-bulb{opacity:1}
+.board-light-wash{position:absolute;inset:0;z-index:10;pointer-events:none;overflow:hidden;--light-origin-y:34px}
+.board-light-ambient,.board-light-pool{position:absolute;inset:0;pointer-events:none;transition:opacity .55s ease}
+.board-light-ambient{background:linear-gradient(#32282024,#34292012 50%,#28252020);opacity:1}
+.board-light-pool{background:radial-gradient(ellipse 60% 95% at 50% var(--light-origin-y),#ffe1a642 0%,#ffdb9824 30%,#171b1910 55%,#151b1a80 100%);opacity:0}
+[data-light=on] .board-light-ambient{background:radial-gradient(ellipse 63% 105% at 50% var(--light-origin-y),transparent 22%,#161b192b 65%,#10171566 100%);opacity:1}
+[data-light=on] .board-light-pool{opacity:1}
+/* Rotate the local shadow offset against the object's rotation, keeping light vertical. */
+@media(pointer:fine){[data-light=on] .memory-artwork:not(.is-lifted){filter:drop-shadow(var(--light-shadow-x,0px) var(--light-shadow-y,5px) var(--light-shadow-blur,3px) #271d146b)}}
+@media(min-width:1700px){.board-light-fixtures{top:72px}}
+@media(max-width:700px), (pointer:coarse) and (max-height:500px){
+  .board-light-fixtures{top:calc(56px + env(safe-area-inset-top))}
+  .pendant-lamp{top:0;width:180px;height:auto}
+  .board-light-wash{--light-origin-y:12px}
+  .board-light-pool{background:radial-gradient(ellipse 85% 90% at 50% var(--light-origin-y),#ffe1a642 0%,#ffdb9824 30%,#171b1910 55%,#151b1a80 100%)}
+}
+@media(prefers-reduced-motion:reduce){.lamp-reflector,.lamp-bulb,.board-light-ambient,.board-light-pool{transition:none}}
+
+.lighting-preview{position:relative;height:55px;border-radius:8px;background:radial-gradient(ellipse at 50% 0,#c3b392,#696b5b);margin-bottom:12px;overflow:hidden;isolation:isolate}
+.lighting-preview .pendant-lamp{top:0;width:280px;max-width:95%;height:auto}

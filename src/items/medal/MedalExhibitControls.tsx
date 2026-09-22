@@ -1,4 +1,6 @@
-import {usePopover} from '../../shared/usePopover'
+import {useState} from 'react'
+import {Popover} from '@base-ui/react/popover'
+import {Hint,HintButton} from '../../shared/ui/Hint'
 import {PanelsTopLeft, Ungroup,X,Check,ArrowUp,ArrowDown,Pencil} from 'lucide-react'
 import type {Memory} from '../../domain/model'
 import type {CollectionRecord} from '../../domain/records'
@@ -10,11 +12,17 @@ function LayoutOptions({count,value,onChange}:{count:number;value?:ExhibitLayout
   return <div className="exhibit-layouts" role="group" aria-label="展览框行列布局">{EXHIBIT_LAYOUTS.map(l=><button type="button" key={l.id} aria-label={`${l.label} 展览框`} aria-pressed={l.id===value} disabled={count>l.rows*l.columns} onClick={()=>onChange(l.id)}><span className="exhibit-layout-icon" style={{gridTemplateColumns:`repeat(${l.columns},1fr)`,gridTemplateRows:`repeat(${l.rows},1fr)`}}>{Array.from({length:l.rows*l.columns},(_,i)=><i key={i}/>)}</span>{l.label}</button>)}</div>
 }
 export function MedalMergeMenu({count,disabled,onMerge}:{count:number;disabled:boolean;onMerge:(layout:ExhibitLayout)=>void}){
-  const {open,root,trigger,toggle,close}=usePopover()
-  return <div className="layer-control" ref={root}><button type="button" ref={trigger} aria-label="合并展览框" aria-expanded={open} disabled={disabled} onClick={toggle}><PanelsTopLeft size={18}/></button>{open&&<div className="layer-popover" style={{width:260}}><LayoutOptions count={count} onChange={layout=>{onMerge(layout);close()}}/></div>}</div>
+  const [open,setOpen]=useState(false)
+  return <div className="layer-control"><Popover.Root open={open} onOpenChange={setOpen}>
+    <Hint label="合并展览框" disabled={disabled||open}><Popover.Trigger aria-label="合并展览框" disabled={disabled}><PanelsTopLeft size={18}/></Popover.Trigger></Hint>
+    <Popover.Portal><Popover.Positioner side="top" sideOffset={14} collisionPadding={8} className="ui-menu-positioner"><Popover.Popup className="layer-popover ui-action-menu" style={{width:260}} aria-label="展览框行列布局" data-ui-overlay>
+      <LayoutOptions count={count} onChange={layout=>{setOpen(false);onMerge(layout)}}/>
+    </Popover.Popup></Popover.Positioner></Popover.Portal>
+  </Popover.Root></div>
 }
+
 export function MedalSplitButton({onSplit,disabled}:{onSplit:()=>void;disabled:boolean}){
-  return <button type="button" aria-label="拆分展览框" disabled={disabled} onClick={onSplit}><Ungroup size={18}/></button>
+  return <HintButton aria-label="拆分展览框" disabled={disabled} onClick={onSplit}><Ungroup size={18}/></HintButton>
 }
 export function MedalExhibitEditor({item,records,onChange,onClose,onSplit,onEdit,onAdd}:{item:Memory;records:CollectionRecord[];onChange:(change:Partial<Memory>)=>void;onClose:()=>void;onSplit:()=>void;onEdit:(medal:Memory)=>void;onAdd:(slot:number)=>void}){
   const exhibit=item.exhibit!,slots=exhibitSlots(exhibit)
@@ -23,7 +31,7 @@ export function MedalExhibitEditor({item,records,onChange,onClose,onSplit,onEdit
     ;[medals[index],medals[next]]=[medals[next],medals[index]]
     onChange({exhibit:{...exhibit,medals}})
   }
-  return <aside className="record-panel" data-record-panel aria-label="奖牌展览框编辑" onKeyDown={e=>e.stopPropagation()}>
+  return <aside className="record-panel" data-record-panel aria-label="奖牌展览框编辑">
     <div className="record-heading"><div><h2>奖牌展览框</h2></div><button type="button" aria-label="关闭展览框编辑" onClick={onClose}><X size={20}/></button></div>
     <div className="record-scroll">
       <div className="exhibit-preview"><div style={{width:220*item.w/item.h,aspectRatio:`${item.w}/${item.h}`}}><MedalExhibitArtwork item={item} records={records} onAdd={onAdd}/></div></div>

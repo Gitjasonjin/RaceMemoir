@@ -18,7 +18,7 @@ export default function RaceMapEditor({item,board,records,groups,groupKey,choosi
   const [draft,setDraft]=useState<Pick<Memory,'w'|'h'|'mapView'|'pinStyle'|'variant'>>(()=>({variant:resolveStyle('race-map',item.variant).id,w:item.w,h:item.h,mapView:item.mapView??{x:0,y:0,scale:1},pinStyle:item.pinStyle??board.decorations?.pin??'classic'}))
   const group=groups.find(g=>g.key===groupKey)
   const races=group?.races??boardRaceRecords(board,records)
-  return <aside className="record-panel race-map-editor" data-record-panel aria-label="赛事地图编辑" onKeyDown={e=>e.stopPropagation()}>
+  return <aside className="record-panel race-map-editor" data-record-panel aria-label="赛事地图编辑">
     <div className="record-heading"><div><h2>编辑赛事地图</h2></div><button type="button" aria-label="关闭地图编辑" onClick={onClose}><X size={20}/></button></div>
     <div className="record-scroll">
     <form onSubmit={e=>{e.preventDefault();onSave(draft);onClose()}}>

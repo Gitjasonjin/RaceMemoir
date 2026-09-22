@@ -9,7 +9,7 @@ import ExhibitMedalPicker from '../items/medal/ExhibitMedalPicker'
 
 export default function RecordPanel(props: RecordPanelProps) {
   const record = props.records.find(r => r.id === props.mode.id)
-  return <aside className="record-panel" data-record-panel aria-label="收藏记录" onKeyDown={e => e.stopPropagation()}>
+  return <aside className="record-panel" data-record-panel aria-label="收藏记录">
     {props.mode.mode==='exhibit-add'?<ExhibitMedalPicker key={`${props.mode.exhibitId}:${props.mode.exhibitSlot}`} {...props}/>:props.mode.mode==='photo-batch'?<BatchPhotoImport initialFiles={props.mode.files} onImport={props.onImportPhotos} onBack={()=>props.onMode({mode:'photo'})} onClose={props.onClose}/>:props.mode.mode === 'library' ? <>
       <div className="record-heading"><div><h2>我的收藏库</h2></div><button onClick={props.onClose} aria-label="关闭收藏库"><X size={20}/></button></div>
       <div className="record-scroll">

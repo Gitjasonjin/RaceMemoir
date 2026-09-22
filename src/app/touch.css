@@ -37,8 +37,6 @@
   .app-shell .selection-bar{bottom:calc(72px + env(safe-area-inset-bottom));left:8px;right:8px;transform:none;max-width:none;padding:4px;gap:2px;flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}
   .app-shell .selection-bar>*,.app-shell .selection-bar button{flex-shrink:0}.app-shell .selection-bar button{width:44px;height:44px}.selection-label{display:none}
   .app-shell .selection-bar .photo-line-action span{display:none}
-  .app-shell .selection-bar .layer-popover{position:fixed;left:8px;right:8px;bottom:calc(136px + env(safe-area-inset-bottom));transform:none;width:calc(100% - 16px)!important;max-width:370px;margin:auto;max-height:calc(var(--visual-height,100dvh) - 205px);overflow:auto;overscroll-behavior:contain}
-  .app-shell .selection-bar .layer-popover button{height:44px}
   .record-panel,.decoration-panel{top:auto;left:0;right:0;bottom:0;width:100%;height:min(72dvh,calc(var(--visual-height,100dvh) - 62px - env(safe-area-inset-top)));max-height:calc(var(--visual-height,100dvh) - 62px - env(safe-area-inset-top));border-radius:18px 18px 0 0;z-index:40;box-shadow:0 -8px 32px #32281d28;padding-bottom:env(safe-area-inset-bottom)}
   .record-heading{padding:8px 12px;min-height:58px;gap:8px}.record-heading>button{width:44px;height:44px;justify-content:center;align-items:center}.record-heading h2{font-size:18px}
   .record-scroll{padding:8px 16px 24px;scroll-padding-block:16px;overscroll-behavior:contain}.record-scroll input:not([type=range]):not([type=file]),.record-scroll textarea,.record-scroll select{font-size:16px}

@@ -8,7 +8,7 @@ test('target layer placement supports groups, overlap cycling, cancel, undo and 
  {id:'e',kind:'note',title:'E',variant:'paper',x:820,y:200,w:130,h:120,rotation:0,groupId:'g'}],threads:[]}))})
  const button=(name:string)=>page.getByRole('button',{name,exact:true}),node=(title:string)=>button(`便签：${title}`)
  const order=()=>page.locator('.scene>.memory').evaluateAll(els=>els.map(e=>e.getAttribute('aria-label')!.slice(3)).join(''))
- const begin=async(action:string)=>{await button('调整物件层级').click();await button(action).click()}
+ const begin=async(action:string)=>{await button('调整物件层级').click();await page.getByRole('menuitem',{name:action,exact:true}).click()}
  await page.goto('/');await page.locator('.records-loading').waitFor({state:'hidden'})
  const original=await page.locator('.memory').evaluateAll(els=>Object.fromEntries(els.map(el=>[el.getAttribute('aria-label'),el.getAttribute('style')])))
  await node('A').click();await begin('放到指定物件下方');await node('C').hover()
@@ -24,5 +24,5 @@ test('target layer placement supports groups, overlap cycling, cancel, undo and 
  await node('A').click();await begin('放到指定物件下方');await node('C').hover();await page.keyboard.press('Escape');expect(await order()).toBe('BCDEA');await expect(node('A')).toHaveAttribute('aria-pressed','true');await expect(page.locator('.layer-target-highlight')).toHaveCount(0)
  await node('D').click();await begin('放到指定物件下方');await node('C').click();expect(await order()).toBe('BDECA')
  await page.reload();await page.locator('.records-loading').waitFor({state:'hidden'});expect(await order()).toBe('BDECA')
- await node('D').click();await button('锁定物件').click();await button('调整物件层级').click();await expect(button('放到指定物件下方')).toBeDisabled()
+ await node('D').click();await button('锁定物件').click();await button('调整物件层级').click();await expect(page.getByRole('menuitem',{name:'放到指定物件下方',exact:true})).toBeDisabled()
 })
