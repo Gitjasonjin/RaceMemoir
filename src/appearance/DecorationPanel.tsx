@@ -1,3 +1,4 @@
+import MaterialPreview from '../shared/MaterialPreview'
 import ToggleSwitch from '../shared/ui/ToggleSwitch'
 import {useRef,useState} from 'react'
 import {Dialog} from '@base-ui/react/dialog'
@@ -5,7 +6,7 @@ import {PendantLamp} from '../board/lighting/BoardLighting'
 import Clothespin from './Clothespin'
 import { DEFAULT_CURVATURE } from '../board/threadCurve'
 import { PIN_OPTIONS as pinOptions, TAPE_OPTIONS as tapeOptions, THREAD_OPTIONS as threadOptions } from '../domain/styleCatalog'
-import { BACKGROUND_STYLES, backgroundStyle, resolveBackground } from '../domain/styleCatalog'
+import { BACKGROUND_STYLES, resolveBackground } from '../domain/styleCatalog'
 import type { BackgroundStyleId } from '../domain/styleCatalog'
 import { Check, Palette, RotateCcw, X } from 'lucide-react'
 import { getDecorations, hasPin, hasTape } from '../domain/model'
@@ -68,7 +69,7 @@ export default function DecorationPanel({board,item,thread,scope,onChange,onPinT
       <div className="lighting-preview" aria-hidden="true"><PendantLamp/></div>
       <div className="pin-toggle-row"><strong id="board-light-label">开启灯具与光照</strong><ToggleSwitch labelledBy="board-light-label" checked={lighting.enabled} onChange={lighting.toggle}/></div>
     </fieldset>}
-    {all&&onBackground&&<fieldset className="decoration-section"><legend>收藏板背景<span>BACKGROUND</span></legend><div className="decoration-options background-options">{BACKGROUND_STYLES.map(option=><button type="button" key={option.id} aria-pressed={resolveBackground(board.backgroundStyle).id===option.id} className={resolveBackground(board.backgroundStyle).id===option.id?'chosen':''} onClick={()=>onBackground(option.id)}><span className="background-sample" style={backgroundStyle(option.id,.55)}/><span>{option.label}</span>{resolveBackground(board.backgroundStyle).id===option.id&&<Check className="style-check" size={12}/>}</button>)}</div></fieldset>}
+    {all&&onBackground&&<fieldset className="decoration-section"><legend>收藏板背景<span>BACKGROUND</span></legend><div className="decoration-options background-options">{BACKGROUND_STYLES.map(option=><button type="button" key={option.id} aria-pressed={resolveBackground(board.backgroundStyle).id===option.id} className={resolveBackground(board.backgroundStyle).id===option.id?'chosen':''} onClick={()=>onBackground(option.id)}><MaterialPreview className="background-sample" id={option.id} scale={.55}/><span>{option.label}</span>{resolveBackground(board.backgroundStyle).id===option.id&&<Check className="style-check" size={12}/>}</button>)}</div></fieldset>}
     {!all && item && hasTape(item) && <div className="pin-toggle-row"><div><strong id="extra-pin-label">同时使用大头钉</strong></div><ToggleSwitch labelledBy="extra-pin-label" checked={hasPin(item)} onChange={togglePin}/></div>}
     {canPin && <fieldset className="decoration-section"><legend>固定装饰<span>PIN & CLIP</span></legend><div className="decoration-options">{pinOptions.map(option=><button type="button" key={option.id} aria-pressed={pin===option.id} className={pin===option.id?'chosen':''} onClick={()=>onChange({kind:'pin',style:option.id})}><span className="decoration-sample pin-sample"><i className={`pushpin pin-${option.id}`}>{option.id==='clip'&&<Clothespin/>}</i></span><span>{option.label}</span>{pin===option.id&&<Check className="style-check" size={12}/>}</button>)}</div>{!all&&item?.pinStyle&&<button type="button" className="inherit-style" onClick={()=>onChange({kind:'pin',style:undefined})}><RotateCcw size={12}/>跟随收藏板大头钉样式</button>}</fieldset>}
     {canTape && <fieldset className="decoration-section"><legend>胶带<span>TAPE</span></legend><div className="decoration-options">{tapeOptions.map(option=><button type="button" key={option.id} aria-pressed={tape===option.id} className={tape===option.id?'chosen':''} onClick={()=>onChange({kind:'tape',style:option.id})}><span className="decoration-sample tape-sample"><i className={`tape tape-${option.id}`}/></span><span>{option.label}</span>{tape===option.id&&<Check className="style-check" size={12}/>}</button>)}</div>{!all&&item?.tapeStyle&&<button type="button" className="inherit-style" onClick={()=>onChange({kind:'tape',style:undefined})}><RotateCcw size={12}/>跟随收藏板胶带样式</button>}</fieldset>}

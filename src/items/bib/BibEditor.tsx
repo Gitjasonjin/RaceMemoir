@@ -44,7 +44,7 @@ export default function BibEditor(props:RecordPanelProps&{record?:BibRecord}){
   finally{if(mounted.current)setSaving(false)}
  }
  return <>
-  <div className="record-heading"><button type="button" disabled={saving||busy} onClick={()=>props.onMode({mode:'library'})} aria-label="返回收藏库"><ArrowLeft size={19}/></button><div><h2>{record?'编辑':'添加'}号码布</h2></div><button type="button" onClick={props.onClose} aria-label="关闭详情"><X size={20}/></button></div>
+  <div className="record-heading"><button type="button" disabled={saving||busy} onClick={()=>props.onBack?props.onBack():props.onMode({mode:'library'})} aria-label={props.backLabel??'返回收藏库'}><ArrowLeft size={19}/></button><div><h2>{record?'编辑':'添加'}号码布</h2></div><button type="button" onClick={props.onClose} aria-label="关闭详情"><X size={20}/></button></div>
     <div className="record-scroll">
   {!record&&props.onBibTemplate&&<div className="bib-source-tabs" role="group" aria-label="号码布来源"><button type="button" disabled={busy||saving} onClick={props.onBibTemplate}>模板制作</button><button type="button" aria-pressed="true">上传图片</button></div>}
   {erasing?<BibNameEraser record={draft} busy={busy} onApply={erase} onCancel={()=>{pending.current?.abort();setBusy(false);setErasing(false)}}/>:adjusting?<BibImageAdjustment record={draft} busy={busy} onApply={apply} onCancel={()=>{pending.current?.abort();setBusy(false);setAdjusting(false)}}/>:<div className="record-preview bib-image-preview">{url?<img src={url} alt="号码布预览"/>:<div className="upload-placeholder"><ImagePlus size={42}/><span>上传电子号码布或实物照片</span></div>}</div>}

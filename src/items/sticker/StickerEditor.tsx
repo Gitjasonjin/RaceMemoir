@@ -68,7 +68,7 @@ export default function StickerEditor(props:RecordPanelProps&{record?:StickerRec
     finally{if(mounted.current)setSaving(false)}
   }
   return <>
-    <div className="record-heading"><button type="button" disabled={saving} aria-label="返回收藏库" onClick={()=>{cancel();props.onMode({mode:'library'})}}><ArrowLeft size={18}/></button><div><h2>{record?'编辑贴纸':'添加贴纸'}</h2></div><button type="button" disabled={saving} aria-label="关闭贴纸编辑" onClick={()=>{cancel();props.onClose()}}><X size={20}/></button></div>
+    <div className="record-heading"><button type="button" disabled={saving} aria-label={props.backLabel??'返回收藏库'} onClick={()=>{cancel();if(props.onBack)props.onBack();else props.onMode({mode:'library'})}}><ArrowLeft size={18}/></button><div><h2>{record?'编辑贴纸':'添加贴纸'}</h2></div><button type="button" disabled={saving} aria-label="关闭贴纸编辑" onClick={()=>{cancel();props.onClose()}}><X size={20}/></button></div>
     <div className="record-scroll">
       {repairing?<RibbonRepair subject="sticker" original={draft.originalImage} image={stickerSource(draft)} onClose={()=>setRepairing(false)} onApply={async image=>{
         const run=token.current

@@ -2,7 +2,7 @@ import {useRef} from 'react'
 import {Dialog} from '@base-ui/react/dialog'
 import {ArrowUpRight,Download,Image,Upload,X} from 'lucide-react'
 import type {Board} from '../domain/model'
-import {backgroundStyle,resolveBackground} from '../domain/styleCatalog'
+import MaterialPreview from '../shared/MaterialPreview'
 import MountainLogo from '../shared/MountainLogo'
 export type BoardModal='share'|'help'|'clear'|null
 interface Props {modal:BoardModal;board:Board;exporting:boolean;exportImage:()=>Promise<void>;exportJson:()=>Promise<void>;onImport:()=>void;onClose:()=>void;onClear:()=>void;canClear:boolean}
@@ -17,7 +17,7 @@ export default function BoardDialog({modal,board,exporting,exportImage,exportJso
       {modal==='share' && <>
         <div className="eyebrow">MEMORIES ARE BETTER SHARED</div><Dialog.Title render={<h2/>}>带走这份山野记忆</Dialog.Title>
         <Dialog.Description className="modal-description">导出图片分享回忆，或用收藏板文件备份与恢复。</Dialog.Description>
-        <div className="share-preview" style={{...backgroundStyle(board.backgroundStyle,1),color:resolveBackground(board.backgroundStyle).ink}}><MountainLogo/><span>{board.title}</span><small>{board.items.length} 件藏品 · {board.threads.length} 段记忆连接</small></div>
+        <MaterialPreview className="share-preview" id={board.backgroundStyle} scale={1}><MountainLogo/><span>{board.title}</span><small>{board.items.length} 件藏品 · {board.threads.length} 段记忆连接</small></MaterialPreview>
         <button className="export-option" onClick={()=>void exportImage()} disabled={exporting}><span className="export-icon"><Image size={23}/></span><span><strong>{exporting?'正在处理文件…':'导出高清图片'}</strong><small>全部藏品自动裁切 · 长边最高 4096 像素</small></span><ArrowUpRight size={18}/></button>
         <button className="export-option" onClick={()=>void exportJson()} disabled={exporting}><span className="export-icon"><Download size={23}/></span><span><strong>导出收藏板文件</strong><small>ZIP 压缩包 · 元数据与图片、GPX 分开保存</small></span><ArrowUpRight size={18}/></button>
         <button className="export-option" onClick={onImport} disabled={exporting}><span className="export-icon"><Upload size={23}/></span><span><strong>导入收藏板文件</strong><small>支持 ZIP 与旧版 JSON · 将替换当前收藏板</small></span><ArrowUpRight size={18}/></button>
