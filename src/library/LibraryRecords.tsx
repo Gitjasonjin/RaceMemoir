@@ -29,7 +29,7 @@ export default function LibraryRecords(props:RecordPanelProps){
     {recycle&&<button type="button" className="record-empty-trash" disabled={busy||!eligible.length} onClick={()=>{setError('');setEmptyOpen(true)}}><Trash2 size={14}/>清空回收站</button>}</div>
     <Dialog.Root open={emptyOpen} onOpenChange={open=>{if(!pending.current)setEmptyOpen(open)}}>
       <Dialog.Portal><Dialog.Backdrop className="ui-dialog-backdrop"/><Dialog.Viewport className="ui-dialog-viewport">
-        <Dialog.Popup className="modal" data-ui-overlay initialFocus={cancelRef}>
+        <Dialog.Popup className="modal recycle-confirm-modal" data-ui-overlay initialFocus={cancelRef}>
           <div className="modal-scroll"><div className="modal-content">
             <Dialog.Title render={<h2/>}>清空回收站？</Dialog.Title>
             <Dialog.Description className="modal-description">将永久删除所有类别中未被使用的 {eligible.length} 份收藏及原始文件，无法撤销。{archived.length>eligible.length&&`仍被画布或地图连线引用的 ${archived.length-eligible.length} 份收藏会保留。`}</Dialog.Description>

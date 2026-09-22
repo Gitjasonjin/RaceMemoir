@@ -1,3 +1,4 @@
+import DatePicker from '../shared/ui/DatePicker'
 import PhotoCropPreview from '../items/photo/PhotoCropPreview'
 import PhotoComposition from '../items/photo/PhotoComposition'
 import { useEffect, useRef, useState } from 'react'
@@ -111,8 +112,8 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
       {cutout.progress&&<div className="record-progress" role="status"><span className="record-spinner"/>{cutout.progress}<button type="button" onClick={()=>{cutout.cancel();setNotice('已取消抠图，使用原图。')}}>取消抠图</button></div>}
       {draft.kind==='medal'&&draft.originalImage&&!cutout.progress&&!repairing&&!cropping&&<div className="record-actions"><button type="button" disabled={busy} onClick={()=>processImage((draft as MedalRecord).originalImage!)}>自动抠图（含绶带）</button>{draft.cutout==='done'&&<><button type="button" disabled={busy} onClick={()=>{setRepairing(true);setNotice('')}}>手动微调</button><button type="button" onClick={()=>setShowOriginal(!showOriginal)}>{showOriginal?'查看抠图':'对比原图'}</button><button type="button" disabled={saving} onClick={()=>{patch({image:draft.originalImage,cutout:'original'});setShowOriginal(false)}}>使用原图</button></>}</div>}
       <label className="field-label">{kindLabel}名称<input required maxLength={200} value={draft.name} disabled={saving} onChange={e=>patch({name:e.target.value})} placeholder={draft.kind==='medal'?'我的第一场越野赛':'山野环线'}/></label>
-      {draft.kind==='photo'&&<label className="field-label">拍摄日期<input type="date" value={draft.date||''} disabled={saving} onChange={e=>patch({date:e.target.value})}/></label>}
-      <label className="field-label">备注<textarea rows={3} maxLength={5000} value={draft.note} disabled={saving} onChange={e=>patch({note:e.target.value})} placeholder="记下这段旅程的故事…"/></label>
+      {draft.kind==='photo'&&<DatePicker value={draft.date||''} disabled={saving} onChange={date=>patch({date})}/>}
+      {draft.kind!=='photo'&&<label className="field-label">备注<textarea rows={3} maxLength={5000} value={draft.note} disabled={saving} onChange={e=>patch({note:e.target.value})} placeholder="记下这段旅程的故事…"/></label>}
       {draft.kind!=='photo'&&<RaceLocationEditor value={draft.location} onChange={location=>patch({location})} disabled={busy}/>}
       {error&&<p className="record-error" role="alert">{error}</p>}{notice&&<p className="record-notice" role="status">{notice}</p>}
       {props.styles}

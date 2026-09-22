@@ -1,4 +1,6 @@
 import ToggleSwitch from '../shared/ui/ToggleSwitch'
+import {useRef,useState} from 'react'
+import {Dialog} from '@base-ui/react/dialog'
 import {PendantLamp} from '../board/lighting/BoardLighting'
 import Clothespin from './Clothespin'
 import { DEFAULT_CURVATURE } from '../board/threadCurve'
@@ -31,6 +33,13 @@ interface Props {
   onBackground?: (id:BackgroundStyleId) => void
 }
 export default function DecorationPanel({board,item,thread,scope,onChange,onPinToggle,onClose,onCurvature,onBackground,lighting,embedded=false}: Props) {
+  const [confirmPinId,setConfirmPinId]=useState<string|null>(null)
+  const cancelPinRef=useRef<HTMLButtonElement>(null)
+  const linkedThreads=item?board.threads.filter(t=>t.from===item.id||t.to===item.id):[]
+  const togglePin=(enabled:boolean)=>{
+    if(!enabled&&item?.kind==='bib'&&hasPin(item)&&linkedThreads.length){setConfirmPinId(item.id);return}
+    onPinToggle(enabled)
+  }
   const defaults = getDecorations(board)
   const all = scope === 'board'
   const pin = all ? defaults.pin : item?.pinStyle ?? defaults.pin
@@ -42,6 +51,11 @@ export default function DecorationPanel({board,item,thread,scope,onChange,onPinT
   const Container=embedded?'section':'aside'
   if(embedded&&!canPin&&!canTape&&!canThread&&!item?.pinEnabled&&!(item&&hasTape(item)))return null
   return <Container className={embedded?'embedded-decoration':'decoration-panel'} aria-label="装饰样式" data-decoration-panel>
+    <Dialog.Root open={!!item&&confirmPinId===item.id} onOpenChange={open=>{if(!open)setConfirmPinId(null)}}>
+      <Dialog.Portal><Dialog.Backdrop className="ui-dialog-backdrop"/><Dialog.Viewport className="ui-dialog-viewport"><Dialog.Popup className="modal recycle-confirm-modal" data-ui-overlay initialFocus={cancelPinRef}>
+        <div className="modal-scroll"><div className="modal-content"><Dialog.Title render={<h2/>}>关闭大头钉？</Dialog.Title><Dialog.Description className="modal-description">关闭后，连接这张号码布的 {linkedThreads.length} 条连线也会同时移除。可通过撤销恢复。</Dialog.Description><div className="clear-board-actions"><button type="button" ref={cancelPinRef} onClick={()=>setConfirmPinId(null)}>取消</button><button type="button" className="clear-board-confirm" onClick={()=>{setConfirmPinId(null);onPinToggle(false)}}>关闭并移除连线</button></div></div></div>
+      </Dialog.Popup></Dialog.Viewport></Dialog.Portal>
+    </Dialog.Root>
     {embedded&&<h3>装饰样式</h3>}
     {!embedded&&<>
     <div className="decoration-heading"><span className="decoration-heading-icon"><Palette size={19}/></span><div><h2 id="decoration-title">装饰样式</h2><p>小小细节，也有你的个性</p></div><button type="button" onClick={onClose} aria-label="关闭装饰样式"><X size={19}/></button></div>
@@ -55,7 +69,7 @@ export default function DecorationPanel({board,item,thread,scope,onChange,onPinT
       <div className="pin-toggle-row"><strong id="board-light-label">开启灯具与光照</strong><ToggleSwitch labelledBy="board-light-label" checked={lighting.enabled} onChange={lighting.toggle}/></div>
     </fieldset>}
     {all&&onBackground&&<fieldset className="decoration-section"><legend>收藏板背景<span>BACKGROUND</span></legend><div className="decoration-options background-options">{BACKGROUND_STYLES.map(option=><button type="button" key={option.id} aria-pressed={resolveBackground(board.backgroundStyle).id===option.id} className={resolveBackground(board.backgroundStyle).id===option.id?'chosen':''} onClick={()=>onBackground(option.id)}><span className="background-sample" style={backgroundStyle(option.id,.55)}/><span>{option.label}</span>{resolveBackground(board.backgroundStyle).id===option.id&&<Check className="style-check" size={12}/>}</button>)}</div></fieldset>}
-    {!all && item && hasTape(item) && <div className="pin-toggle-row"><div><strong id="extra-pin-label">同时使用大头钉</strong></div><ToggleSwitch labelledBy="extra-pin-label" checked={hasPin(item)} onChange={onPinToggle}/></div>}
+    {!all && item && hasTape(item) && <div className="pin-toggle-row"><div><strong id="extra-pin-label">同时使用大头钉</strong></div><ToggleSwitch labelledBy="extra-pin-label" checked={hasPin(item)} onChange={togglePin}/></div>}
     {canPin && <fieldset className="decoration-section"><legend>固定装饰<span>PIN & CLIP</span></legend><div className="decoration-options">{pinOptions.map(option=><button type="button" key={option.id} aria-pressed={pin===option.id} className={pin===option.id?'chosen':''} onClick={()=>onChange({kind:'pin',style:option.id})}><span className="decoration-sample pin-sample"><i className={`pushpin pin-${option.id}`}>{option.id==='clip'&&<Clothespin/>}</i></span><span>{option.label}</span>{pin===option.id&&<Check className="style-check" size={12}/>}</button>)}</div>{!all&&item?.pinStyle&&<button type="button" className="inherit-style" onClick={()=>onChange({kind:'pin',style:undefined})}><RotateCcw size={12}/>跟随收藏板大头钉样式</button>}</fieldset>}
     {canTape && <fieldset className="decoration-section"><legend>胶带<span>TAPE</span></legend><div className="decoration-options">{tapeOptions.map(option=><button type="button" key={option.id} aria-pressed={tape===option.id} className={tape===option.id?'chosen':''} onClick={()=>onChange({kind:'tape',style:option.id})}><span className="decoration-sample tape-sample"><i className={`tape tape-${option.id}`}/></span><span>{option.label}</span>{tape===option.id&&<Check className="style-check" size={12}/>}</button>)}</div>{!all&&item?.tapeStyle&&<button type="button" className="inherit-style" onClick={()=>onChange({kind:'tape',style:undefined})}><RotateCcw size={12}/>跟随收藏板胶带样式</button>}</fieldset>}
     {canThread && <fieldset className="decoration-section"><legend>连接绳<span>THREAD</span></legend><div className="decoration-options">{threadOptions.map(option=><button type="button" key={option.id} aria-pressed={line===option.id} className={line===option.id?'chosen':''} onClick={()=>onChange({kind:'thread',style:option.id})}><span className="decoration-sample thread-sample"><svg viewBox="0 0 70 44" aria-hidden="true"><ThreadStroke d="M 8 31 Q 34 32 62 12" style={option.id}/><circle cx="8" cy="31" r="2.5"/><circle cx="62" cy="12" r="2.5"/></svg></span><span>{option.label}</span>{line===option.id&&<Check className="style-check" size={12}/>}</button>)}</div>{!all&&thread?.style&&<button type="button" className="inherit-style" onClick={()=>onChange({kind:'thread',style:undefined})}><RotateCcw size={12}/>跟随收藏板红线样式</button>}</fieldset>}

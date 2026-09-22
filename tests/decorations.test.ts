@@ -20,7 +20,7 @@ test('奖牌不使用图钉，固定开关和样式都不影响展示框', () =>
   }
 })
 
-test('胶带物件可选图钉，开关和样式独立保存且保留红线', () => {
+test('胶带物件关闭图钉同步移除关联红线，保留其他连线和样式', () => {
   const id = 'ridge-bib'
   const original = seed.items.find(i=>i.id===id)!
   assert.equal(hasPin(original), false)
@@ -30,7 +30,9 @@ test('胶带物件可选图钉，开关和样式独立保存且保留红线', ()
   const disabled = setTapePin(styled,id,false)
   assert.equal(hasPin(disabled.items.find(i=>i.id===id)!), false)
   assert.equal(disabled.items.find(i=>i.id===id)?.pinStyle,'forest')
-  assert.deepEqual(disabled.threads,seed.threads)
+  assert.deepEqual(enabled.threads,seed.threads)
+  assert.deepEqual(disabled.threads,seed.threads.filter(t=>t.from!==id&&t.to!==id))
+  assert.deepEqual(setTapePin(seed,'missing',false),seed)
   assert.deepEqual(pinPosition(disabled.items.find(i=>i.id===id)!),pinPosition(original))
   for (const board of [enabled,styled,disabled]) {
     const saved = JSON.parse(JSON.stringify(board))

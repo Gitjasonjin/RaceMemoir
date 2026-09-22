@@ -27,7 +27,7 @@ async function prepare(page:Page){
 }
 const button=(page:Page,name:string)=>page.getByRole('button',{name,exact:true})
 async function save(page:Page){await button(page,'保存修改').click();await expect(page.locator('.record-panel')).toHaveCount(0)}
-async function addMap(page:Page){await button(page,'添加地图').click();await expect(page.locator('.race-map-editor')).toBeVisible();await expect(button(page,'使用说明')).toHaveCount(0);await save(page)}
+async function addMap(page:Page){await button(page,'添加地图').click();await expect(page.locator('.race-map-editor')).toBeVisible();await expect(button(page,'使用说明')).toHaveCount(0);await button(page,'保存并放上画布').click();await expect(page.locator('.record-panel')).toHaveCount(0)}
 async function editor(page:Page){await page.locator('.memory-race-map').first().focus();await page.keyboard.press('Enter');await expect(page.locator('.race-map-editor')).toBeVisible()}
 async function connect(page:Page){
   await button(page,'添加连线').click();await button(page,'地点钉子：四姑娘山，2 场赛事').click()
@@ -81,7 +81,7 @@ test('map object: grouping, drag, rotation, framing, multiple maps, PNG and clea
   await aligned();await page.reload();await page.locator('.records-loading').waitFor({state:'hidden'});await aligned()
   await context.setOffline(true);await editor(page);await expect(page.locator('.race-map-editor-preview .race-province')).toHaveCount(34);await context.setOffline(false)
   await button(page,'关闭地图编辑').click();await addMap(page);await expect(map).toHaveCount(2);await expect(page.locator('.map-place-pin')).toHaveCount(4)
-  await button(page,'撤销').click();await button(page,'撤销').click();await expect(map).toHaveCount(1)
+  await button(page,'撤销').click();await expect(map).toHaveCount(1)
   await button(page,'适应画布').click();const vp=await page.locator('.board-viewport').boundingBox()
   await page.keyboard.down('Control');await page.mouse.move(vp!.x+90,vp!.y+25);await page.mouse.down();await page.mouse.move(vp!.x+vp!.width-60,vp!.y+vp!.height-50,{steps:8});await page.mouse.up();await page.keyboard.up('Control')
   expect(await page.locator('.memory.selected').count()).toBeGreaterThan(1)

@@ -1,7 +1,8 @@
 import {useCallback,useState} from 'react'
 import type {RecordPanelMode} from '../library/types'
+import type {Memory} from '../domain/model'
 
-export interface MapPanel {id:string;groupKey?:string;choosing?:boolean}
+export interface MapPanel {id:string;groupKey?:string;choosing?:boolean;draft?:Memory}
 export type EditorPanel =
   | {kind:'record';value:RecordPanelMode}
   | {kind:'memory';mode:'add'|'edit'}

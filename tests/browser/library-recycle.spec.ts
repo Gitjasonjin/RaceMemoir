@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test'
 
-test('recycle bulk delete confirms across filters and preserves referenced records',async({page})=>{
+test('recycle bulk delete confirms across filters and preserves referenced records',async({page},info)=>{
   await page.goto('/');await page.locator('.records-loading').waitFor({state:'hidden'})
   await page.evaluate(async()=>{
     const {putRecords}=await import('/src/persistence/recordStore.ts')
@@ -23,6 +23,7 @@ test('recycle bulk delete confirms across filters and preserves referenced recor
   await expect(dialog).toContainText('2 份收藏及原始文件')
   await expect(dialog).toContainText('1 份收藏会保留')
   await expect(dialog.getByRole('button',{name:'取消'})).toBeFocused()
+  await dialog.screenshot({path:info.outputPath('recycle-confirm.png')})
   await dialog.getByRole('button',{name:'取消'}).click()
   await expect(page.locator('.record-row-main[title="trash-photo"]')).toBeVisible()
   await page.getByRole('button',{name:'清空回收站',exact:true}).click()

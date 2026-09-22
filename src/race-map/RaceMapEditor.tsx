@@ -10,8 +10,8 @@ import {boardRaceRecords} from './raceMapGrouping'
 import type {RaceLocationGroup} from './raceMapGrouping'
 import RaceMapCanvas from './RaceMapCanvas'
 
-export default function RaceMapEditor({item,board,records,groups,groupKey,choosing,hiddenThreads,onSave,onClose,onSelectGroup,onRace,onConnect,onRemoveThread}: {
-  item:Memory;board:Board;records:CollectionRecord[];groups:RaceLocationGroup[];groupKey?:string;choosing:boolean;hiddenThreads:Thread[]
+export default function RaceMapEditor({creating=false,item,board,records,groups,groupKey,choosing,hiddenThreads,onSave,onClose,onSelectGroup,onRace,onConnect,onRemoveThread}: {
+  creating?:boolean;item:Memory;board:Board;records:CollectionRecord[];groups:RaceLocationGroup[];groupKey?:string;choosing:boolean;hiddenThreads:Thread[]
   onSave:(change:Partial<Memory>)=>void;onClose:()=>void;onSelectGroup:(key:string)=>void
   onRace:(id:string)=>void;onConnect:(id:string)=>void;onRemoveThread:(id:string)=>void
 }){
@@ -19,7 +19,7 @@ export default function RaceMapEditor({item,board,records,groups,groupKey,choosi
   const group=groups.find(g=>g.key===groupKey)
   const races=group?.races??boardRaceRecords(board,records)
   return <aside className="record-panel race-map-editor" data-record-panel aria-label="赛事地图编辑">
-    <div className="record-heading"><div><h2>编辑赛事地图</h2></div><button type="button" aria-label="关闭地图编辑" onClick={onClose}><X size={20}/></button></div>
+    <div className="record-heading"><div><h2>{creating?'添加赛事地图':'编辑赛事地图'}</h2></div><button type="button" aria-label="关闭地图编辑" onClick={onClose}><X size={20}/></button></div>
     <div className="record-scroll">
     <form onSubmit={e=>{e.preventDefault();onSave(draft);onClose()}}>
       <div className="race-map-editor-preview"><RaceMapCanvas theme={draft.variant} value={draft.mapView} onViewChange={mapView=>setDraft(d=>({...d,mapView}))} groups={groups} selected={groupKey} onSelect={onSelectGroup}/></div>
@@ -27,7 +27,7 @@ export default function RaceMapEditor({item,board,records,groups,groupKey,choosi
       <p className="race-map-editor-help">拖动平移 · 双指或 Ctrl / ⌘ + 滚轮缩放 · 修改后点击保存</p>
       <fieldset className="decoration-section"><legend>地图样式</legend><div className="map-style-options">{RACE_MAP_STYLES.map(style=><button type="button" key={style.id} aria-pressed={draft.variant===style.id} className={draft.variant===style.id?'chosen':''} onClick={()=>setDraft(d=>({...d,variant:style.id}))}><svg viewBox="0 0 1000 700" aria-hidden="true"><RaceMapDrawing theme={style.id} view={{x:0,y:0,scale:1}}/></svg><span>{style.label}</span>{draft.variant===style.id&&<Check size={14}/>}</button>)}</div></fieldset>
       <DecorationPanel embedded board={board} item={{...item,...draft}} scope="selection" onChange={change=>{if(change.kind==='pin')setDraft(d=>({...d,pinStyle:change.style}))}} onPinToggle={()=>{}} onCurvature={()=>{}} onClose={()=>{}}/>
-      <button type="submit" className="primary-button full-width"><Check size={17}/>保存修改</button>
+      <button type="submit" className="primary-button full-width"><Check size={17}/>{creating?'保存并放上画布':'保存修改'}</button>
     </form>
     <section className="race-map-editor-races"><div className="race-map-list-heading"><h3>{choosing?'选择连线对应的赛事':group?.name??'本板赛事'}</h3>{group&&!choosing&&<button type="button" onClick={()=>onSelectGroup('')}>全部</button>}</div>
       {!groups.length&&<p className="race-map-editor-help">为本板奖牌或路线添加赛事地点，即可在地图上留下红圈。</p>}

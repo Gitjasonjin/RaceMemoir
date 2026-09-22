@@ -4,3 +4,5 @@
 .clear-board-actions .clear-board-confirm{background:#a55443;border-color:#a55443;color:#fffaf3}
 .clear-board-actions button:hover{filter:brightness(.96)}.clear-board-actions button:focus-visible{outline:2px solid #71845d;outline-offset:3px}
 .clear-board-actions button:disabled{opacity:.45;cursor:default}
+
+.modal.recycle-confirm-modal{width:420px;padding:0;border-radius:14px}.recycle-confirm-modal .modal-content{padding:26px}.recycle-confirm-modal h2{font-size:21px;line-height:1.4;letter-spacing:0;margin:0 0 12px}.recycle-confirm-modal .modal-description{font-size:13px;line-height:1.75;color:#767b6c;margin:0}.recycle-confirm-modal .clear-board-actions{margin-top:24px;gap:10px}.recycle-confirm-modal .clear-board-actions button{min-height:40px;font-size:13px;line-height:20px;padding:9px 18px}@media(max-width:480px){.recycle-confirm-modal .modal-content{padding:22px}.recycle-confirm-modal .clear-board-actions button{flex:1;min-height:44px}}

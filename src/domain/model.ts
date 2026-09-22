@@ -27,7 +27,8 @@ export function hasPin(item: Memory): boolean {
   return item.kind !== 'note' || resolveStyle('note',item.variant).pin
 }
 export function setTapePin(board: Board, id: string, enabled: boolean): Board {
-  return { ...board, items: board.items.map(item => item.id === id && hasTape(item) ? { ...item, pinEnabled: enabled } : item) }
+  if(!board.items.some(item=>item.id===id&&hasTape(item)))return board
+  return { ...board, items: board.items.map(item => item.id === id ? { ...item, pinEnabled: enabled } : item),threads:enabled?board.threads:board.threads.filter(thread=>thread.from!==id&&thread.to!==id) }
 }
 /** Without a target, replace this decoration across the board and set its future default. */
 export function changeDecoration(board: Board, change: DecorationChange, targetId?: string): Board {
