@@ -117,6 +117,16 @@ export default function App() {
   const redo = useCallback(() => {if(history.redo()){setSelected(null);setSelectedThread(null)}},[history.redo,setSelected])
   useEffect(() => { if (!toast) return; const timer = setTimeout(()=>setToast(''),3200); return () => clearTimeout(timer) }, [toast])
 
+  const canClear=library.ready&&!exporting&&!library.saving&&(board.items.length>0||board.threads.length>0)
+  const clearBoard=()=>{
+    const current=boardRef.current
+    if(!canClear||fileOperation.current||gesture.current||touchGestures.active())return
+    commit({...current,items:[],threads:[]})
+    setSelected(null);setSelectedThread(null);setConnecting(null);setCursor(null);setTool('select');setMultiSelect(false)
+    setGuides([]);setMarquee(null);layerTarget.cancel();closePanel();closeCanvasMenu();setModal(null)
+    setToast('画布已清空，收藏库素材已保留，可撤销恢复')
+  }
+
   const removeSelected = useCallback(() => {
     const current = boardRef.current
     if(lockedSelection(current.items,selectedIds)){setToast('请先解锁物件');return}
@@ -506,7 +516,7 @@ export default function App() {
         {board.items.length===0 && <div className="empty-board" style={{left:visible.x+visible.width/2,top:visible.y+visible.height*.3,width:600}}><MountainLogo/><h1>每段旅程，都值得收藏</h1><p>从一张照片、一块奖牌开始，串起你的山野记忆。</p><button className="primary-button" onPointerDown={e=>e.stopPropagation()} onClick={()=>openAdd('photo')}><Plus size={18}/>添加第一张照片</button></div>}
       </div>
     </main>
-    {canvasMenu&&<CanvasContextMenu position={canvasMenu} snapEnabled={snapEnabled} onToggle={toggleSnap} onClose={closeCanvasMenu}/>}
+    {canvasMenu&&<CanvasContextMenu position={canvasMenu} snapEnabled={snapEnabled} onToggle={toggleSnap} onClose={closeCanvasMenu} canClear={canClear} onClear={()=>{closeCanvasMenu();setModal('clear')}}/>}
     <ToolPalette multiSelect={multiSelect} onMultiSelect={()=>{setMultiSelect(value=>!value);setTool('select');setConnecting(null);closePanel()}} tool={tool} onSelect={()=>{setMultiSelect(false);setTool('select');setConnecting(null)}} onConnect={()=>{setMultiSelect(false);setTool(tool==='connect'?'select':'connect');setConnecting(null);setSelected(null);setSelectedThread(null)}} onAdd={openAdd}/>
     {layerTarget.mode&&<div className="connection-hint layer-target-hint" data-layer-target-hint role="status"><span>{layerTarget.target?`放到「${board.items.find(i=>i.id===layerTarget.target)?.title.replaceAll('\n',' ')||'物件'}」${layerTarget.mode.action==='above'?'上方':'下方'}`:`点击目标物件，放到它的${layerTarget.mode.action==='above'?'上方':'下方'}`}<small>Alt 单击切换重叠目标 · 点击或 Enter 确认 · Esc 取消</small></span><button type="button" onClick={layerTarget.cancel} aria-label="取消指定层级"><X size={16}/></button></div>}
     <div className="history-controls" data-history={historyTick}><button title="撤销 · Ctrl+Z" aria-label="撤销" disabled={!history.canUndo || dragging} onClick={undo}><Undo2 size={17}/></button><span/><button title="重做 · Ctrl+Shift+Z" aria-label="重做" disabled={!history.canRedo || dragging} onClick={redo}><Redo2 size={17}/></button></div>
@@ -519,6 +529,6 @@ export default function App() {
     <button className="minimap" title="点击定位画布" aria-label="画布缩略图，点击定位" onClick={e=>{const r=e.currentTarget.getBoundingClientRect(),el=viewport.current;if(el)setView(v=>({...v,x:el.clientWidth/2-(overview.x+(e.clientX-r.left)/r.width*overview.width)*v.scale,y:el.clientHeight/2-(overview.y+(e.clientY-r.top)/r.height*overview.height)*v.scale}))}}><svg viewBox={`${overview.x} ${overview.y} ${overview.width} ${overview.height}`} preserveAspectRatio="none">{board.items.map(i=><rect key={i.id} x={i.x} y={i.y} width={i.w} height={i.h} fill={i.kind==='note'?'#f1d989':i.kind==='medal'?'#676b50':'#f7e7d2'} opacity=".65"/>)}{board.threads.map(t=>{const [a,b]=threadEndpoints(t).map(pointFor);if(!a||!b)return null;return <line key={t.id} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#bc6050" strokeWidth={overview.width/180}/>})}<rect x={visible.x} y={visible.y} width={visible.width} height={visible.height} fill="#fff" fillOpacity=".09" stroke="#fff9ef" strokeWidth={overview.width/100}/></svg></button>
     <input ref={inputFile} type="file" accept=".zip,application/zip,.json,application/json" hidden onChange={e=>void importJson(e.target.files?.[0])}/>
     {toast && <div className="toast" role="status"><Check size={17}/>{toast}</div>}
-    <BoardDialog modal={modal} board={board} exporting={exporting} exportImage={exportImage} exportJson={exportJson} onImport={()=>inputFile.current?.click()} onClose={()=>setModal(null)}/>
+    <BoardDialog onClear={clearBoard} canClear={canClear} modal={modal} board={board} exporting={exporting} exportImage={exportImage} exportJson={exportJson} onImport={()=>inputFile.current?.click()} onClose={()=>setModal(null)}/>
   </div>
 }

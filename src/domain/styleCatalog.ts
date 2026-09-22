@@ -49,6 +49,7 @@ export const PHOTO_PAPERS = [
   {id:'polaroid',label:'Polaroid',caption:'footer'},
   {id:'print',label:'冲印照片',caption:'overlay'},
   {id:'torn',label:'撕边相纸',caption:'footer'},
+  {id:'borderless',label:'无框照片',caption:'none'},
 ] as const
 export const MEDAL_FRAMES = [
   {id:'wood',label:'原木框'}, {id:'black',label:'黑框'}, {id:'hook',label:'挂钩'},

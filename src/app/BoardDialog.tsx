@@ -3,14 +3,15 @@ import {ArrowUpRight,Download,Image,Upload,X} from 'lucide-react'
 import type {Board} from '../domain/model'
 import {backgroundStyle,resolveBackground} from '../domain/styleCatalog'
 import MountainLogo from '../shared/MountainLogo'
-export type BoardModal='share'|'help'|null
-interface Props {modal:BoardModal;board:Board;exporting:boolean;exportImage:()=>Promise<void>;exportJson:()=>Promise<void>;onImport:()=>void;onClose:()=>void}
-export default function BoardDialog({modal,board,exporting,exportImage,exportJson,onImport,onClose}:Props){
+export type BoardModal='share'|'help'|'clear'|null
+interface Props {modal:BoardModal;board:Board;exporting:boolean;exportImage:()=>Promise<void>;exportJson:()=>Promise<void>;onImport:()=>void;onClose:()=>void;onClear:()=>void;canClear:boolean}
+export default function BoardDialog({modal,board,exporting,exportImage,exportJson,onImport,onClose,onClear,canClear}:Props){
   const dialog=useRef<HTMLDialogElement>(null)
   useEffect(()=>{if(modal)dialog.current?.showModal();else dialog.current?.close()},[modal])
-  return     <dialog ref={dialog} className="modal" aria-label={modal==='share'?'分享与备份':'使用指南'} onCancel={()=>onClose()} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
+  return     <dialog ref={dialog} className="modal" aria-label={modal==='clear'?'清空画布确认':modal==='share'?'分享与备份':'使用指南'} onCancel={()=>onClose()} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
       <div className="modal-controls"><button className="modal-close" onClick={()=>onClose()} aria-label="关闭"><X size={21}/></button></div>
       <div className="modal-scroll"><div className="modal-content">
+      {modal==='clear'&&<><h2>清空当前画布？</h2><p className="modal-description">将移除画布上的 {board.items.length} 件物件和 {board.threads.length} 条连线，包括已锁定的物件。收藏库素材、收藏板名称与背景保留，可通过撤销恢复。</p><div className="clear-board-actions"><button type="button" autoFocus onClick={onClose}>取消</button><button type="button" className="clear-board-confirm" disabled={!canClear||exporting} onClick={onClear}>确认清空</button></div></>}
       {modal==='share' && <>
         <div className="eyebrow">MEMORIES ARE BETTER SHARED</div><h2>带走这份山野记忆</h2>
         <p className="modal-description">导出图片分享回忆，或用收藏板文件备份与恢复。</p>

@@ -22,3 +22,6 @@
 .canvas-context-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 10px;border-radius:6px;font-size:13px;text-align:left}
 .canvas-context-menu button span{flex:1}.canvas-context-menu .unchecked{visibility:hidden}
 .canvas-context-menu button:hover{background:#e6e9dd}.canvas-context-menu button:focus-visible{outline:2px solid #788666;outline-offset:-2px}
+.canvas-menu-divider{height:1px;margin:5px 6px;background:#dfdfd2}
+.canvas-context-menu .canvas-clear-action{color:#a34f40}.canvas-context-menu .canvas-clear-action:hover:not(:disabled){background:#f2e4db}
+.canvas-context-menu button:disabled{opacity:.4;cursor:default;background:none}
