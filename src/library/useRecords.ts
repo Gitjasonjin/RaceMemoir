@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Board } from '../domain/model'
 import { migrateBoard } from '../domain/records'
 import type { CollectionRecord } from '../domain/records'
-import { deleteRecord, putRecords, readRecords } from '../persistence/recordStore'
+import { deleteRecords, putRecords, readRecords } from '../persistence/recordStore'
 
 export function useRecords(board:Board,onMigrate:(board:Board)=>void){
   const [savedAt,setSavedAt]=useState('')
@@ -38,19 +38,19 @@ export function useRecords(board:Board,onMigrate:(board:Board)=>void){
     queue.current=operation.catch(()=>{})
     return operation
   }
-  async function remove(id:string){
+  async function removeMany(ids:string[]){
     setSaving(n=>n+1)
     const operation=queue.current.then(async()=>{
       try{
-        await deleteRecord(id)
-        failed.current.delete(id)
+        await deleteRecords(ids)
+        ids.forEach(id=>failed.current.delete(id))
         setSaveError(failed.current.size?'部分收藏尚未保存，请在编辑栏重试':'')
-        setRecords(current=>current.filter(r=>r.id!==id))
+        setRecords(current=>current.filter(r=>!ids.includes(r.id)))
         setSavedAt(new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}))
       }finally{setSaving(n=>n-1)}
     })
     queue.current=operation.catch(()=>{})
     return operation
   }
-  return {records,ready,error,save,remove,savedAt,saving:saving>0,saveError,retry:()=>setAttempt(n=>n+1)}
+  return {records,ready,error,save,remove:(id:string)=>removeMany([id]),removeMany,savedAt,saving:saving>0,saveError,retry:()=>setAttempt(n=>n+1)}
 }

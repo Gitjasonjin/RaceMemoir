@@ -36,3 +36,5 @@
 .batch-photo-row>button{display:flex;flex-shrink:0;padding:7px;border-radius:4px;color:#8a7e6c}
 .batch-photo-row>button:hover{background:#f1e0d7;color:#b45142}
 .record-error ul{padding-left:18px;margin:8px 0 0;overflow-wrap:anywhere}
+
+.record-recycle-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 10px}.record-recycle-actions .record-recycle{margin:0}.record-empty-trash{display:flex;align-items:center;gap:6px;font-size:11px;color:#a35342;padding:8px 0}.record-empty-trash:hover:not(:disabled){color:#793c30}.record-empty-trash:disabled{opacity:.45;cursor:not-allowed}

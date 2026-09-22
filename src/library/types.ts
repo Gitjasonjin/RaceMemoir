@@ -16,5 +16,6 @@ export interface RecordPanelProps {
   onMode: (mode: RecordPanelMode) => void; onClose: () => void
   onSave: (record: CollectionRecord, add: boolean, layout?: Partial<Memory>) => Promise<void>
   onAdd: (record: CollectionRecord) => void | Promise<void>
+  onEmptyRecycle: (ids: string[]) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }

@@ -4,13 +4,27 @@ import 'fake-indexeddb/auto'
 import { seed, isBoard } from '../src/domain/model.ts'
 import { migrateBoard, displayMemory, recordFor, validRecord } from '../src/domain/records.ts'
 import type { MedalRecord, RouteRecord } from '../src/domain/records.ts'
-import { deleteRecord, readRecords, putRecords } from '../src/persistence/recordStore.ts'
+import { deleteRecord, deleteRecords, readRecords, putRecords } from '../src/persistence/recordStore.ts'
 import { makeArchive, readArchive } from '../src/persistence/recordArchive.ts'
 
 const original=new Blob(['original-image'],{type:'image/jpeg'})
 const processed=new Blob(['transparent-png'],{type:'image/png'})
 const medal:MedalRecord={id:'real-medal',kind:'medal',name:'山野五十公里',date:'2026-09-14',note:'完赛纪念',source:'upload',originalImage:original,image:processed,cutout:'done'}
 const route:RouteRecord={id:'real-route',kind:'route',name:'山脊环线',note:'清晨出发',source:'upload',gpx:new Blob(['<gpx/>'],{type:'application/gpx+xml'}),trackPoints:[{lat:30,lon:120,elevation:100,segment:0},{lat:30.01,lon:120.01,elevation:110,segment:0}]}
+
+test('批量删除发生错误时整笔回滚，重试后只删除指定记录',async()=>{
+  const ids=['bulk-first','bulk-second']
+  await putRecords(ids.map(id=>({...medal,id,archived:true})))
+  const original=IDBObjectStore.prototype.delete
+  IDBObjectStore.prototype.delete=function(key){
+    if(key===ids[1])throw new DOMException('failed','UnknownError')
+    return original.call(this,key)
+  }
+  try{await assert.rejects(deleteRecords(ids),/删除收藏失败/)}finally{IDBObjectStore.prototype.delete=original}
+  assert.equal((await readRecords()).filter(r=>ids.includes(r.id)).length,2)
+  await deleteRecords(ids)
+  assert.equal((await readRecords()).filter(r=>ids.includes(r.id)).length,0)
+})
 
 test('彻底删除释放整条收藏及文件，重新读取不恢复且不影响其他记录',async()=>{
   const removed={...medal,id:'delete-medal',archived:true},kept={...route,id:'keep-route'}

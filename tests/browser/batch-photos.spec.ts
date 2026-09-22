@@ -87,9 +87,8 @@ test('multiple selection previews, skips corrupt files, saves originals and supp
 test('batch storage failure leaves canvas intact and same selection can retry without duplicates',async({page})=>{
   await ready(page)
   const files=await fixtures(page),initial=await page.locator('.scene>.memory').count()
-  await page.getByRole('button',{name:'打开收藏库',exact:true}).click()
-  await page.getByRole('button',{name:'批量导入图片',exact:true}).click()
-  await page.getByLabel('批量选择图片').setInputFiles(files)
+  await page.getByRole('button',{name:'添加照片',exact:true}).click()
+  await page.locator('.record-upload input').setInputFiles(files)
   await expect(page.locator('.batch-photo-row')).toHaveCount(3)
   await page.evaluate(()=>{
     const original=IDBObjectStore.prototype.put

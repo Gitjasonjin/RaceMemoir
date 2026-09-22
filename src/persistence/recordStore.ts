@@ -31,11 +31,16 @@ export async function putRecords(records:CollectionRecord[]):Promise<void>{
   })
 }
 export async function deleteRecord(id:string):Promise<void>{
+  return deleteRecords([id])
+}
+export async function deleteRecords(ids:string[]):Promise<void>{
+  if(!ids.length)return
   const db=await openDatabase()
   return new Promise((resolve,reject)=>{
     const tx=db.transaction('records','readwrite')
     tx.oncomplete=()=>{db.close();resolve()}
     tx.onabort=tx.onerror=()=>{db.close();reject(new Error('删除收藏失败，请重试'))}
-    tx.objectStore('records').delete(id)
+    try { ids.forEach(id=>tx.objectStore('records').delete(id)) }
+    catch { tx.abort() }
   })
 }
