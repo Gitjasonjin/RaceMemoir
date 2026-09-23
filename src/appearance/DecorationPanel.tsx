@@ -54,7 +54,7 @@ export default function DecorationPanel({board,item,thread,scope,onChange,onPinT
   return <Container className={embedded?'embedded-decoration':'decoration-panel'} aria-label="装饰样式" data-decoration-panel>
     <Dialog.Root open={!!item&&confirmPinId===item.id} onOpenChange={open=>{if(!open)setConfirmPinId(null)}}>
       <Dialog.Portal><Dialog.Backdrop className="ui-dialog-backdrop"/><Dialog.Viewport className="ui-dialog-viewport"><Dialog.Popup className="modal recycle-confirm-modal" data-ui-overlay initialFocus={cancelPinRef}>
-        <div className="modal-scroll"><div className="modal-content"><Dialog.Title render={<h2/>}>关闭大头钉？</Dialog.Title><Dialog.Description className="modal-description">关闭后，连接这张号码布的 {linkedThreads.length} 条连线也会同时移除。可通过撤销恢复。</Dialog.Description><div className="clear-board-actions"><button type="button" ref={cancelPinRef} onClick={()=>setConfirmPinId(null)}>取消</button><button type="button" className="clear-board-confirm" onClick={()=>{setConfirmPinId(null);onPinToggle(false)}}>关闭并移除连线</button></div></div></div>
+        <div className="modal-scroll"><div className="modal-content"><Dialog.Title render={<h2/>}>关闭大头钉？</Dialog.Title><Dialog.Description className="modal-description">同时移除 {linkedThreads.length} 条连线，可撤销。</Dialog.Description><div className="clear-board-actions"><button type="button" ref={cancelPinRef} onClick={()=>setConfirmPinId(null)}>取消</button><button type="button" className="clear-board-confirm" onClick={()=>{setConfirmPinId(null);onPinToggle(false)}}>关闭并移除连线</button></div></div></div>
       </Dialog.Popup></Dialog.Viewport></Dialog.Portal>
     </Dialog.Root>
     {embedded&&<h3>装饰样式</h3>}

@@ -32,7 +32,7 @@ export default function LibraryRecords(props:RecordPanelProps){
         <Dialog.Popup className="modal recycle-confirm-modal" data-ui-overlay initialFocus={cancelRef}>
           <div className="modal-scroll"><div className="modal-content">
             <Dialog.Title render={<h2/>}>清空回收站？</Dialog.Title>
-            <Dialog.Description className="modal-description">将永久删除所有类别中未被使用的 {eligible.length} 份收藏及原始文件，无法撤销。{archived.length>eligible.length&&`仍被画布或地图连线引用的 ${archived.length-eligible.length} 份收藏会保留。`}</Dialog.Description>
+            <Dialog.Description className="modal-description">删除所有类别中 {eligible.length} 份闲置收藏及原文件，不可撤销。{archived.length>eligible.length&&`使用中的 ${archived.length-eligible.length} 份收藏保留。`}</Dialog.Description>
             {error&&<p className="record-error" role="alert">{error}</p>}
             <div className="clear-board-actions"><button ref={cancelRef} type="button" disabled={busy} onClick={()=>setEmptyOpen(false)}>取消</button><button type="button" className="clear-board-confirm" disabled={busy||!eligible.length} onClick={()=>void run(()=>props.onEmptyRecycle(eligible.map(r=>r.id)))}>{busy?'正在删除…':'确认清空'}</button></div>
           </div></div>
@@ -49,7 +49,7 @@ export default function LibraryRecords(props:RecordPanelProps){
         <button type="button" className="record-delete" disabled={busy||(recycle&&(references>0||threadReferences>0))} aria-label={`${recycle?'彻底删除':'删除'} ${r.name}`} title={recycle?(threadReferences?'请先移除地图上的地点连线':references?'请先移除画布上使用此收藏的物件':'彻底删除原始文件'):'移入回收站，画布物件保留'} onClick={()=>{if(recycle){setConfirmId(r.id);setError('')}else void run(()=>props.onSave({...r,archived:true},false))}}><Trash2 size={17}/></button>
       </div>{recycle&&references>0&&<p className="record-delete-hint">先移除画布上的 {references} 件物件，才能彻底删除。</p>}
       {recycle&&threadReferences>0&&<p className="record-delete-hint">请先在地图编辑栏移除 {threadReferences} 条地点连线，再彻底删除收藏。</p>}
-      {confirmId===r.id&&<div className="record-delete-confirm" role="group" aria-label={`确认删除 ${r.name}`}><p>彻底删除这份收藏及原始文件？此操作无法撤销。</p><button type="button" disabled={busy} className="record-delete" onClick={()=>void run(()=>props.onDelete(r.id))}>确认彻底删除</button><button type="button" disabled={busy} onClick={()=>setConfirmId(null)}>取消</button></div>}
+      {confirmId===r.id&&<div className="record-delete-confirm" role="group" aria-label={`确认删除 ${r.name}`}><p>删除收藏及原文件？不可撤销。</p><button type="button" disabled={busy} className="record-delete" onClick={()=>void run(()=>props.onDelete(r.id))}>确认彻底删除</button><button type="button" disabled={busy} onClick={()=>setConfirmId(null)}>取消</button></div>}
       </div>
     })}{!visible.length&&<p className="record-empty">{filter!=='all'?'此类别暂无收藏':recycle?'回收站是空的':'还没有收藏，上传第一份记忆吧。'}</p>}</div>
   </>

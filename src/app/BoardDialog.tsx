@@ -13,7 +13,7 @@ export default function BoardDialog({modal,board,exporting,exportImage,exportJso
     <Dialog.Popup className="modal" data-ui-overlay initialFocus={modal==='clear'?cancel:undefined}>
       <div className="modal-controls"><Dialog.Close className="modal-close" aria-label="关闭"><X size={21}/></Dialog.Close></div>
       <div className="modal-scroll"><div className="modal-content">
-      {modal==='clear'&&<><Dialog.Title render={<h2/>}>清空当前画布？</Dialog.Title><Dialog.Description className="modal-description">将移除画布上的 {board.items.length} 件物件和 {board.threads.length} 条连线，包括已锁定的物件。收藏库素材、收藏板名称与背景保留，可通过撤销恢复。</Dialog.Description><div className="clear-board-actions"><button type="button" ref={cancel} onClick={onClose}>取消</button><button type="button" className="clear-board-confirm" disabled={!canClear||exporting} onClick={onClear}>确认清空</button></div></>}
+      {modal==='clear'&&<><Dialog.Title render={<h2/>}>清空当前画布？</Dialog.Title><Dialog.Description className="modal-description">移除 {board.items.length} 件物件（含锁定）及 {board.threads.length} 条连线。素材保留，可撤销。</Dialog.Description><div className="clear-board-actions"><button type="button" ref={cancel} onClick={onClose}>取消</button><button type="button" className="clear-board-confirm" disabled={!canClear||exporting} onClick={onClear}>确认清空</button></div></>}
       {modal==='share' && <>
         <div className="eyebrow">MEMORIES ARE BETTER SHARED</div><Dialog.Title render={<h2/>}>带走这份山野记忆</Dialog.Title>
         <Dialog.Description className="modal-description">导出图片分享回忆，或用收藏板文件备份与恢复。</Dialog.Description>
