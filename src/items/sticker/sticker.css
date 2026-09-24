@@ -5,17 +5,17 @@
 .sticker-preview>div{max-width:100%;max-height:100%}
 .sticker-preview .sticker-artwork img{max-height:230px}
 .sticker-modes{display:flex;gap:8px;margin:12px 0}
-.sticker-modes button{flex:1;border:1px solid #d2d6c7;border-radius:6px;padding:8px;font-size:12px}
-.sticker-modes button[aria-pressed=true]{background:#e6eadb;border-color:#717c56;color:#47532d}
-.sticker-preview-empty{color:#858978;font-size:13px}
+.sticker-modes button{flex:1;border:1px solid var(--ui-border);border-radius:6px;padding:8px;font-size:12px}
+.sticker-modes button[aria-pressed=true]{background:var(--ui-forest-soft);border-color:var(--ui-forest);color:var(--ui-forest)}
+.sticker-preview-empty{color:var(--ui-subtle);font-size:13px}
 .sticker-style-options{margin:0 0 18px;padding:0;border:0}
-.sticker-style-options legend{font-size:12px;color:#606d50;margin-bottom:9px}
+.sticker-style-options legend{font-size:12px;color:var(--ui-forest);margin-bottom:9px}
 .sticker-style-options>div{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.sticker-style-options button{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;border:1px solid #dddccd;border-radius:9px;padding:12px 8px;background:#faf8f0}
-.sticker-style-options button:hover{background:#f0eee2;border-color:#aaa98f}
-.sticker-style-options button[aria-pressed=true]{background:#eef0e2;border-color:#82916a}
-.sticker-style-options strong{font-size:12px;font-weight:550}.sticker-style-options small{font-size:10px;color:#959780}
-.sticker-style-options button>svg{position:absolute;top:8px;right:8px;color:#718158}
+.sticker-style-options button{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;border:1px solid var(--ui-border);border-radius:9px;padding:12px 8px;background:var(--ui-paper)}
+.sticker-style-options button:hover{background:var(--ui-hover);border-color:var(--ui-border-strong)}
+.sticker-style-options button[aria-pressed=true]{background:var(--ui-forest-soft);border-color:var(--ui-forest)}
+.sticker-style-options strong{font-size:12px;font-weight:550}.sticker-style-options small{font-size:10px;color:var(--ui-subtle)}
+.sticker-style-options button>svg{position:absolute;top:8px;right:8px;color:var(--ui-forest)}
 .sticker-style-sample{position:relative;display:block;width:62px;height:46px;filter:drop-shadow(0 1px 1px #493f302b)}
 .sticker-style-sample i{position:absolute;inset:8px 13px;background:#7d9373;clip-path:polygon(0 100%,38% 9%,59% 54%,75% 27%,100% 100%)}
 .sticker-style-contour{background:#fffdf5;clip-path:polygon(8% 92%,36% 4%,48% 4%,61% 40%,72% 18%,84% 20%,100% 92%,98% 100%,6% 100%)}
@@ -26,4 +26,4 @@
 .sticker-style-washi{background:repeating-linear-gradient(115deg,#f1e6cb88 0 1px,#f9f0dbaa 1px 4px);clip-path:polygon(8% 92%,36% 4%,48% 4%,61% 40%,72% 18%,84% 20%,100% 92%,98% 100%,6% 100%)}
 .sticker-style-washi i{opacity:.65;background:repeating-linear-gradient(110deg,#8eaa8a 0 2px,#bac6a0 2px 3px)}
 .sticker-washi img{filter:drop-shadow(0 .4px .25px #30201433)}
-.sticker-style-options button:focus-visible{outline:2px solid #718158;outline-offset:2px}
+.sticker-style-options button:focus-visible{outline:2px solid var(--ui-forest);outline-offset:2px}

@@ -1,1 +1,3 @@
 .handwritten{font-family:"Ma Shan Zheng","KaiTi","STKaiti",cursive;white-space:pre-line;font-weight:400}.paper{background-color:#f1f0e7;background-image:linear-gradient(131deg,transparent 28%,#adab9620 28.5%,#ffffff55 29%,transparent 30%),linear-gradient(51deg,transparent 64%,#b2ae9820 64.5%,#fff8 65%,transparent 66%),linear-gradient(174deg,#ffffff44,transparent 43%,#c2bfb025 44%,#fff6 45%,transparent 48%);box-shadow:3px 6px 8px #49311f4d,0 1px 2px #3929153d}
+/* Interface colors must not recolor the physical keepsakes. */
+.memory,.demo-record-preview{color:#30332f}

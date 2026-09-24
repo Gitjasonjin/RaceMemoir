@@ -7,19 +7,19 @@
 .exhibit-preview .exhibit-add-slot{font-size:10px;gap:3px;inset:5%;width:90%;height:90%;padding:3px;white-space:nowrap}
 .exhibit-preview .exhibit-add-slot svg{width:18px;height:18px}
 .exhibit-picker-list{display:grid;gap:8px;margin:16px 0}
-.exhibit-picker-list button{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d7dccb;border-radius:6px;background:#eeefe6;text-align:left}
+.exhibit-picker-list button{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--ui-border);border-radius:6px;background:var(--ui-surface-muted);text-align:left}
 .exhibit-picker-list button span{flex:1;min-width:0;overflow-wrap:anywhere}
 .exhibit-layouts{display:flex;gap:8px;margin:12px 0 20px}
-.exhibit-layouts button{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 5px;border:1px solid #dddccf;border-radius:6px;color:#747861}
-.exhibit-layouts button[aria-pressed=true]{border-color:#68794e;background:#eaf0df;color:#465835}
+.exhibit-layouts button{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 5px;border:1px solid var(--ui-border);border-radius:6px;color:var(--ui-muted)}
+.exhibit-layouts button[aria-pressed=true]{border-color:var(--ui-forest);background:var(--ui-forest-soft);color:var(--ui-forest)}
 .exhibit-layouts button:disabled{opacity:.35;cursor:not-allowed}
 .selection-bar .layer-popover .exhibit-layouts button{width:auto;height:auto;min-width:0;padding:10px 4px;justify-content:center;gap:8px}
 .exhibit-layout-icon{display:grid;gap:2px;width:44px;height:30px;padding:3px;border:2px solid currentColor}
 .exhibit-layout-icon i{background:currentColor;opacity:.5}
 .exhibit-medals{list-style:none;padding:0;margin:10px 0 24px}
-.exhibit-medals li{display:flex;align-items:center;gap:8px;border-bottom:1px solid #e5e5d9;padding:6px 0;min-width:0}
+.exhibit-medals li{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--ui-border);padding:6px 0;min-width:0}
 .exhibit-medals li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
-.exhibit-medals button{padding:7px;color:#747861;border-radius:4px}
-.exhibit-medals button:hover{background:#e8eddf}
+.exhibit-medals button{padding:7px;color:var(--ui-muted);border-radius:4px}
+.exhibit-medals button:hover{background:var(--ui-hover)}
 .exhibit-preview{display:flex;justify-content:center;margin:0 0 22px;pointer-events:none}
 .exhibit-preview>div{max-width:100%}

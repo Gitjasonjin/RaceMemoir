@@ -1,9 +1,9 @@
-.tool-palette{position:absolute;left:18px;top:87px;z-index:12;width:50px;max-height:calc(100dvh - 185px);padding:6px;display:flex;flex-direction:column;align-items:center;gap:3px;overflow:auto;scrollbar-width:none;background:linear-gradient(100deg,#f5f3e9f5,#eeede5f2);border:1px solid #faf8e960;border-radius:10px;box-shadow:0 4px 12px #49332026}
+.tool-palette{position:absolute;left:18px;top:87px;z-index:12;width:50px;max-height:calc(100dvh - 185px);padding:6px;display:flex;flex-direction:column;align-items:center;gap:3px;overflow:auto;scrollbar-width:none;background:var(--ui-floating);border:1px solid var(--ui-border);border-radius:10px;box-shadow:0 4px 12px #49332026}
 .tool{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:36px;height:36px;padding:0;border-radius:6px}
-.tool:hover{background:#e4e5db}.tool.active{background:#dadcd2}.tool.active>svg{stroke-width:1.8}.tool:focus-visible{outline:2px solid #788666;outline-offset:-2px}
-.tool-divider{flex-shrink:0;width:24px;height:1px;margin:3px 0;background:#dedfd6}
-.connect-tool svg{color:#bc2d37}.connect-tool.active{background:#ead6cc}
-.tool-tooltip{position:fixed;z-index:120;pointer-events:none;max-width:132px;padding:8px 11px;border-radius:6px;background:#35392f;color:#fffdf5;font-size:12px;line-height:18px;white-space:nowrap;box-shadow:0 3px 12px #25271f26}
+.tool:hover{background:var(--ui-hover)}.tool.active{background:var(--ui-forest);color:var(--ui-paper)}.tool.active>svg{stroke-width:1.8}.tool:focus-visible{outline:2px solid var(--ui-forest);outline-offset:-2px}
+.tool-divider{flex-shrink:0;width:24px;height:1px;margin:3px 0;background:var(--ui-border)}
+.connect-tool svg{color:#bc2d37}.connect-tool.active{background:var(--ui-forest)}.connect-tool.active svg{color:var(--ui-paper)}
+.tool-tooltip{position:fixed;z-index:120;pointer-events:none;max-width:132px;padding:8px 11px;border-radius:6px;background:var(--ui-forest);color:var(--ui-paper);font-size:12px;line-height:18px;white-space:nowrap;box-shadow:0 3px 12px #25271f26}
 @media(min-width:1700px){.tool-palette{top:96px;left:24px}}
 @media(max-width:1000px){.tool-palette{left:12px}}
 @media(max-width:700px){.tool-palette{top:76px;left:10px}}

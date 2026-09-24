@@ -1,4 +1,4 @@
-.medal-sizing{padding:12px 0;border-top:1px solid #d7dccb}.medal-sizing h3{font-size:14px;margin:8px 0}.medal-sizing input[type=range]{width:100%;accent-color:#71845d;padding:0}.medal-layout-preview{height:320px;display:flex;justify-content:center;align-items:center;overflow:hidden;background:#e8e9df;border-radius:8px;margin-top:14px}.medal-layout-preview>div{position:relative;flex-shrink:0}.real-medal{transform-origin:center}
+.medal-sizing{padding:12px 0;border-top:1px solid var(--ui-border)}.medal-sizing h3{font-size:14px;margin:8px 0}.medal-sizing input[type=range]{width:100%;accent-color:#71845d;padding:0}.medal-layout-preview{height:320px;display:flex;justify-content:center;align-items:center;overflow:hidden;background:var(--ui-surface-muted);border-radius:8px;margin-top:14px}.medal-layout-preview>div{position:relative;flex-shrink:0}.real-medal{transform-origin:center}
 
 /* Follow the medal's display bounds and scale without changing its layout. */
 .medal-layout-preview .real-medal,

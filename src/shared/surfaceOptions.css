@@ -1,8 +1,8 @@
 .surface-options{margin:16px 0}
 .surface-options>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
-.surface-options button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:10px 5px;font-size:11px;border:1px solid #d8ddcd;border-radius:6px;min-width:0;background:#f6f6ec}
-.surface-options button[aria-pressed=true]{background:#e5ead9;border-color:#7b9065;color:#425b32}
-.surface-options button:hover{background:#ebefdf;filter:none}
+.surface-options button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:10px 5px;font-size:11px;border:1px solid var(--ui-border);border-radius:6px;min-width:0;background:var(--ui-surface-muted)}
+.surface-options button[aria-pressed=true]{background:var(--ui-forest-soft);border-color:var(--ui-forest);color:var(--ui-forest)}
+.surface-options button:hover{background:var(--ui-forest-soft);filter:none}
 .paper-swatch{display:block;width:36px;height:40px;background:linear-gradient(145deg,#c5d4c1,#698572);border:3px solid #fffdf5;border-bottom-width:10px;box-shadow:1px 2px 3px #0003}
 .paper-swatch-print{height:29px;border-width:2px}
 .paper-swatch-borderless{height:29px;border:0}

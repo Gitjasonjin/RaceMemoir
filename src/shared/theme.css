@@ -1,0 +1,24 @@
+/* RaceMemoir interface palette. Keep artwork, maps and material colors independent. */
+:root {
+  --ui-paper: #f5f2e8;
+  --ui-input: #fffdf7;
+  --ui-surface-muted: #eeede3;
+  --ui-ink: #161914;
+  --ui-muted: #606454;
+  --ui-subtle: #667062;
+  --ui-forest: #153d31;
+  --ui-forest-hover: #204f40;
+  --ui-forest-soft: #e5ebe3;
+  --ui-hover: #e9ece2;
+  --ui-orange: #ff621d;
+  --ui-orange-hover: #ef5514;
+  --ui-border: #d8d9cd;
+  --ui-border-strong: #819487;
+  --ui-scrollbar: #b6bfae;
+  --ui-focus-ring: #153d3126;
+  --ui-danger: #a34736;
+  --ui-danger-soft: #f4e4dc;
+  --ui-floating: #f5f2e8f5;
+  --ui-overlay-button: #f5f2e8eb;
+  --ui-shadow: #16191426;
+}

@@ -1,4 +1,5 @@
 /* Ordered explicitly: base, artwork, editor rules, then surface overrides. */
+@import '../shared/theme.css';
 @import '../shared/base.css';
 @import 'chrome.css';
 @import '../board/canvas.css';

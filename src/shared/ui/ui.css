@@ -4,13 +4,13 @@
 .ui-tooltip-positioner .tool-tooltip{position:relative;max-width:min(260px,calc(100vw - 16px));white-space:normal}
 .ui-action-menu{position:relative;inset:auto;transform:none;max-width:calc(100vw - 16px);max-height:var(--available-height);overflow:auto;overscroll-behavior:contain;outline:none}
 .ui-action-menu button{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;height:36px;padding:0 10px;font-size:12px;border-radius:5px;white-space:nowrap}
-.ui-action-menu button[data-highlighted]{background:#e6e9dd;outline:none}
+.ui-action-menu button[data-highlighted]{background:var(--ui-hover);outline:none}
 .ui-action-menu button[data-disabled]{opacity:.35;cursor:default;background:none}
 .ui-action-menu .exhibit-layouts button{height:auto;min-height:64px;flex-direction:column;padding:8px 4px}
 .ui-action-menu .exhibit-layouts{margin:0}
 .canvas-context-menu.ui-action-menu{width:196px}
 .canvas-context-menu.ui-action-menu button{height:42px;font-size:13px}
-.ui-dialog-backdrop{position:fixed;inset:0;z-index:100;background:#302b2657;backdrop-filter:blur(5px)}
+.ui-dialog-backdrop{position:fixed;inset:0;z-index:100;background:#16191457;backdrop-filter:blur(5px)}
 .ui-dialog-viewport{position:fixed;inset:0;z-index:101;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
 .ui-dialog-viewport .modal{position:relative;inset:auto;margin:auto;flex-shrink:0;outline:none}
 @media(max-width:700px), (pointer:coarse) and (max-height:500px){.ui-dialog-viewport{padding:8px}}
