@@ -1,3 +1,4 @@
+import AssetPicker from '../shared/AssetPicker'
 import DatePicker from '../shared/ui/DatePicker'
 import PhotoCropPreview from '../items/photo/PhotoCropPreview'
 import PhotoComposition from '../items/photo/PhotoComposition'
@@ -57,7 +58,7 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
     patch({image:blob,cutout:'original'})
     cutout.run(blob, result => {
       patch({image:result,cutout:'done'});setNotice('自动抠图已完成，请检查奖牌和绶带，满意后保存。')
-      requestAnimationFrame(()=>preview.current?.scrollIntoView({block:'start',behavior:'smooth'}))
+      requestAnimationFrame(()=>preview.current?.closest('.asset-picker')?.scrollIntoView({block:'start',behavior:'smooth'}))
     }, setNotice)
   }
   const upload = async (file?: File) => {
@@ -94,10 +95,10 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
   return <>
     <div className="record-heading"><button disabled={saving} onClick={() => props.onBack?props.onBack():props.onMode({mode:'library'})} aria-label={props.backLabel??(props.onBack?(props.mode.exhibitSlot!==undefined?'返回奖牌选择':'返回展览框'):'返回收藏库')}><ArrowLeft size={19}/></button><div><h2>{record?'编辑':'添加'}{kindLabel}</h2></div><button onClick={props.onClose} aria-label="关闭详情"><X size={20}/></button></div>
     <div className="record-scroll">
-    {!repairing&&!cropping&&<div ref={preview} className={`record-preview ${draft.kind==='medal'?'medal-preview':''}`}>
+    {!repairing&&!cropping&&<AssetPicker hasAsset={draft.kind==='route'?!!draft.trackPoints.length:draft.source==='demo'||!!draft.image?.size} label={reading?'正在读取文件…':draft.kind==='photo'&&!record&&!draft.image.size?'选择照片（可多选）':draft.kind==='route'?(draft.trackPoints.length?'更换 GPX 文件':'选择 GPX 文件'):`${draft.image?.size||draft.source==='demo'?'更换':'选择'}${kindLabel}图片`} inputLabel={draft.kind==='route'?'GPX 文件':`${kindLabel}图片`} accept={draft.kind==='route'?'.gpx':'image/png,image/jpeg,image/webp'} multiple={draft.kind==='photo'&&!record} disabled={saving||reading||repairing||cropping} onFiles={files=>{if(draft.kind==='photo'&&!record&&files.length>1)props.onMode({mode:'photo-batch',files});else void upload(files[0])}}><div ref={preview} className={`record-preview ${draft.kind==='medal'?'medal-preview':''}`}>
       {draft.kind==='photo'&&image?<PhotoCropPreview key={image} item={photoItem} record={draft} onChange={!busy&&(!record||props.item?.kind==='photo')?changePhoto:undefined}/>:draft.kind!=='route' ? image ? <img src={showOriginal?original:image} alt={`${draft.name||kindLabel}预览`}/> : draft.source==='demo'? <div className="demo-record-preview"><Artwork item={demoItem} record={draft}/></div>:<div className="upload-placeholder">{draft.kind==='photo'?<ImagePlus size={42}/>:<Medal size={42}/>}<span>{draft.kind==='photo'?'上传照片，留下你的山野瞬间':'让这块奖牌，成为你的收藏'}</span></div>
         : draft.trackPoints.length ? <RouteArtwork record={draft as RouteRecord}/> : <div className="upload-placeholder"><Route size={42}/><span>{draft.source==='demo'?'示例路线 · 尚无真实轨迹':'导入走过的路'}</span></div>}
-    </div>}
+    </div></AssetPicker>}
     {draft.kind==='photo'&&(!record||props.item?.kind==='photo')&&<PhotoComposition item={photoItem} onChange={changePhoto}/>}
     {draft.kind==='medal'&&(!record||props.item?.kind==='medal')&&!repairing&&!cropping&&<>
       <div className="medal-layout-preview"><div style={{width:medalItem.w,height:medalItem.h,transform:`scale(${Math.min(260/medalItem.w,300/medalItem.h)})`}}><>{props.exhibitMedal?<div className="frame-backing"><MedalContent item={medalItem} record={draft}/></div>:<Artwork item={medalItem} record={draft}/>}</></div></div>
@@ -107,8 +108,6 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
     {draft.kind==='medal'&&draft.image&&!repairing&&!cropping&&<div className="record-actions"><button type="button" disabled={busy} onClick={()=>{setCropping(true);setNotice('')}}>手动裁剪</button>{draft.crop&&<button type="button" disabled={busy} onClick={()=>{patch({crop:undefined});setShowOriginal(false);setNotice('已恢复自动显示范围，保存后生效。')}}>恢复裁剪前区域</button>}</div>}
     {repairing&&draft.kind==='medal'&&draft.originalImage&&draft.image&&<RibbonRepair original={draft.originalImage} image={draft.image} onApply={image=>{patch({image,cutout:'done'});setRepairing(false);setShowOriginal(false);setNotice(`绶带修复已应用，点击「${record?'保存修改':props.mode.exhibitSlot!==undefined?'保存并放入展览框':'保存并放上画布'}」保存到收藏记录。`)}} onClose={()=>setRepairing(false)}/>}
     <form onSubmit={e=>void save(e)}>
-      <label className="record-upload">{reading?'正在读取文件…':draft.kind==='photo'&&!record?'选择照片（可多选）':draft.kind!=='route'?`选择 / 更换${kindLabel}图片`:'选择 / 更换 GPX 文件'}<input type="file" multiple={draft.kind==='photo'&&!record} disabled={saving||reading||repairing||cropping} accept={draft.kind!=='route'?'image/png,image/jpeg,image/webp':'.gpx'} onChange={e=>{const files=Array.from(e.currentTarget.files??[]);e.currentTarget.value='';if(draft.kind==='photo'&&!record&&files.length>1)props.onMode({mode:'photo-batch',files});else void upload(files[0])}}/></label>
-
       {cutout.progress&&<div className="record-progress" role="status"><span className="record-spinner"/>{cutout.progress}<button type="button" onClick={()=>{cutout.cancel();setNotice('已取消抠图，使用原图。')}}>取消抠图</button></div>}
       {draft.kind==='medal'&&draft.originalImage&&!cutout.progress&&!repairing&&!cropping&&<div className="record-actions"><button type="button" disabled={busy} onClick={()=>processImage((draft as MedalRecord).originalImage!)}>自动抠图（含绶带）</button>{draft.cutout==='done'&&<><button type="button" disabled={busy} onClick={()=>{setRepairing(true);setNotice('')}}>手动微调</button><button type="button" onClick={()=>setShowOriginal(!showOriginal)}>{showOriginal?'查看抠图':'对比原图'}</button><button type="button" disabled={saving} onClick={()=>{patch({image:draft.originalImage,cutout:'original'});setShowOriginal(false)}}>使用原图</button></>}</div>}
       <label className="field-label">{kindLabel}名称<input required maxLength={200} value={draft.name} disabled={saving} onChange={e=>patch({name:e.target.value})} placeholder={draft.kind==='medal'?'我的第一场越野赛':'山野环线'}/></label>

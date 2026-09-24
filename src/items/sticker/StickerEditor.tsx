@@ -1,3 +1,4 @@
+import AssetPicker from '../../shared/AssetPicker'
 import {useEffect,useRef,useState} from 'react'
 import {ArrowLeft,Check,X} from 'lucide-react'
 import type {StickerRecord} from '../../domain/records'
@@ -77,9 +78,9 @@ export default function StickerEditor(props:RecordPanelProps&{record?:StickerRec
         setDraft(d=>({...d,image,imageMode:'cutout',width:bounds.width,height:bounds.height}))
         setAccepted(true);setError('');setRepairing(false)
       }}/>:<>
-      <div className="sticker-preview">{draft.originalImage.size?<div style={{width:preview.w*previewScale,height:preview.h*previewScale}}><StickerArtwork record={draft} border={border} style={style}/></div>:<span className="sticker-preview-empty">上传图片，制作你的贴纸</span>}</div>
+      <AssetPicker hasAsset={!!draft.originalImage.size} label={draft.originalImage.size?'更换贴纸图片':'选择贴纸图片'} inputLabel="贴纸图片" accept="image/png,image/jpeg,image/webp" disabled={saving} onFiles={files=>void upload(files[0])}><div className="sticker-preview">{draft.originalImage.size?<div style={{width:preview.w*previewScale,height:preview.h*previewScale}}><StickerArtwork record={draft} border={border} style={style}/></div>:<span className="sticker-preview-empty">上传图片，制作你的贴纸</span>}</div></AssetPicker>
       <fieldset className="sticker-style-options"><legend>贴纸风格</legend><div>{([{id:'contour',label:'轮廓贴纸',detail:'沿主体留白'},{id:'torn',label:'撕纸拼贴',detail:'不规则纤维毛边'},{id:'sketch',label:'手绘描边',detail:'随手勾勒的线条'},{id:'washi',label:'和纸贴纸',detail:'半透纸感 · 细纤维'}] as const).map(option=><button type="button" key={option.id} aria-pressed={style===option.id} aria-label={option.label} disabled={busy} onClick={()=>setStyle(option.id)}><span className={`sticker-style-sample sticker-style-${option.id}`} aria-hidden="true"><i/></span><strong>{option.label}</strong><small>{option.detail}</small>{style===option.id&&<Check size={14}/>}</button>)}</div></fieldset>
-      <label className="record-upload">{draft.originalImage.size?'更换贴纸图片':'选择贴纸图片'}<input type="file" aria-label="贴纸图片" disabled={saving} accept="image/png,image/jpeg,image/webp" onChange={e=>{const file=e.currentTarget.files?.[0];e.currentTarget.value='';void upload(file)}}/></label>
+
       {cutout.progress&&<p className="record-progress" role="status">{cutout.progress}</p>}
       {reading&&<p className="record-progress" role="status">正在读取图片…</p>}
       {!!draft.originalImage.size&&<><div className="sticker-modes" role="group" aria-label="贴纸图片模式"><button type="button" disabled={saving} aria-pressed={draft.imageMode==='original'} onClick={()=>void mode('original')}>使用原图</button><button type="button" disabled={saving||!draft.image} aria-pressed={draft.imageMode==='cutout'} onClick={()=>void mode('cutout')}>使用抠图</button></div><div className="record-actions"><button type="button" disabled={saving} onClick={()=>process(draft)}>重新抠图</button></div></>}
