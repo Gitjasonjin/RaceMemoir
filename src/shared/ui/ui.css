@@ -1,7 +1,15 @@
 /* Portalled surfaces own their layout, independent of the canvas toolbar. */
 .ui-menu-positioner{z-index:80;max-width:calc(100vw - 16px)}
-.ui-tooltip-positioner{z-index:120;pointer-events:none}
-.ui-tooltip-positioner .tool-tooltip{position:relative;max-width:min(260px,calc(100vw - 16px));white-space:normal}
+.ui-tooltip-positioner{z-index:120;pointer-events:none;width:var(--positioner-width);height:var(--positioner-height);--hint-ease:cubic-bezier(.23,1,.32,1)}
+.ui-tooltip-positioner[data-anchor-hidden]{visibility:hidden}
+.ui-tooltip-positioner .tool-tooltip{position:relative;max-width:min(260px,calc(100vw - 16px));width:var(--popup-width,auto);height:var(--popup-height,auto);padding:0;white-space:normal;border-radius:8px;transform-origin:var(--transform-origin);box-shadow:0 2px 4px #16191414,0 8px 20px -6px #16191438}
+.hint-viewport{position:relative;overflow:hidden;border-radius:inherit}
+.hint-content{display:flex;align-items:center;gap:8px;width:max-content;max-width:min(260px,calc(100vw - 16px));padding:8px 11px}
+.hint-content kbd{flex-shrink:0;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--ui-paper) 12%,transparent);box-shadow:inset 0 -1px 0 #ffffff21;font-family:inherit;font-size:10px;line-height:16px;color:var(--ui-paper)}
+.hint-arrow{width:7px;height:7px}
+.hint-arrow:before{content:'';position:absolute;inset:0;border-radius:1px;background:var(--ui-forest);transform:rotate(45deg)}
+.hint-arrow[data-side=top]{bottom:-3px}.hint-arrow[data-side=bottom]{top:-3px}.hint-arrow[data-side=right]{left:-3px}.hint-arrow[data-side=left]{right:-3px}
+.hint-viewport [data-previous]{inset:0;width:var(--popup-width);height:var(--popup-height)}
 .ui-action-menu{position:relative;inset:auto;transform:none;max-width:calc(100vw - 16px);max-height:var(--available-height);overflow:auto;overscroll-behavior:contain;outline:none}
 .ui-action-menu button{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;height:36px;padding:0 10px;font-size:12px;border-radius:5px;white-space:nowrap}
 .ui-action-menu button[data-highlighted]{background:var(--ui-hover);outline:none}
@@ -15,4 +23,23 @@
 .ui-dialog-viewport .modal{position:relative;inset:auto;margin:auto;flex-shrink:0;outline:none}
 @media(max-width:700px), (pointer:coarse) and (max-height:500px){.ui-dialog-viewport{padding:8px}}
 @media(pointer:coarse){.ui-action-menu button{min-height:44px}.record-scroll .pin-toggle,.decoration-panel .pin-toggle{min-height:21px;position:relative}.pin-toggle::after{content:'';position:absolute;inset:-11px 0}}
-@media(prefers-reduced-motion:no-preference){.ui-action-menu,.ui-tooltip-positioner .tool-tooltip{transition:opacity 100ms ease}.ui-action-menu[data-starting-style],.ui-action-menu[data-ending-style],.tool-tooltip[data-starting-style],.tool-tooltip[data-ending-style]{opacity:0}}
+@media(prefers-reduced-motion:no-preference){
+  .ui-action-menu{transition:opacity 100ms ease}.ui-action-menu[data-starting-style],.ui-action-menu[data-ending-style]{opacity:0}
+  .ui-tooltip-positioner{transition:top 260ms var(--hint-ease),left 260ms var(--hint-ease),right 260ms var(--hint-ease),bottom 260ms var(--hint-ease)}
+  .ui-tooltip-positioner .tool-tooltip{transition:opacity 160ms var(--hint-ease),transform 160ms var(--hint-ease),filter 160ms var(--hint-ease),width 260ms var(--hint-ease),height 260ms var(--hint-ease)}
+  .ui-tooltip-positioner .tool-tooltip[data-starting-style],.ui-tooltip-positioner .tool-tooltip[data-ending-style]{opacity:0;transform:translate(var(--hint-x,0px),var(--hint-y,3px)) scale(.95);filter:blur(2px)}
+  .tool-tooltip[data-side=right]{--hint-x:-3px;--hint-y:0px}.tool-tooltip[data-side=left]{--hint-x:3px;--hint-y:0px}.tool-tooltip[data-side=bottom]{--hint-y:-3px}
+  .ui-tooltip-positioner .tool-tooltip[data-ending-style]{transition-duration:120ms}
+  .hint-viewport{--hint-swap-x:0px;--hint-swap-y:0px}
+  .hint-viewport[data-activation-direction~=right]{--hint-swap-x:6px}.hint-viewport[data-activation-direction~=left]{--hint-swap-x:-6px}
+  .hint-viewport[data-activation-direction~=down]{--hint-swap-y:6px}.hint-viewport[data-activation-direction~=up]{--hint-swap-y:-6px}
+  .hint-viewport [data-current],.hint-viewport [data-previous]{transition:opacity 140ms var(--hint-ease),transform 140ms var(--hint-ease),filter 140ms var(--hint-ease)}
+  .hint-viewport [data-current][data-starting-style]{opacity:0;transform:translate(var(--hint-swap-x),var(--hint-swap-y));filter:blur(1px)}
+  .hint-viewport [data-previous][data-ending-style]{opacity:0;transform:translate(calc(-1 * var(--hint-swap-x)),calc(-1 * var(--hint-swap-y)));filter:blur(1px)}
+  /* Keyboard focus and dismissal stay immediate; only pointer travel glides. */
+  .ui-tooltip-positioner[data-instant=focus],.ui-tooltip-positioner[data-instant=dismiss],.ui-tooltip-positioner .tool-tooltip[data-instant=focus],.ui-tooltip-positioner .tool-tooltip[data-instant=dismiss],.hint-viewport[data-instant=focus]>*{transition:none}
+  :is(.tool-palette,.selection-bar,.history-controls,.zoom-controls) button>svg{transform-origin:center;transition:transform 200ms cubic-bezier(.2,.8,.2,1)}
+  :is(.tool-palette,.selection-bar,.history-controls,.zoom-controls) button:not(:disabled):focus-visible>svg{transform:scale(1.05)}
+  @media(hover:hover) and (pointer:fine){:is(.tool-palette,.selection-bar,.history-controls,.zoom-controls) button:not(:disabled):hover>svg{transform:translateY(-1.5px) scale(1.06)}}
+  :is(.tool-palette,.selection-bar,.history-controls,.zoom-controls) button:not(:disabled):active>svg{transform:translateY(1px) scale(.92);transition-duration:80ms}
+}

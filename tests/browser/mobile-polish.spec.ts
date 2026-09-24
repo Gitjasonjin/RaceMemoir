@@ -14,6 +14,7 @@ test('mobile toolbars and canvas editor return preserve library navigation',asyn
   await expect(page.getByRole('button',{name:'取消选择'})).toHaveCount(0)
   await page.screenshot({path:info.outputPath('toolbars.png')})
   await page.getByRole('button',{name:'编辑物件'}).tap()
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
   await page.getByRole('button',{name:'返回画布'}).tap();await expect(page.locator('.record-panel')).toHaveCount(0)
   await page.getByRole('button',{name:'打开收藏库',exact:true}).tap()
   await page.locator('.record-row-main').filter({hasText:'测试奖牌'}).tap()

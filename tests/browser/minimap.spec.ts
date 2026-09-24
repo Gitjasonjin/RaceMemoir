@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test'
 for(const zoomSteps of [0,4,8])test(`minimap drag remains usable without jumping at zoom step ${zoomSteps}`,async({page})=>{
   await page.goto('/')
   await page.locator('.records-loading').waitFor({state:'hidden'})
-  await page.getByTitle('恢复 100%').click()
+  await page.getByRole('button',{name:'恢复 100%',exact:true}).click()
   for(let i=0;i<zoomSteps;i++)await page.getByRole('button',{name:'放大',exact:true}).click()
   const map=page.locator('.minimap svg'),windowRect=page.locator('[data-minimap-viewport]')
   const camera=()=>page.locator('.scene').evaluate(el=>{const m=new DOMMatrix(getComputedStyle(el).transform);return {x:m.e,y:m.f,scale:m.a}})

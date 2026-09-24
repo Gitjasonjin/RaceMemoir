@@ -1,4 +1,4 @@
-import {HintButton} from '../shared/ui/Hint'
+import {HintButton,HintGroup} from '../shared/ui/Hint'
 import {Scan,Sticker,MousePointer2,ImagePlus,Medal,RectangleEllipsis,Route,Map,Spline,StickyNote} from 'lucide-react'
 import type {Kind} from '../domain/model'
 
@@ -6,7 +6,7 @@ const additions=[{kind:'sticker',label:'添加贴纸',icon:Sticker},{kind:'photo
 
 export default function ToolPalette({tool,onSelect,onConnect,onAdd,multiSelect,onMultiSelect}:{multiSelect:boolean;onMultiSelect:()=>void;tool:'select'|'connect';onSelect:()=>void;onConnect:()=>void;onAdd:(kind:Kind)=>void}){
  const button=(label:string,Icon:typeof ImagePlus,action:()=>void,active?:boolean,shortcut?:string)=> <HintButton key={label} side="right" hint={shortcut?`${label} · ${shortcut}`:label} className={`tool ${active?'active':''} ${label==='添加连线'?'connect-tool':''}`} aria-label={label} aria-pressed={active} onClick={action}><Icon size={21}/></HintButton>
- return <>
+ return <HintGroup>
   <nav className="tool-palette" aria-label="收藏板工具">
    {button('选择',MousePointer2,onSelect,tool==='select'&&!multiSelect,'V')}
    <div className="touch-multiselect">{button(multiSelect?'结束多选':'多选物件',Scan,onMultiSelect,multiSelect)}</div>
@@ -16,5 +16,5 @@ export default function ToolPalette({tool,onSelect,onConnect,onAdd,multiSelect,o
    {button('添加连线',Spline,onConnect,tool==='connect','C')}
    {button('添加便签',StickyNote,()=>onAdd('note'))}
   </nav>
- </>
+ </HintGroup>
 }
