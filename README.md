@@ -7,7 +7,7 @@
   <img alt="React" src="https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" />
   <img alt="Vite" src="https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white" />
-  <img alt="Version 0.0.1" src="https://img.shields.io/badge/version-0.0.4-6B7D53" />
+  <img alt="Version 0.0.1" src="https://img.shields.io/badge/version-0.0.5-6B7D53" />
   <a href="LICENSE"><img alt="License: AGPL v3" src="https://img.shields.io/badge/License-AGPL_v3-blue" /></a>
 </p>
 
@@ -22,10 +22,14 @@
 ![山径线索板页面截图](docs/images/board.png)
 
 <div align="center">发挥你的创意，请随意摆放！</div>
+<div></div>
 
-![地图配置页面截图](docs/images/map-themes.png)
+![贴纸配置页面截图](docs/images/sticker.png)
 
 <div align="center">自由配置物件，不再受限。</div>
+<div></div>
+
+![分享页面截图](docs/images/share.png)
 
 ## 特色
 - 🖼️虚拟展示墙，不受实体世界的限制
