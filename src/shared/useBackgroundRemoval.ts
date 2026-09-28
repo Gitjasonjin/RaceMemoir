@@ -26,7 +26,7 @@ export function useBackgroundRemoval(subject:'medal'|'sticker'='medal') {
           // A first-time model download can take minutes while still making progress.
           clearTimeout(active.current.timer)
           active.current.timer=setTimeout(fail,Math.max(0,Math.min(180_000,deadline-Date.now())))
-          setProgress(data.key==='compute:ribbon'?'正在自动补全绶带并清理背景…':data.key.startsWith('fetch:') ? `下载抠图模型 ${data.total ? Math.round(data.current / data.total * 100) : 0}%` : '正在本机分离主体与背景…')
+          setProgress(data.key==='compute:resize'?'正在准备图片处理副本…':data.key==='compute:ribbon'?'正在自动补全绶带并清理背景…':data.key.startsWith('fetch:') ? `下载抠图模型 ${data.total ? Math.round(data.current / data.total * 100) : 0}%` : '正在本机分离主体与背景…')
         }
       }
       worker.postMessage({blob,subject})

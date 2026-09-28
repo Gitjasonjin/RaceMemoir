@@ -5,6 +5,7 @@ import {useEffect,useRef,useState} from 'react'
 import {ArrowLeft,Check,ImagePlus,X} from 'lucide-react'
 import type {BibRecord} from '../../domain/records'
 import {readImageSize} from '../../shared/readImageSize'
+import {MAX_IMAGE_PIXELS} from '../../domain/imageRules'
 import type {RecordPanelProps} from '../../library/types'
 import {useBlobUrl} from '../../shared/useBlobUrl'
 import {bibLayout,fullQuad} from './bibGeometry'
@@ -26,7 +27,7 @@ export default function BibEditor(props:RecordPanelProps&{record?:BibRecord}){
   finally{if(mounted.current&&pending.current===controller)setBusy(false)}
  }
  const upload=(file?:File)=>{if(!file)return;void run(async signal=>{
-  const {width:w,height:h}=await readImageSize(file);signal.throwIfAborted()
+  const {width:w,height:h}=await readImageSize(file,MAX_IMAGE_PIXELS);signal.throwIfAborted()
   if(w<16||h<16||w/h>10||h/w>10)throw new Error('图片需在 2500 万像素以内，长宽比不超过 10:1')
   patch({image:file,originalImage:file,width:w,height:h,originalWidth:w,originalHeight:h,quad:undefined,processing:undefined,erasures:undefined,...(!draft.name?{name:file.name.replace(/\.[^.]+$/,'').slice(0,200)}:{})});setAdjusting(false)
  })}
@@ -45,7 +46,7 @@ export default function BibEditor(props:RecordPanelProps&{record?:BibRecord}){
   finally{if(mounted.current)setSaving(false)}
  }
  return <>
-  <div className="record-heading"><button type="button" disabled={saving||busy} onClick={()=>props.onBack?props.onBack():props.onMode({mode:'library'})} aria-label={props.backLabel??'返回收藏库'}><ArrowLeft size={19}/></button><div><h2>{record?'编辑':'添加'}号码布</h2></div><button type="button" onClick={props.onClose} aria-label="关闭详情"><X size={20}/></button></div>
+  <div className="record-heading">{props.mode.origin!=='canvas'&&<button type="button" disabled={saving||busy} onClick={()=>props.onBack?props.onBack():props.onMode({mode:'library'})} aria-label="返回收藏库"><ArrowLeft size={19}/></button>}<div><h2>{record?'编辑':'添加'}号码布</h2></div><button type="button" onClick={props.onClose} aria-label="关闭详情"><X size={20}/></button></div>
     <div className="record-scroll">
   {!record&&props.onBibTemplate&&<div className="bib-source-tabs" role="group" aria-label="号码布来源"><button type="button" disabled={busy||saving} onClick={props.onBibTemplate}>模板制作</button><button type="button" aria-pressed="true">上传图片</button></div>}
   {erasing?<BibNameEraser record={draft} busy={busy} onApply={erase} onCancel={()=>{pending.current?.abort();setBusy(false);setErasing(false)}}/>:adjusting?<BibImageAdjustment record={draft} busy={busy} onApply={apply} onCancel={()=>{pending.current?.abort();setBusy(false);setAdjusting(false)}}/>:<AssetPicker hasAsset={!!draft.image.size} label={busy?'正在处理图片…':draft.image.size?'更换号码布图片':'选择号码布图片'} inputLabel="号码布图片" accept="image/png,image/jpeg,image/webp" disabled={busy||saving||adjusting||erasing} onFiles={files=>upload(files[0])}><div className="record-preview bib-image-preview">{url?<img src={url} alt="号码布预览"/>:<div className="upload-placeholder"><ImagePlus size={42}/><span>上传电子号码布或实物照片</span></div>}</div></AssetPicker>}

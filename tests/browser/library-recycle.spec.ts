@@ -25,7 +25,7 @@ test('recycle bulk delete confirms across filters and preserves referenced recor
   await expect(dialog.getByRole('button',{name:'取消'})).toBeFocused()
   await dialog.screenshot({path:info.outputPath('recycle-confirm.png')})
   await dialog.getByRole('button',{name:'取消'}).click()
-  await expect(page.locator('.record-row-main[title="trash-photo"]')).toBeVisible()
+  await expect(page.getByRole('button',{name:'查看 trash-photo',exact:true})).toBeVisible()
   await page.getByRole('button',{name:'清空回收站',exact:true}).click()
   await dialog.getByRole('button',{name:'确认清空'}).click()
   await expect(dialog).toHaveCount(0)

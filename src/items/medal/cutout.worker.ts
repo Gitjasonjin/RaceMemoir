@@ -1,6 +1,7 @@
 import {removeBackground} from '@imgly/background-removal'
 import {keepRibbon} from './keepRibbon'
 import {restoreMedalPixels} from './medalPixels'
+import {processingImage} from '../../shared/processingImage'
 
 async function keepOriginalPixels(original:Blob,mask:Blob){
  const source=await createImageBitmap(original);let result:ImageBitmap|undefined
@@ -17,7 +18,9 @@ async function keepOriginalPixels(original:Blob,mask:Blob){
 
 self.onmessage = async (event: MessageEvent<{blob:Blob;subject:'medal'|'sticker'}>) => {
   try {
-    const cutout = await removeBackground(event.data.blob, {
+    self.postMessage({type:'progress',key:'compute:resize',current:0,total:1})
+    const input=await processingImage(event.data.blob)
+    const cutout = await removeBackground(input, {
       // Keep the higher precision model for fine foreground details such as ribbons.
       device: 'cpu', model: 'isnet_fp16', proxyToWorker: false,
       progress: (key, current, total) => self.postMessage({ type: 'progress', key, current, total }),
@@ -25,7 +28,7 @@ self.onmessage = async (event: MessageEvent<{blob:Blob;subject:'medal'|'sticker'
     })
     if(event.data.subject==='medal')self.postMessage({type:'progress',key:'compute:ribbon',current:0,total:1})
     // If refinement is unavailable, preserve the successful model result.
-    const image=event.data.subject==='medal'?await keepRibbon(event.data.blob,cutout).catch(()=>cutout):await keepOriginalPixels(event.data.blob,cutout)
+    const image=event.data.subject==='medal'?await keepRibbon(input,cutout).catch(()=>cutout):await keepOriginalPixels(input,cutout)
     self.postMessage({ type: 'done', image })
   } catch (error) {
     self.postMessage({ type: 'error', message: error instanceof Error ? error.message : '无法完成抠图' })

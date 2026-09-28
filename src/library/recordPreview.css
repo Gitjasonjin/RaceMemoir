@@ -1,0 +1,17 @@
+.record-preview-positioner{z-index:80;max-width:calc(100vw - 24px)}
+.record-preview-positioner[data-anchor-hidden]{visibility:hidden;pointer-events:none}
+.record-hover-preview{width:280px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:10px;background:var(--ui-paper);border:1px solid var(--ui-border);border-radius:12px;box-shadow:0 12px 36px #241d182e,0 2px 8px #241d1812;color:var(--ui-ink);overflow:hidden;transform-origin:var(--transform-origin);transition:opacity .12s,transform .12s}
+.record-hover-preview[data-starting-style],.record-hover-preview[data-ending-style]{opacity:0;transform:translateX(4px)}
+.record-hover-media{height:min(220px,40dvh);position:relative;display:flex;align-items:center;justify-content:center;padding:12px;overflow:hidden;border-radius:7px;background:var(--ui-surface-muted)}
+.record-hover-media>img{display:block;max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 2px 3px #241d181a)}
+.record-preview-message{max-width:210px;text-align:center;font-size:12px;line-height:1.7;color:var(--ui-muted)}
+.record-hover-medal{position:relative;width:134px;height:194px;flex-shrink:0}
+.record-hover-route{height:min(270px,44dvh);padding:0}
+.record-hover-route>.real-route{position:relative;width:100%;height:100%;padding:12px;box-shadow:none;display:flex;flex-direction:column}
+.record-hover-route .real-route-title{font-size:16px;line-height:1.3;overflow-wrap:anywhere}
+.record-hover-route .real-route-map{flex:1;min-height:0;width:100%;margin:6px 0}
+.record-hover-caption{padding:10px 3px 2px;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.record-hover-caption>strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;font-weight:650}
+.record-hover-caption>span{display:block;font-size:11px;color:var(--ui-muted);margin-top:3px}
+.record-hover-caption>p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;color:var(--ui-muted);margin:5px 0 0;white-space:pre-wrap}
+@media(prefers-reduced-motion:reduce){.record-hover-preview{transition:none}}

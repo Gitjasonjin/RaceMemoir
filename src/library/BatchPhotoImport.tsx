@@ -48,7 +48,7 @@ export default function BatchPhotoImport({initialFiles,onBack,onClose,onImport}:
     <div className="record-heading"><button type="button" disabled={saving} onClick={onBack} aria-label="返回照片添加"><ArrowLeft size={19}/></button><div><h2>批量导入图片</h2></div><button type="button" disabled={saving} onClick={onClose} aria-label="关闭批量导入"><X size={20}/></button></div>
     <div className="record-scroll">
       <label className="record-upload"><ImagePlus size={20}/> {photos.length?'重新选择图片':'选择多张图片'}<input type="file" multiple accept="image/png,image/jpeg,image/webp" aria-label="批量选择图片" disabled={busy} onChange={e=>{const files=Array.from(e.currentTarget.files??[]);e.currentTarget.value='';void read(files)}}/></label>
-      <p className="record-muted">每批最多 50 张，每张不超过 20 MB。按图片方向匹配相纸，保存到收藏库并排列到画布。</p>
+      <p className="record-muted">每批最多 50 张，每张不超过 20 MB、5000 万像素。保留原文件，按图片方向匹配相纸并排列到画布。</p>
       {progress&&<p className="record-progress" role="status"><span className="record-spinner"/>正在读取 {progress.done} / {progress.total}</p>}
       {!!issues.length&&<div className="record-error" role="alert"><strong>以下图片未加入</strong><ul>{issues.map((issue,index)=><li key={index}>{issue}</li>)}</ul></div>}
       {!!photos.length&&<><p className="record-muted">待导入 {photos.length} 张 · 可直接修改照片名称</p><ul ref={list} className="batch-photo-list">{photos.map(photo=><PhotoRow key={photo.record.id} photo={photo} disabled={busy} onRename={name=>{setError('');setPhotos(current=>current.map(p=>p.record.id===photo.record.id?{...p,record:{...p.record,name}}:p))}} onRemove={()=>setPhotos(current=>current.filter(p=>p.record.id!==photo.record.id))}/>)}</ul></>}

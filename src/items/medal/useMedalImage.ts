@@ -2,13 +2,14 @@ import { useEffect,useState } from 'react'
 import { medalBounds,restoreMedalPixels } from './medalPixels'
 import { useBlobUrl } from '../../shared/useBlobUrl'
 import type {MedalCrop} from './medalCrop'
+import {createProcessingBitmap} from '../../shared/processingImage'
 
 const cache=new WeakMap<Blob,WeakMap<Blob,Map<string,Promise<{blob:Blob;aspect:number}>>>>()
 async function prepare(original:Blob,image:Blob,crop?:MedalCrop){
-  const source=await createImageBitmap(original)
+  const source=await createProcessingBitmap(original)
   let mask:ImageBitmap|undefined
   try{
-    mask=await createImageBitmap(image)
+    mask=await createProcessingBitmap(image)
     const canvas=document.createElement('canvas');canvas.width=source.width;canvas.height=source.height
     const ctx=canvas.getContext('2d',{willReadFrequently:true})!
     ctx.drawImage(source,0,0);const pixels=ctx.getImageData(0,0,canvas.width,canvas.height)

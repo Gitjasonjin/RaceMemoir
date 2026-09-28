@@ -4,11 +4,12 @@ import {alphaBounds,stickerPadding,outlineAlpha,transparentBackground} from './s
 import {applyPaperFinish} from './paperFinish.ts'
 import {tornContourAlpha} from './tornPaper.ts'
 import {sketchContour,applyWashiFinish} from './stickerFinish.ts'
+import {createProcessingBitmap} from '../../shared/processingImage.ts'
 
 const cache=new WeakMap<Blob,Map<string,Promise<{blob:Blob;width:number;height:number}>>>()
 export function stickerSource(record:StickerRecord){return record.imageMode==='cutout'?record.image!:record.originalImage}
 export async function inspectSticker(blob:Blob){
-  const bitmap=await createImageBitmap(blob)
+  const bitmap=await createProcessingBitmap(blob)
   try{
     const canvas=new OffscreenCanvas(bitmap.width,bitmap.height),ctx=canvas.getContext('2d',{willReadFrequently:true})!
     ctx.drawImage(bitmap,0,0)
@@ -18,7 +19,7 @@ export async function inspectSticker(blob:Blob){
   }finally{bitmap.close()}
 }
 async function render(blob:Blob,border:number,style:StickerStyle){
-  const bitmap=await createImageBitmap(blob)
+  const bitmap=await createProcessingBitmap(blob)
   try{
     const canvas=new OffscreenCanvas(bitmap.width,bitmap.height),ctx=canvas.getContext('2d',{willReadFrequently:true})!
     ctx.drawImage(bitmap,0,0)

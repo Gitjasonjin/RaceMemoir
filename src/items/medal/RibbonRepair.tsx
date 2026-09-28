@@ -3,6 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import { paintRibbonStroke } from './ribbonBrush'
 import type { BrushPoint, RepairMode } from './ribbonBrush'
 import { useBlobUrl } from '../../shared/useBlobUrl'
+import {createProcessingBitmap} from '../../shared/processingImage'
 
 interface Props { original: Blob; image: Blob; onApply: (image: Blob) => void | Promise<void>; onClose: () => void; subject?: 'medal'|'sticker' }
 export default function RibbonRepair({original,image,onApply,onClose,subject='medal'}:Props){
@@ -20,7 +21,7 @@ export default function RibbonRepair({original,image,onApply,onClose,subject='me
     void (async()=>{
       let source:ImageBitmap|undefined,processed:ImageBitmap|undefined
       try{
-        source=await createImageBitmap(original);processed=await createImageBitmap(image)
+        source=await createProcessingBitmap(original);processed=await createProcessingBitmap(image)
         if(!active||!canvas.current)return
         if(source.width!==processed.width||source.height!==processed.height)throw new Error('原图与抠图尺寸不一致，请重新抠图后修复')
         const el=canvas.current;el.width=source.width;el.height=source.height

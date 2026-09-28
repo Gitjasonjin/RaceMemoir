@@ -5,6 +5,7 @@ import type {StickerRecord} from '../../domain/records'
 import type {StickerStyle} from '../../domain/model'
 import type {RecordPanelProps} from '../../library/types'
 import {readImageSize} from '../../shared/readImageSize'
+import ProcessingImageNotice from '../../shared/ProcessingImageNotice'
 import {validImageBlob} from '../../domain/imageRules'
 import {useBackgroundRemoval} from '../../shared/useBackgroundRemoval'
 import {inspectSticker,prepareSticker,stickerSource} from './stickerImage'
@@ -69,7 +70,7 @@ export default function StickerEditor(props:RecordPanelProps&{record?:StickerRec
     finally{if(mounted.current)setSaving(false)}
   }
   return <>
-    <div className="record-heading"><button type="button" disabled={saving} aria-label={props.backLabel??'返回收藏库'} onClick={()=>{cancel();if(props.onBack)props.onBack();else props.onMode({mode:'library'})}}><ArrowLeft size={18}/></button><div><h2>{record?'编辑贴纸':'添加贴纸'}</h2></div><button type="button" disabled={saving} aria-label="关闭贴纸编辑" onClick={()=>{cancel();props.onClose()}}><X size={20}/></button></div>
+    <div className="record-heading">{props.mode.origin!=='canvas'&&<button type="button" disabled={saving} aria-label="返回收藏库" onClick={()=>{cancel();if(props.onBack)props.onBack();else props.onMode({mode:'library'})}}><ArrowLeft size={18}/></button>}<div><h2>{record?'编辑贴纸':'添加贴纸'}</h2></div><button type="button" disabled={saving} aria-label="关闭贴纸编辑" onClick={()=>{cancel();props.onClose()}}><X size={20}/></button></div>
     <div className="record-scroll">
       {repairing?<RibbonRepair subject="sticker" original={draft.originalImage} image={stickerSource(draft)} onClose={()=>setRepairing(false)} onApply={async image=>{
         const run=token.current
@@ -81,6 +82,7 @@ export default function StickerEditor(props:RecordPanelProps&{record?:StickerRec
       <AssetPicker hasAsset={!!draft.originalImage.size} label={draft.originalImage.size?'更换贴纸图片':'选择贴纸图片'} inputLabel="贴纸图片" accept="image/png,image/jpeg,image/webp" disabled={saving} onFiles={files=>void upload(files[0])}><div className="sticker-preview">{draft.originalImage.size?<div style={{width:preview.w*previewScale,height:preview.h*previewScale}}><StickerArtwork record={draft} border={border} style={style}/></div>:<span className="sticker-preview-empty">上传图片，制作你的贴纸</span>}</div></AssetPicker>
       <fieldset className="sticker-style-options"><legend>贴纸风格</legend><div>{([{id:'contour',label:'轮廓贴纸',detail:'沿主体留白'},{id:'torn',label:'撕纸拼贴',detail:'不规则纤维毛边'},{id:'sketch',label:'手绘描边',detail:'随手勾勒的线条'},{id:'washi',label:'和纸贴纸',detail:'半透纸感 · 细纤维'}] as const).map(option=><button type="button" key={option.id} aria-pressed={style===option.id} aria-label={option.label} disabled={busy} onClick={()=>setStyle(option.id)}><span className={`sticker-style-sample sticker-style-${option.id}`} aria-hidden="true"><i/></span><strong>{option.label}</strong><small>{option.detail}</small>{style===option.id&&<Check size={14}/>}</button>)}</div></fieldset>
 
+      <ProcessingImageNotice image={draft.originalImage}/>
       {cutout.progress&&<p className="record-progress" role="status">{cutout.progress}</p>}
       {reading&&<p className="record-progress" role="status">正在读取图片…</p>}
       {!!draft.originalImage.size&&<><div className="sticker-modes" role="group" aria-label="贴纸图片模式"><button type="button" disabled={saving} aria-pressed={draft.imageMode==='original'} onClick={()=>void mode('original')}>使用原图</button><button type="button" disabled={saving||!draft.image} aria-pressed={draft.imageMode==='cutout'} onClick={()=>void mode('cutout')}>使用抠图</button></div><div className="record-actions"><button type="button" disabled={saving} onClick={()=>process(draft)}>重新抠图</button></div></>}

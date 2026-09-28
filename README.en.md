@@ -40,6 +40,7 @@ Frame your medals, pin up photos, tape down race bibs, and turn GPX tracks into 
 - ✅ Collect medals, photos, race bibs, notes, stickers, and route cards.
 - ✅ Turn uploaded images into cutout stickers with adjustable white borders and sizes, and reuse them from your collection library.
 - ✅ Upload photos (including batches), medals, and real race bibs; remove medal backgrounds, crop and rectify bib images, and import GPX routes.
+- ✅ Upload photos, medals, and stickers up to 50 megapixels (20 MB per file). Originals are retained; medals and stickers use proportional processing copies capped at 25 megapixels.
 - ✅ Arrange items freely on an infinite canvas, with grouping, locking, alignment, equal spacing, snapping guides, and undo/redo.
 - ✅ Use touch gestures on mobile: pinch to zoom and pan, long-press to select multiple items, and adjust photo crops and map views directly.
 - ✅ Customize photo paper, frames, and decorations, and connect memories with adjustable curved threads.

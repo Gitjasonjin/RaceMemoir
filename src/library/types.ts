@@ -8,7 +8,6 @@ export interface RecordPanelProps {
   onImportPhotos:(photos:BatchPhoto[])=>Promise<void>
   onBibTemplate?:()=>void
   onBack?:()=>void
-  backLabel?:string
   exhibitMedal?:boolean
   styles?: ReactNode
   item?: Memory; onLayout?: (change: Partial<Memory>) => void
