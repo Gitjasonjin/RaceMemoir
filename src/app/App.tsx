@@ -1,3 +1,4 @@
+import BoardActions from '../board/BoardActions'
 import {preloadBackgroundTextures} from '../shared/MaterialPreview'
 import Minimap from '../board/Minimap'
 import {HintButton,HintGroup} from '../shared/ui/Hint'
@@ -497,9 +498,9 @@ export default function App() {
       const member=boardMembers(board.items).find(i=>i.recordId===id),item=member?ownerOf(board.items,member.id):undefined
       if(item){const el=viewport.current;if(el)setView(v=>({...v,x:el.clientWidth/2-(item.x+item.w/2)*v.scale,y:el.clientHeight/2-(item.y+item.h/2)*v.scale}));editItem(item)}else{setSelected(null);openRecord({mode:'detail',id,origin:'canvas'})}
     }}/>}
-    <Topbar board={board} saved={saved} saveError={saveError} saveFailed={!!boardSave.error} onRetry={boardSave.retry} onRename={title=>commit({...board,title})} onLibrary={()=>{openRecord({mode:'library'})}} onShare={()=>setModal('share')}/>
+    <Topbar board={board} saved={saved} saveError={saveError} saveFailed={!!boardSave.error} onRetry={boardSave.retry} onRename={title=>commit({...board,title})} onShare={()=>setModal('share')}/>
     {light.enabled&&<BoardLighting/>}
-    <button className={`decoration-toggle ${decorationOpen?'active':''}`} aria-label="装饰样式" aria-expanded={decorationOpen} onClick={()=>{closePanel();decorationOpen?closePanel():openDecoration('board')}}><Palette size={18}/><span>装饰样式</span></button>
+    <BoardActions decorationOpen={decorationOpen} libraryOpen={recordPanel?.mode==='library'} onDecoration={()=>decorationOpen?closePanel():openDecoration('board')} onLibrary={()=>openRecord({mode:'library'})}/>
     {decorationOpen && <DecorationPanel lighting={light} onBackground={id=>{if(resolveBackground(boardRef.current.backgroundStyle).id!==id)commit({...boardRef.current,backgroundStyle:id})}} onCurvature={curvature=>{const current=boardRef.current;commit({...current,threads:current.threads.map(t=>t.id===selectedThread?{...t,curvature}:t)})}} board={board} thread={board.threads.find(t=>t.id===selectedThread)} scope={decorationScope} onClose={()=>closePanel()} onPinToggle={enabled=>{if(selected)commit(setTapePin(board,selected,enabled))}} onChange={change=>{
       const target = decorationScope==='selection' ? (change.kind==='thread'?selectedThread:selected) : undefined
       if(decorationScope==='selection' && !target) return

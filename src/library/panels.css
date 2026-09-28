@@ -1,5 +1,5 @@
 .missing-record{height:100%;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;font-size:12px;color:#827c6a}.records-loading{position:absolute;inset:0;background:#ede9dfcc;backdrop-filter:blur(5px);z-index:100;display:grid;place-items:center;text-align:center}.records-loading>div{max-width:380px;padding:25px;background:var(--ui-paper);border-radius:12px;box-shadow:0 8px 28px #0001}.records-loading h2{font-size:18px}.records-loading p{font-size:13px;line-height:1.8}.records-loading button{margin:auto}.kind-tabs{gap:5px}.kind-tabs button{flex-direction:column}.history-controls{top:auto;bottom:72px}
 @keyframes record-spin{to{transform:rotate(360deg)}}
-@media(max-width:1000px){.library-button span{display:none}.record-panel{right:12px}}
-@media(max-width:700px){.record-panel{top:70px;right:10px;bottom:12px;width:min(360px,calc(100vw - 78px))}.header-actions .library-button{padding:8px}.record-heading small{font-size:8px}.record-heading{gap:3px;padding:12px 17px 10px}.record-scroll{padding:8px 10px 12px}.record-heading h2{font-size:17px}}
-@media(max-height:600px){.record-panel{top:132px}.history-controls{bottom:65px}}
+@media(max-width:1000px){.library-button span{display:none}.record-panel{right:var(--ui-right-edge)}}
+@media(max-width:700px){.record-panel{top:70px;right:var(--ui-right-edge);bottom:12px;width:min(360px,calc(100vw - 78px))}.header-actions .library-button{padding:8px}.record-heading small{font-size:8px}.record-heading{gap:3px;padding:12px 17px 10px}.record-scroll{padding:8px 10px 12px}.record-heading h2{font-size:17px}}
+@media(max-height:600px){.record-panel{top:72px}.history-controls{bottom:65px}}
