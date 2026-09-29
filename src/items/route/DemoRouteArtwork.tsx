@@ -1,12 +1,15 @@
 import type {Memory} from '../../domain/model'
 import {resolveStyle} from '../../domain/styleCatalog'
 import DemoRouteMap from './DemoRouteMap'
+import RouteTicket from './RouteTicket'
+import ElevationProfile from './ElevationProfile'
 
 export default function DemoRouteArtwork({item}:{item:Memory}){
-  const route=resolveStyle('map',item.variant)
-  return <div className={`map-paper paper ${route.compact ? 'compact' : ''}`}>
-    {!route.compact && <div className="map-heading handwritten">50 km / +2,800 m</div>}<div className="map-content"><DemoRouteMap compact={route.compact}/>{!route.compact && <div className="map-stats">最高海拔<strong>3,082 m</strong><br/>最低海拔<strong>482 m</strong></div>}{route.compact && <span className="gpx">GPX</span>}</div>
-    {!route.compact && <svg className="elevation" viewBox="0 0 220 65"><defs><linearGradient id="altitude" x2="0" y2="1"><stop stopColor="#5678c5" stopOpacity=".35"/><stop offset="1" stopColor="#5678c5" stopOpacity="0"/></linearGradient></defs><path d="m0 53 11-4 6 1 12-11 6 3 12-18 8 12 8-4 8 9 6-5 10 2 12-29 7 5 7-11 7 11 6-3 10 21 8-4 13 12 10-5 12 13 8-3 8 5 8-8 5 5 10-1v15H0Z" fill="url(#altitude)" stroke="#4164a3" strokeWidth="1.3"/><path d="M0 10V58H220M0 39H220M0 20H220" stroke="#a7a89e" opacity=".5" strokeWidth=".5"/></svg>}
-    <div className="map-caption handwritten">{item.title}<small>{!route.compact && `— ${item.subtitle}`}</small></div>
-  </div>
+  const {compact}=resolveStyle('map',item.variant)
+  // Older compact samples store their demo statistics in the title.
+  const stats=item.title.match(/^([\d.]+)\s*km\s*\/\s*\+([\d,]+)\s*m$/i)
+  return <RouteTicket title={stats?'山野路线':item.title} date={item.subtitle} compact={compact} demo
+    distance={stats?Number(stats[1]).toFixed(1):'50.0'} ascent={stats?stats[2]:'2,800'} altitude="482–3,082 m"
+    map={<DemoRouteMap compact={compact}/>}
+    elevation={<ElevationProfile demo path="M10 58 L21 54 L28 55 L39 44 L46 47 L58 29 L66 41 L74 37 L82 46 L88 41 L98 43 L110 14 L117 19 L124 8 L131 19 L137 16 L147 37 L155 33 L168 45 L178 40 L190 53 L198 50 L206 55 L214 47 L220 52 L230 51"/>}/>
 }

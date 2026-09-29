@@ -10,7 +10,7 @@
 @import '../appearance/tape.css';
 @import '../items/medal/artwork.css';
 @import '../items/note/artwork.css';
-@import '../items/route/artwork.css';
+@import '../items/route/ticket.css';
 @import '../appearance/threads.css';
 @import '../board/controls.css';
 @import 'dialog.css';
@@ -22,7 +22,7 @@
 @import '../appearance/mounts.css';
 @import '../library/records.css';
 @import '../items/medal/upload.css';
-@import '../items/route/upload.css';
+
 @import '../library/panels.css';
 @import '../items/medal/repair.css';
 @import '../items/medal/editor.css';

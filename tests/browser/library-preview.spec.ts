@@ -54,7 +54,7 @@ test('library hover previews show assets and routes, release URLs and dismiss on
     await row.hover()
     await expect(preview).toBeVisible()
     await expect(preview.locator('.record-hover-caption>strong')).toHaveText(name)
-    if(name==='山脊路线')await expect(preview.locator('.real-route-map path')).toHaveAttribute('d',/^M/)
+    if(name==='山脊路线')await expect(preview.locator('.real-route-map>path')).toHaveAttribute('d',/^M/)
     else await expect.poll(()=>preview.locator('img').evaluate((img:HTMLImageElement)=>img.naturalWidth)).toBe(240)
     const rect=(await preview.boundingBox())!,trigger=(await row.boundingBox())!
     expect(rect.x).toBeGreaterThanOrEqual(0);expect(rect.x+rect.width).toBeLessThanOrEqual(trigger.x)

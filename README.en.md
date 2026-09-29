@@ -47,6 +47,7 @@ Frame your medals, pin up photos, tape down race bibs, and turn GPX tracks into 
 - ✅ Combine medals into 1×2, 1×4, or 2×4 display cases, reorder them, and split them back into individual medals.
 - ✅ Manage and reuse keepsakes in a collection library, with automatic local saving.
 - ✅ Add paper maps to the canvas, mark race locations with red circles and pins, and connect them to your keepsakes.
+- ✅ GPX race tickets include real basemaps and green elevation area charts. Imports locate the event at the track start, with optional manual adjustments. First viewing fetches OpenStreetMap tiles for the route region and caches them locally; image exports retain the map and attribution.
 - ✅ Export high-resolution images and complete ZIP backups, restore your board, and import legacy JSON backups.
 
 ## Getting Started

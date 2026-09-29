@@ -1,10 +1,11 @@
-/** A user-chosen area; deliberately independent from GPX start coordinates. */
+/** Event area selected manually or derived from a route's GPX start. */
 export interface RaceLocation {
   name: string
   lng: number
   lat: number
   region?: string
   precise?: boolean
+  source?: 'gpx' | 'manual'
 }
 
 export function validRaceLocation(value: unknown): value is RaceLocation {
@@ -14,7 +15,8 @@ export function validRaceLocation(value: unknown): value is RaceLocation {
     Number.isFinite(p.lat) && p.lat >= -90 && p.lat <= 90 &&
     Number.isFinite(p.lng) && p.lng >= -180 && p.lng <= 180 &&
     (p.region === undefined || (typeof p.region === 'string' && p.region.length <= 80)) &&
-    (p.precise === undefined || typeof p.precise === 'boolean')
+    (p.precise === undefined || typeof p.precise === 'boolean') &&
+    (p.source === undefined || p.source === 'gpx' || p.source === 'manual')
 }
 
 export function coarseCoordinate(value: number) { return Number(value.toFixed(2)) }

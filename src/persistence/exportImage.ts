@@ -15,6 +15,14 @@ export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:
       if(record?.kind!=='sticker')throw new Error('贴纸记录丢失，无法导出')
       return prepareSticker(stickerSource(record),item.stickerBorder??2,item.stickerStyle)
     }))
+    const routeMaps=Array.from(scene.querySelectorAll<SVGSVGElement>('[data-route-map-state]'))
+    routeMaps.forEach(map=>map.dispatchEvent(new Event('prepare-route-map')))
+    const mapDeadline=performance.now()+45000
+    while(routeMaps.some(map=>map.dataset.routeMapState==='idle'||map.dataset.routeMapState==='loading')){
+      if(performance.now()>mapDeadline)throw new Error('地图背景尚未加载完成，请联网重试后导出')
+      await new Promise<void>(resolve=>setTimeout(resolve,50))
+    }
+    if(routeMaps.some(map=>map.dataset.routeMapState==='error'))throw new Error('有线路卡底图加载失败，请点击卡片上的重试后导出')
     const deadline=performance.now()+10000
     while(scene.querySelector('[data-sticker-state="loading"]')){
       if(performance.now()>deadline)throw new Error('贴纸尚未生成，请稍后重试导出')

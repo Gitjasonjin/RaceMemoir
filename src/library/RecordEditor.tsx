@@ -17,6 +17,7 @@ import ProcessingImageNotice from '../shared/ProcessingImageNotice'
 import MedalScaleControl from '../items/medal/MedalScaleControl'
 import type { CollectionRecord as AnyRecord, MedalRecord, RouteRecord } from '../domain/records'
 import { parseGpx } from '../items/route/gpx'
+import {gpxLocation,locationAfterGpxImport} from '../items/route/routeLocation'
 import { useBlobUrl } from '../shared/useBlobUrl'
 import { useCutout } from '../items/medal/useCutout'
 import RibbonRepair from '../items/medal/RibbonRepair.tsx'
@@ -76,7 +77,11 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
         if(!file.name.toLowerCase().endsWith('.gpx')||file.size>15*1024*1024)throw new Error('请选择不超过 15 MB 的 GPX 文件')
         const text=await file.text(), parsed=parseGpx(text)
         if(token!==pending.current)return
-        patch({trackPoints:parsed.points,gpx:new Blob([text],{type:'application/gpx+xml'}),source:'upload',...(!draft.name||draft.source==='demo'?{name:parsed.name}:{})})
+        setDraft(current=>{
+          if(current.kind!=='route')return current
+          const name=!current.name||current.source==='demo'?parsed.name:current.name
+          return {...current,name,trackPoints:parsed.points,gpx:new Blob([text],{type:'application/gpx+xml'}),source:'upload',location:locationAfterGpxImport(current.location,parsed.points,name)}
+        })
       }
     } catch(e) { if(token===pending.current)setError(e instanceof Error?e.message:'文件读取失败，请重试') }
     finally {if(token===pending.current)setReading(false)}
@@ -112,10 +117,16 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
       {draft.kind==='medal'&&<ProcessingImageNotice image={draft.originalImage}/>}
       {cutout.progress&&<div className="record-progress" role="status"><span className="record-spinner"/>{cutout.progress}<button type="button" onClick={()=>{cutout.cancel();setNotice('已取消抠图，使用原图。')}}>取消抠图</button></div>}
       {draft.kind==='medal'&&draft.originalImage&&!cutout.progress&&!repairing&&!cropping&&<div className="record-actions"><button type="button" disabled={busy} onClick={()=>processImage((draft as MedalRecord).originalImage!)}>自动抠图（含绶带）</button>{draft.cutout==='done'&&<><button type="button" disabled={busy} onClick={()=>{setRepairing(true);setNotice('')}}>手动微调</button><button type="button" onClick={()=>setShowOriginal(!showOriginal)}>{showOriginal?'查看抠图':'对比原图'}</button><button type="button" disabled={saving} onClick={()=>{patch({image:draft.originalImage,cutout:'original'});setShowOriginal(false)}}>使用原图</button></>}</div>}
-      <label className="field-label">{kindLabel}名称<input required maxLength={200} value={draft.name} disabled={saving} onChange={e=>patch({name:e.target.value})} placeholder={draft.kind==='medal'?'我的第一场越野赛':'山野环线'}/></label>
+      <label className="field-label">{kindLabel}名称<input required maxLength={200} value={draft.name} disabled={saving} onChange={e=>{const name=e.target.value;patch({name,...(draft.kind==='route'&&draft.location?.source==='gpx'?{location:gpxLocation(draft.trackPoints,name)}:{})})}} placeholder={draft.kind==='medal'?'我的第一场越野赛':'山野环线'}/></label>
       {draft.kind==='photo'&&<DatePicker value={draft.date||''} disabled={saving} onChange={date=>patch({date})}/>}
       {draft.kind!=='photo'&&<label className="field-label">备注<textarea rows={3} maxLength={5000} value={draft.note} disabled={saving} onChange={e=>patch({note:e.target.value})} placeholder="记下这段旅程的故事…"/></label>}
-      {draft.kind!=='photo'&&<RaceLocationEditor value={draft.location} onChange={location=>patch({location})} disabled={busy}/>}
+      {draft.kind==='route'&&<section className="route-location-settings">
+        <p className="record-muted" aria-live="polite">{draft.location?.source==='gpx'?'已从 GPX 自动定位':draft.location?'已保留赛事地点':draft.trackPoints.length?'尚未设置赛事地点':'导入 GPX 后自动定位'}{draft.location&&<span> · {draft.location.name}</span>}</p>
+        <details className="race-location-manual"><summary>修改位置</summary>
+          <RaceLocationEditor value={draft.location} onChange={location=>patch({location:location?{...location,source:'manual'}:undefined})} disabled={busy}/>
+          {draft.trackPoints.length>0&&draft.location?.source!=='gpx'&&<button className="race-location-pick" type="button" disabled={busy} onClick={()=>patch({location:gpxLocation(draft.trackPoints,draft.name)})}>使用 GPX 起点</button>}
+        </details>
+      </section>}
       {error&&<p className="record-error" role="alert">{error}</p>}{notice&&<p className="record-notice" role="status">{notice}</p>}
       {props.styles}
       <button className="primary-button full-width" type="submit" disabled={busy}><Check size={17}/>{saving?'正在保存…':record?'保存修改':props.mode.exhibitSlot!==undefined?'保存并放入展览框':'保存并放上画布'}</button>
