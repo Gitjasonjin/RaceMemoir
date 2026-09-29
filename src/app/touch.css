@@ -18,13 +18,13 @@
 }
 @media(max-width:700px), (pointer:coarse) and (max-height:500px){
   .app-shell{position:fixed;inset-inline:0;top:var(--visual-top,0px);height:var(--visual-height,100dvh);min-height:0;overscroll-behavior:none}
-  .topbar{height:calc(56px + env(safe-area-inset-top));padding:env(safe-area-inset-top) max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left));gap:6px}
+  .topbar{height:var(--ui-topbar-height);padding:env(safe-area-inset-top) max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left));gap:6px}
   .brand span{display:none}.brand svg{width:29px}
   .topbar>.header-divider,.header-actions>.header-divider,.header-actions .primary-button span,.share-button span,.avatar,.minimap,.board-signature{display:none}
   .board-name{flex:1;gap:0}.board-title{font-size:14px;max-width:calc(100% - 44px)}
   .board-name-edit{width:44px;height:44px}.board-title-input{max-width:100%;font-size:16px}
   .header-actions{gap:5px;flex-shrink:0}.header-actions .share-button{width:44px;height:44px;justify-content:center;padding:8px}
-  .board-viewport{top:calc(56px + env(safe-area-inset-top))}
+  
   .touch-multiselect{display:contents}
   .tool-palette{top:auto;left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));bottom:calc(8px + env(safe-area-inset-bottom));width:auto;max-width:none;max-height:58px;flex-direction:row;justify-content:flex-start;padding:5px;gap:2px;overflow-x:auto;overscroll-behavior-x:contain;touch-action:pan-x;z-index:16}
   .tool{width:44px;height:44px}.tool-divider{width:1px;height:25px;margin:0 4px}

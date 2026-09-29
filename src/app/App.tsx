@@ -44,6 +44,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { Spline, Plus, Minus, Maximize, Undo2, Redo2, X, Check, RotateCcw, RotateCw, Trash2, Move, Keyboard, Palette, Pencil } from 'lucide-react'
 import {exportBoardImage} from '../persistence/exportImage'
+import {useFileOperation} from '../persistence/useFileOperation'
+import FileOperationOverlay from '../persistence/FileOperationOverlay'
 import {downloadBlob} from '../persistence/download'
 import Artwork from '../items/Artwork'
 import MountainLogo from '../shared/MountainLogo'
@@ -80,7 +82,7 @@ export default function App() {
   useEffect(()=>{preloadBackgroundTextures()},[])
   const {recordPanel,memoryPanel,mapPanel,exhibitPanel,decorationOpen,decorationScope,closePanel,openRecord,openMemory,openMap,openExhibit,openDecoration}=useEditorPanel()
   const memoryEditingId = useRef<string|null>(null)
-  const fileOperation = useRef(false)
+  const {active:fileOperation,state:operation,run:runFileOperation,busy:exporting}=useFileOperation()
   const gesture = useRef<Gesture | null>(null)
   const {view,setView,viewRef,viewport,viewportSize,fit,zoom,zoomAt}=useCanvasCamera(boardRef,gesture,library.records)
   const scene = useRef<HTMLDivElement>(null)
@@ -109,7 +111,6 @@ export default function App() {
   const saveError=library.error||library.saveError||boardSave.error
   const saved=!library.ready?tr("App.114"):saveError?tr("App.113"):library.saving||boardSave.saving||dragging?tr("App.112"):tr("App.111",{v1:formatTime(Math.max(boardSave.time,library.savedAt))})
   const layerTarget=useLayerTarget({board,selectedIds,viewport,view,commit,onBegin:()=>{closePanel();setSelectedThread(null);setTool('select');setConnecting(null)},onDone:()=>setToast(msg("App.110"))})
-  const [exporting, setExporting] = useState(false)
   const inputFile = useRef<HTMLInputElement>(null)
   const selectedPhotos=board.items.filter(item=>selectedIds.includes(item.id)&&item.kind==='photo')
   const selectedItem = board.items.find(item => item.id === selected)
@@ -399,8 +400,7 @@ export default function App() {
     const el=viewport.current
     const center=el?screenToWorld(el.clientWidth/2,el.clientHeight/2,viewRef.current):{x:0,y:0}
     const items=layoutBatchPhotos(photos,center)
-    fileOperation.current=true;setExporting(true)
-    try{
+    await runFileOperation(null,async()=>{
       // Persist all originals in one transaction before one undoable canvas change.
       await library.save(photos.map(photo=>photo.record))
       commit({...boardRef.current,items:[...boardRef.current.items,...items]})
@@ -408,32 +408,30 @@ export default function App() {
       closePanel()
       if(el)setView(fitCamera(contentBounds(items,60),el.clientWidth,el.clientHeight))
       setToast(msg("App.088",{count:items.length}))
-    }finally{fileOperation.current=false;setExporting(false)}
+    })
   }
   const deleteRecord = async (id:string) => {
     if(fileOperation.current)throw new AppError("App.084")
     if(recordThreadReferences(boardRef.current,id))throw new AppError("App.087")
     if(boardMembers(boardRef.current.items).some(item=>item.recordId===id))throw new AppError("App.086")
-    fileOperation.current=true;setExporting(true)
-    try{
+    await runFileOperation(null,async()=>{
       // Persist removal from the canvas before releasing the original files.
       if(!boardSave.retry())throw new AppError("App.081")
       await library.remove(id)
       // Undo must never restore an item whose source files were permanently deleted.
       history.forgetRecord(id);setToast(msg("App.085"))
-    }finally{fileOperation.current=false;setExporting(false)}
+    })
   }
   const emptyRecycle = async (ids:string[]) => {
     if(fileOperation.current)throw new AppError("App.084")
     if(ids.some(id=>!library.records.find(r=>r.id===id)?.archived))throw new AppError("App.083")
     if(ids.some(id=>recordThreadReferences(boardRef.current,id)||boardMembers(boardRef.current.items).some(item=>item.recordId===id)))throw new AppError("App.082")
-    fileOperation.current=true;setExporting(true)
-    try {
+    await runFileOperation(null,async()=>{
       if(!boardSave.retry())throw new AppError("App.081")
       await library.removeMany(ids)
       ids.forEach(id=>history.forgetRecord(id))
       setToast(msg("App.080",{count:ids.length}))
-    }finally{fileOperation.current=false;setExporting(false)}
+    })
   }
   const submitMemory = (e: FormEvent) => {
     e.preventDefault()
@@ -464,29 +462,31 @@ export default function App() {
 
   const exportJson = async () => {
     if(fileOperation.current)return
-    fileOperation.current=true;setExporting(true)
-    try{const blob=await makeZipArchive(boardRef.current,library.records);downloadBlob(blob,`${board.title}.zip`);setToast(msg("App.071"))}
-    catch(e){setToast(errorNotice(e,msg("App.070")))}
-    finally{fileOperation.current=false;setExporting(false)}
+    setModal(null)
+    try{await runFileOperation('backup',async()=>{
+      const blob=await makeZipArchive(boardRef.current,library.records)
+      downloadBlob(blob,`${board.title}.zip`);setToast(msg("App.071"))
+    })}catch(e){setToast(errorNotice(e,msg("App.070")))}
   }
   const exportImage = async () => {
-    if(!scene.current || fileOperation.current) return
-    fileOperation.current=true;setExporting(true)
+    const element=scene.current
+    if(!element || fileOperation.current) return
+    setModal(null)
     setSelected(null);setSelectedThread(null);setConnecting(null)
-    try {
-      const blob=await exportBoardImage(scene.current,boardRef.current,library.records,light.enabled)
+    try {await runFileOperation('image',async()=>{
+      const blob=await exportBoardImage(element,boardRef.current,library.records,light.enabled)
       downloadBlob(blob,`${board.title}.png`);setToast(msg("App.069"))
-    } catch {setToast(msg("App.068"))} finally {fileOperation.current=false;setExporting(false)}
+    })}catch{setToast(msg("App.068"))}
   }
   const importJson = async (file?: File) => {
     if(!file||fileOperation.current)return
-    fileOperation.current=true;setExporting(true)
-    try{
+    setModal(null)
+    try{await runFileOperation('restore',async()=>{
       if(file.size>80*1024*1024)throw new AppError("App.067")
       const data=await readBackup(file);await library.save(data.records)
       commit(data.board);setSelected(null);setSelectedThread(null);setConnecting(null);closePanel();setModal(null);fit();setToast(msg("App.066"))
-    }catch(e){setToast(errorNotice(e,msg("App.065")))}
-    finally{fileOperation.current=false;setExporting(false);if(inputFile.current)inputFile.current.value=''}
+    })}catch(e){setToast(errorNotice(e,msg("App.065")))}
+    finally{if(inputFile.current)inputFile.current.value=''}
   }
   const startPin = connecting?pointFor(connecting):null
   const visible=visibleBounds(view,viewportSize.width,viewportSize.height)
@@ -495,7 +495,8 @@ export default function App() {
   const itemStyles=selectedItem?<DecorationPanel embedded board={board} item={selectedItem} scope="selection" onClose={()=>{}} onCurvature={()=>{}} onPinToggle={enabled=>commit(setTapePin(boardRef.current,selectedItem.id,enabled))} onChange={change=>commit(changeDecoration(boardRef.current,change,selectedItem.id))}/>:null
   return <div data-light={light.enabled?'on':'off'} className={`app-shell ${touchLayout?'is-touch':''} ${recordPanel||memoryPanel||mapPanel||exhibitPanel||decorationOpen?'has-editor':''}`}>
     {selectedItem?.exhibit&&exhibitPanel===selectedItem.id&&!selectedItem.locked&&!selectedItem.groupId&&<MedalExhibitEditor item={selectedItem} records={library.records} onAdd={slot=>openExhibitSlot(selectedItem,slot)} onChange={transformItem} onClose={()=>closePanel()} onSplit={splitSelection} onEdit={medal=>{openRecord({mode:'detail',id:medal.recordId,exhibitId:selectedItem.id,medalId:medal.id})}}/>}
-    {(!library.ready||exporting)&&<div className="records-loading" role="status"><div><h2>{exporting?tr("App.064"):library.error?tr("App.063"):tr("App.062")}</h2>{library.error&&<><p>{library.error}</p><button className="primary-button" onClick={library.retry}>{tr("App.061")}</button></>}</div></div>}
+    {!library.ready&&<div className="records-loading" role="status"><div><h2>{library.error?tr("App.063"):tr("App.062")}</h2>{library.error&&<><p>{library.error}</p><button className="primary-button" onClick={library.retry}>{tr("App.061")}</button></>}</div></div>}
+    <FileOperationOverlay operation={operation}/>
     {saveError&&<div className="save-failure-banner" role="alert"><span>{saveError}</span><span>{tr("App.060")}</span>{boardSave.error&&<button onClick={boardSave.retry}>{tr("App.059")}</button>}<button onClick={()=>setModal('share')}>{tr("App.058")}</button></div>}
     {library.ready&&recordPanel&&<RecordPanel exhibitMedal={!!editingExhibitMedal||addingExhibitMedal} onBack={addingExhibitMedal?(recordPanel.mode==='medal'?()=>openRecord({...recordPanel,mode:'exhibit-add'}):returnToExhibit):editingExhibitMedal?returnToExhibit:undefined} onImportPhotos={importPhotos} onBibTemplate={()=>openAdd('bib')} styles={recordPanel.mode==='detail'&&selectedItem?.recordId===recordPanel.id?itemStyles:undefined} item={editingExhibitMedal??(recordPanel.mode==='detail'&&selectedItem&&selectedItem.recordId===recordPanel.id?selectedItem:undefined)} onLayout={editingExhibitMedal?transformExhibitMedal:transformItem} mode={recordPanel} records={library.records} references={id=>boardMembers(board.items).filter(i=>i.recordId===id).length} threadReferences={id=>recordThreadReferences(board,id)} onMode={openRecord} onClose={addingExhibitMedal?returnToExhibit:()=>closePanel()} onSave={saveRecord} onDelete={deleteRecord} onEmptyRecycle={emptyRecycle} onAdd={addingExhibitMedal?record=>addRecord(record):record=>{void addRecord(record).catch(()=>setToast(msg("App.057")))}}/>}
     {memoryPanel&&<MemoryEditor onBibUpload={()=>{openRecord({mode:'bib'})}} memoryPanel={memoryPanel} kind={kind} selectedItem={selectedItem} draft={draft} setDraft={setDraft} transformItem={transformItem} itemStyles={itemStyles} submitMemory={submitMemory} onClose={()=>{closePanel()}}/>}

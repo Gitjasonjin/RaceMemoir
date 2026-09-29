@@ -13,6 +13,10 @@ test('recycle bulk delete confirms across filters and preserves referenced recor
     localStorage.setItem('racememoir-board-v1',JSON.stringify({title:'Recycle',items:[{id:'protected',kind:'photo',recordId:'protected-photo',title:'protected',variant:'polaroid',x:200,y:200,w:200,h:240,rotation:0}],threads:[]}))
   })
   await page.reload();await page.locator('.records-loading').waitFor({state:'hidden'})
+  await page.evaluate(()=>{
+    document.body.dataset.operationSeen='false'
+    new MutationObserver(records=>{if(records.some(r=>Array.from(r.addedNodes).some(n=>n instanceof Element&&(n.matches('.file-operation-floating')||n.querySelector('.file-operation-floating')))))document.body.dataset.operationSeen='true'}).observe(document.body,{childList:true,subtree:true})
+  })
   await page.getByRole('button',{name:'打开收藏库',exact:true}).click()
   await expect(page.locator('.record-actions')).toHaveCount(0)
   await expect(page.locator('.avatar')).toHaveCount(0)
@@ -30,6 +34,7 @@ test('recycle bulk delete confirms across filters and preserves referenced recor
   await dialog.getByRole('button',{name:'确认清空'}).click()
   await expect(dialog).toHaveCount(0)
   await expect(page.getByRole('button',{name:'清空回收站',exact:true})).toBeDisabled()
+  await expect(page.locator('body')).toHaveAttribute('data-operation-seen','false')
   await page.reload();await page.locator('.records-loading').waitFor({state:'hidden'})
   const ids=await page.evaluate(async()=>{const {readRecords}=await import('/src/persistence/recordStore.ts');return (await readRecords()).map((r:{id:string})=>r.id)})
   expect(ids).toContain('protected-photo');expect(ids).toContain('active-photo')

@@ -74,7 +74,8 @@ test('PNG renders fixed labels in current language and keeps user names',async({
   await page.locator('.share-button').click()
   const pending=page.waitForEvent('download');await page.locator('.export-option').first().click()
   await(await pending).saveAs(info.outputPath(`export-${lang}.png`))
-  await page.locator('.modal-close').click()
+  await expect(page.locator('.file-operation-floating')).toBeHidden()
+  await expect(page.locator('.modal')).toBeHidden()
  }
 })
 

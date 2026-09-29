@@ -10,7 +10,7 @@ interface Props {modal:BoardModal;board:Board;exporting:boolean;exportImage:()=>
 export default function BoardDialog({modal,board,exporting,exportImage,exportJson,onImport,onClose,onClear,canClear}:Props){
   const cancel=useRef<HTMLButtonElement>(null)
   return <Dialog.Root open={modal!==null} onOpenChange={open=>{if(!open)onClose()}}>
-    <Dialog.Portal><Dialog.Backdrop className="ui-dialog-backdrop"/><Dialog.Viewport className="ui-dialog-viewport">
+    <Dialog.Portal><Dialog.Backdrop className="ui-dialog-backdrop" data-board-share={modal==='share'||undefined}/><Dialog.Viewport className="ui-dialog-viewport" data-board-share={modal==='share'||undefined}>
     <Dialog.Popup className="modal" data-ui-overlay initialFocus={modal==='clear'?cancel:undefined}>
       <div className="modal-controls"><Dialog.Close className="modal-close" aria-label={tr("BoardDialog.045")}><X size={21}/></Dialog.Close></div>
       <div className="modal-scroll"><div className="modal-content">
@@ -19,7 +19,7 @@ export default function BoardDialog({modal,board,exporting,exportImage,exportJso
         <div className="eyebrow">MEMORIES ARE BETTER SHARED</div><Dialog.Title render={<h2/>}>{tr("BoardDialog.040")}</Dialog.Title>
         <Dialog.Description className="modal-description">{tr("BoardDialog.039")}</Dialog.Description>
         <MaterialPreview className="share-preview" id={board.backgroundStyle} scale={1}><MountainLogo/><span>{board.title}</span><small>{tr("BoardDialog.038",{v1:board.items.length,v2:board.threads.length})}</small></MaterialPreview>
-        <button className="export-option" onClick={()=>void exportImage()} disabled={exporting}><span className="export-icon"><Image size={23}/></span><span><strong>{exporting?tr("BoardDialog.037"):tr("BoardDialog.036")}</strong><small>{tr("BoardDialog.035")}</small></span><ArrowUpRight size={18}/></button>
+        <button className="export-option" onClick={()=>void exportImage()} disabled={exporting}><span className="export-icon"><Image size={23}/></span><span><strong>{tr("BoardDialog.036")}</strong><small>{tr("BoardDialog.035")}</small></span><ArrowUpRight size={18}/></button>
         <button className="export-option" onClick={()=>void exportJson()} disabled={exporting}><span className="export-icon"><Download size={23}/></span><span><strong>{tr("BoardDialog.034")}</strong><small>{tr("BoardDialog.033")}</small></span><ArrowUpRight size={18}/></button>
         <button className="export-option" onClick={onImport} disabled={exporting}><span className="export-icon"><Upload size={23}/></span><span><strong>{tr("BoardDialog.032")}</strong><small>{tr("BoardDialog.031")}</small></span><ArrowUpRight size={18}/></button>
         <p className="local-footnote">{tr("BoardDialog.030")}</p>

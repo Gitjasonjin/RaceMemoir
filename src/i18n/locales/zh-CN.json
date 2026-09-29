@@ -791,5 +791,20 @@
   "seed.sunrise-photo": "每一个清晨\n都是新的出发",
   "seed.sunrise-note": "下一座山",
   "seed.finish-photo": "向山而行",
-  "seed.race-note": "2023.04.15\n雨中完赛\n32 km / +1,950 m"
+  "seed.race-note": "2023.04.15\n雨中完赛\n32 km / +1,950 m",
+  "fileOperation.image.working": "正在生成高清图片",
+  "fileOperation.image.done": "高清图片已生成",
+  "fileOperation.image.error": "图片导出失败",
+  "fileOperation.image.detail": "正在准备地图、字体与图片，并合成收藏板画面。",
+  "fileOperation.backup.working": "正在导出收藏板",
+  "fileOperation.backup.done": "收藏板备份已生成",
+  "fileOperation.backup.error": "收藏板导出失败",
+  "fileOperation.backup.detail": "正在整理布局与原始素材，打包为 ZIP 备份。",
+  "fileOperation.restore.working": "正在导入收藏板",
+  "fileOperation.restore.done": "收藏板已导入",
+  "fileOperation.restore.error": "收藏板导入失败",
+  "fileOperation.restore.detail": "正在读取并校验备份，恢复藏品素材与画板布局。",
+  "fileOperation.elapsed": "已用时 {{seconds}} 秒",
+  "fileOperation.doneDetail": "操作已完成，此提示将自动关闭。",
+  "fileOperation.errorDetail": "未能完成此操作，请查看错误提示后重试。"
 }

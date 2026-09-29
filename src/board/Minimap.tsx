@@ -4,6 +4,7 @@ import type {Board,PinStyle} from '../domain/model'
 import type {CollectionRecord} from '../domain/records'
 import {unionBounds,visibleBounds} from './canvas'
 import type {Bounds,Camera} from './canvas'
+import {Hint} from '../shared/ui/Hint'
 import {resolveEndpoint,threadEndpoints} from './threadEndpoints'
 
 interface Props {
@@ -30,7 +31,7 @@ export default function Minimap(props:Props){
     if(frame.current===null)frame.current=requestAnimationFrame(flush)
   }
   const end=()=>{flush();drag.current=null;setFixed(null)}
-  return <button className="minimap" title={tr("Minimap.002")} aria-label={tr("Minimap.001")} style={{touchAction:'none',cursor:fixed?'grabbing':'grab'}}
+  return <Hint label={tr("Minimap.002")} disabled={!!fixed}><button className="minimap" aria-label={tr("Minimap.001")} style={{touchAction:'none',cursor:fixed?'grabbing':'grab'}}
     onPointerDown={e=>{
       if(e.button!==0||drag.current||!svg.current)return
       const rect=svg.current.getBoundingClientRect();if(!rect.width||!rect.height)return
@@ -57,5 +58,5 @@ export default function Minimap(props:Props){
       {board.threads.map(t=>{const [a,b]=threadEndpoints(t).map(e=>resolveEndpoint(board,records,e,pin));return a&&b?<line key={t.id} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#bc6050" strokeWidth={overview.width/180}/>:null})}
       <rect data-minimap-viewport x={visible.x} y={visible.y} width={visible.width} height={visible.height} fill="#fff" fillOpacity=".09" stroke="#fff9ef" strokeWidth={overview.width/100}/>
     </svg>
-  </button>
+  </button></Hint>
 }

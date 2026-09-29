@@ -799,5 +799,20 @@
   "App.099_one": "Added {{count}} medal to a display frame",
   "App.099_other": "Combined {{count}} medals in a display frame",
   "LibraryRecords.023_one": "The {{count}} item in use will be kept.",
-  "LibraryRecords.023_other": "The {{count}} items in use will be kept."
+  "LibraryRecords.023_other": "The {{count}} items in use will be kept.",
+  "fileOperation.image.working": "Rendering image",
+  "fileOperation.image.done": "Image ready",
+  "fileOperation.image.error": "Image export failed",
+  "fileOperation.image.detail": "Preparing maps, fonts and images to render your board.",
+  "fileOperation.backup.working": "Exporting board",
+  "fileOperation.backup.done": "Backup ready",
+  "fileOperation.backup.error": "Board export failed",
+  "fileOperation.backup.detail": "Packing your layout and original assets into a ZIP backup.",
+  "fileOperation.restore.working": "Importing board",
+  "fileOperation.restore.done": "Board imported",
+  "fileOperation.restore.error": "Board import failed",
+  "fileOperation.restore.detail": "Reading and validating the backup, then restoring assets and layout.",
+  "fileOperation.elapsed": "Elapsed: {{seconds}} s",
+  "fileOperation.doneDetail": "All done. This message will close automatically.",
+  "fileOperation.errorDetail": "The operation could not finish. Check the error message and try again."
 }

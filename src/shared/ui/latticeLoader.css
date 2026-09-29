@@ -1,0 +1,17 @@
+.lattice-loader{display:flex;align-items:center;gap:18px;text-align:left;color:var(--ui-forest)}
+.lattice-loader-grid{display:grid;flex:none;width:40px;height:40px}
+.lattice-loader-run,.lattice-loader-mark{grid-area:1/1;display:grid;grid-template-columns:repeat(3,10px);gap:5px;transition:opacity .2s ease,transform .2s ease}
+.lattice-loader-grid span>span{width:10px;height:10px;border-radius:3px;background:currentColor;opacity:.14}
+.lattice-loader-run>span{animation:lattice-orbit 864ms cubic-bezier(.77,0,.175,1) infinite;animation-delay:var(--cell-delay)}
+.lattice-loader-run>span[data-hole]{animation:none;opacity:.06}
+.lattice-loader-mark{opacity:0;transform:scale(.85)}
+.lattice-loader-mark>span[data-on]{opacity:1}
+.lattice-loader[data-status=error]{color:var(--ui-danger)}
+.lattice-loader:not([data-status=working]) .lattice-loader-run{opacity:0}
+.lattice-loader:not([data-status=working]) .lattice-loader-run>span{animation-play-state:paused}
+.lattice-loader:not([data-status=working]) .lattice-loader-mark{opacity:1;transform:none}
+.lattice-loader-copy{display:grid;gap:8px;min-width:0}
+.lattice-loader-copy strong{font-size:17px;font-weight:600;line-height:1.5;overflow-wrap:anywhere}
+.lattice-loader-timer{font-size:12px;color:var(--ui-subtle);font-variant-numeric:tabular-nums;line-height:1.4}
+@keyframes lattice-orbit{0%,62%,100%{opacity:.14}18%,42%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.lattice-loader-run>span{animation:none;opacity:.65}.lattice-loader-run,.lattice-loader-mark{transition:none;transform:none}}

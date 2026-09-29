@@ -791,5 +791,20 @@
   "seed.sunrise-photo": "朝が来るたび\n新しいスタート",
   "seed.sunrise-note": "次の山へ",
   "seed.finish-photo": "山に向かって",
-  "seed.race-note": "2023.04.15\n雨の中で完走\n32 km / +1,950 m"
+  "seed.race-note": "2023.04.15\n雨の中で完走\n32 km / +1,950 m",
+  "fileOperation.image.working": "画像を書き出しています",
+  "fileOperation.image.done": "画像の準備ができました",
+  "fileOperation.image.error": "画像の書き出しに失敗しました",
+  "fileOperation.image.detail": "地図・フォント・画像を読み込み、ボードの画像を作成しています。",
+  "fileOperation.backup.working": "ボードを書き出しています",
+  "fileOperation.backup.done": "バックアップを作成しました",
+  "fileOperation.backup.error": "ボードの書き出しに失敗しました",
+  "fileOperation.backup.detail": "レイアウトと元の素材を ZIP ファイルにまとめています。",
+  "fileOperation.restore.working": "ボードを読み込んでいます",
+  "fileOperation.restore.done": "ボードを読み込みました",
+  "fileOperation.restore.error": "ボードの読み込みに失敗しました",
+  "fileOperation.restore.detail": "バックアップを確認し、素材とレイアウトを復元しています。",
+  "fileOperation.elapsed": "経過時間：{{seconds}} 秒",
+  "fileOperation.doneDetail": "完了しました。このメッセージは自動的に閉じます。",
+  "fileOperation.errorDetail": "操作を完了できませんでした。エラー内容を確認して、もう一度お試しください。"
 }

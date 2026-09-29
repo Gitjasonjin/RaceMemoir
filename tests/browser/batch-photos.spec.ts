@@ -23,6 +23,10 @@ const photos=(page:Page)=>page.evaluate(async()=>{
 
 test('multiple selection previews, skips corrupt files, saves originals and supports undo and ZIP recovery',async({page},info)=>{
   await ready(page)
+  await page.evaluate(()=>{
+    document.body.dataset.operationSeen='false'
+    new MutationObserver(records=>{if(records.some(r=>Array.from(r.addedNodes).some(n=>n instanceof Element&&(n.matches('.file-operation-floating')||n.querySelector('.file-operation-floating')))))document.body.dataset.operationSeen='true'}).observe(document.body,{childList:true,subtree:true})
+  })
   const files=await fixtures(page),initial=await page.locator('.scene>.memory').count()
   await page.getByRole('button',{name:'添加照片',exact:true}).click()
   await expect(page.getByRole('button',{name:'批量导入图片',exact:true})).toHaveCount(0)
@@ -47,6 +51,7 @@ test('multiple selection previews, skips corrupt files, saves originals and supp
   await expect(page.locator('.scene>.memory')).toHaveCount(initial+2)
   await expect(page.locator('.scene>.memory.selected')).toHaveCount(2)
   const stored=await photos(page)
+  await expect(page.locator('body')).toHaveAttribute('data-operation-seen','false')
   expect(stored.map(r=>r.name).sort()).toEqual(['photo-2','山野的第一缕晨光'])
   await expect(page.locator('.scene>.memory.selected').filter({hasText:'山野的第一缕晨光'})).toHaveCount(1)
   expect(stored.map(r=>r.size).sort()).toEqual(files.slice(0,2).map(f=>f.buffer.length).sort())
@@ -75,6 +80,8 @@ test('multiple selection previews, skips corrupt files, saves originals and supp
   await page.getByRole('button',{name:/导出收藏板文件/}).click()
   const zip=info.outputPath('photos.zip');await(await download).saveAs(zip)
   expect((await readFile(zip)).length).toBeGreaterThan(1000)
+  await expect(page.locator('.file-operation-floating')).toBeHidden()
+  await page.getByRole('button',{name:'分享',exact:true}).click()
   const picker=page.waitForEvent('filechooser')
   await page.getByRole('button',{name:/导入收藏板文件/}).click();await(await picker).setFiles(zip)
   await expect(page.locator('dialog.modal')).not.toBeVisible()
