@@ -6,6 +6,7 @@ import {getDecorations} from '../domain/model'
 import {backgroundStyle} from '../domain/styleCatalog'
 import {contentBounds,exportSize} from '../board/canvas'
 import {prepareSticker,stickerSource} from '../items/sticker/stickerImage'
+import {exportFontCSS} from './exportFonts'
 
 /** Render a detached snapshot; export fixes stay shared across every item type. */
 export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:CollectionRecord[]=[],lighting=false):Promise<Blob>{
@@ -81,7 +82,11 @@ export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:
       }
     }
     document.body.append(wrapper)
-    const blob=await toBlob(wrapper,{pixelRatio:1,width:size.width,height:size.height,style:{position:'relative',inset:'auto',insetInline:'auto',insetBlock:'auto',left:'0',top:'0'}})
+    // Layout the snapshot before waiting, so newly visible glyphs also load.
+    await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()))
+    await document.fonts.ready
+    const fontEmbedCSS=await exportFontCSS(wrapper)
+    const blob=await toBlob(wrapper,{fontEmbedCSS,pixelRatio:1,width:size.width,height:size.height,style:{position:'relative',inset:'auto',insetInline:'auto',insetBlock:'auto',left:'0',top:'0'}})
     if(!blob||!blob.size)throw new AppError("exportImage.002")
     const bitmap=await createImageBitmap(blob);if(bitmap.width!==size.width||bitmap.height!==size.height){bitmap.close();throw new AppError("exportImage.001")}bitmap.close()
     return blob

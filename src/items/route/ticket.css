@@ -1,6 +1,6 @@
 /* Heavy uncoated card: crisp cut edge, stacked thickness, soft contact shadow. */
 .route-ticket{width:100%;height:100%;container-type:size;filter:drop-shadow(0 1px 0 #faf2dc) drop-shadow(0 2px 0 #b8a88c) drop-shadow(1px 4px 3px #33241440);color:#292e26}
-.route-ticket-surface{position:relative;width:100%;height:100%;display:grid;grid-template-rows:minmax(76px,20%) minmax(0,1fr) 15%;background:#f3eee0;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px #6b583725,inset 0 1px 0 #fffdf2;mask-image:radial-gradient(circle at 0 85%,transparent 5px,#000 5.7px),radial-gradient(circle at 100% 85%,transparent 5px,#000 5.7px);mask-composite:intersect}
+.route-ticket-surface{--route-note-size:clamp(12px,7cqw,19px);--route-note-lines:2;--route-stub-size:max(15cqh,calc(var(--route-note-size)*var(--route-note-leading,1.25)*var(--route-note-lines) + 26px));position:relative;width:100%;height:100%;display:grid;grid-template-rows:minmax(76px,20%) minmax(0,1fr) var(--route-stub-size);background:#f3eee0;border-radius:5px;overflow:hidden;box-shadow:inset 0 0 0 1px #6b583725,inset 0 1px 0 #fffdf2;mask-image:radial-gradient(circle at 0 calc(100% - var(--route-stub-size)),transparent 5px,#000 5.7px),radial-gradient(circle at 100% calc(100% - var(--route-stub-size)),transparent 5px,#000 5.7px);mask-composite:intersect}
 .route-ticket-header{position:relative;isolation:isolate;overflow:hidden;padding:8px 13px 7px;background:linear-gradient(110deg,#f27e38,#e76b2b);box-shadow:inset 0 1px 0 #ffbd8166,inset 0 -1px 0 #9e4a2330;min-height:0}
 .route-ticket-kicker{display:flex;justify-content:space-between;position:relative;z-index:1;font-size:8px;letter-spacing:1.5px;line-height:1.3;margin-bottom:5px;font-weight:600}.route-ticket-kicker>span{font-size:7px;letter-spacing:.6px}
 .route-ticket .real-route-title{position:relative;z-index:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:clamp(14px,8cqw,22px);line-height:1.14;letter-spacing:.2px;font-weight:850;overflow-wrap:anywhere;white-space:normal;max-width:87%}
@@ -18,19 +18,21 @@
 .real-route-stats strong{font-family:'Barlow Condensed',sans-serif;font-size:clamp(19px,11cqw,31px);font-weight:700;white-space:nowrap}
 .real-route-stats em{font:500 10px sans-serif;margin-left:3px}
 .route-ticket-profile{height:38px;flex-shrink:0;display:flex;flex-direction:column;gap:2px}.real-route-elevation{display:block;width:100%;height:100%;min-height:0;flex:1}.route-altitude{font-size:7px;color:#7c7b68;line-height:1.2}
-.route-ticket-stub{position:relative;min-height:0;overflow:hidden;padding:8px 14px 5px;background:linear-gradient(175deg,#fffdf53d,transparent 55%,#b6a98c12)}
+.route-ticket-stub{position:relative;min-width:0;min-height:0;overflow:hidden;padding:8px 14px 5px;background:linear-gradient(175deg,#fffdf53d,transparent 55%,#b6a98c12)}
 .route-ticket-stub::before{content:'';position:absolute;top:0;left:7px;right:7px;height:2px;background:repeating-linear-gradient(90deg,#7e6e514d 0 4px,transparent 4px 8px);box-shadow:0 1px 0 #fffaf0b3}
 .route-ticket-stub>span{display:flex;justify-content:space-between;font-size:7px;letter-spacing:2px;line-height:1.2;color:#7b7869}.route-ticket-stub time{letter-spacing:.4px}
-.route-ticket .route-note{font-size:clamp(12px,7cqw,19px);line-height:1.25;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;white-space:pre-wrap}
+.route-ticket .route-note{font-size:var(--route-note-size);line-height:var(--route-note-leading,1.25);margin-top:4px;display:-webkit-box;-webkit-line-clamp:var(--route-note-lines);-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;white-space:pre-wrap}
 .route-ticket-grain{position:absolute;inset:0;pointer-events:none;background-image:url('/textures/kraft-photo.webp');background-size:300px;opacity:.11;mix-blend-mode:multiply;filter:grayscale(1);border-radius:inherit}
 .record-preview>.route-ticket{height:365px;width:245px;margin:18px;flex-shrink:0}
+/* Reserve complete text lines; short cards show one line instead of a clipped second line. */
+@container(max-height:300px){.route-ticket-surface{--route-note-lines:1}}
 @container(max-height:230px){
- .route-ticket-surface{grid-template-rows:26% minmax(0,1fr) 21%;mask-image:radial-gradient(circle at 0 79%,transparent 4px,#000 4.6px),radial-gradient(circle at 100% 79%,transparent 4px,#000 4.6px)}
+ .route-ticket-surface{--route-note-size:12px;--route-stub-size:max(21cqh,calc(12px*var(--route-note-leading,1.25) + 19px));grid-template-rows:26% minmax(0,1fr) var(--route-stub-size);mask-image:radial-gradient(circle at 0 calc(100% - var(--route-stub-size)),transparent 4px,#000 4.6px),radial-gradient(circle at 100% calc(100% - var(--route-stub-size)),transparent 4px,#000 4.6px)}
  .route-ticket-header{padding:6px 10px}.route-ticket-kicker{font-size:6px;margin-bottom:2px;letter-spacing:1px}.route-ticket-kicker>span{font-size:6px}
  .route-ticket .real-route-title{font-size:clamp(12px,8cqw,18px);-webkit-line-clamp:1}
  .route-ticket-body{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;padding:6px 10px}
  .route-ticket .real-route-stats{flex-direction:column;justify-content:center;gap:4px}.real-route-stats>div+div{border:0;padding:0}.real-route-stats small{font-size:6px;margin-bottom:1px}.real-route-stats strong{font-size:18px}.real-route-stats em{font-size:7px}
- .route-ticket-profile{display:none}.route-ticket-stub{padding:6px 10px 3px}.route-ticket-stub>span{font-size:6px;letter-spacing:1px}.route-ticket .route-note{font-size:12px;margin-top:2px;-webkit-line-clamp:1}
+ .route-ticket-profile{display:none}.route-ticket-stub{padding:6px 10px 3px}.route-ticket-stub>span{font-size:6px;letter-spacing:1px}.route-ticket .route-note{margin-top:2px}
 }
 .route-location-settings{margin:20px 0;padding:12px 14px;border:1px solid var(--ui-border,#dedbc9);border-radius:8px}
 .route-location-settings>.record-muted{margin:0;overflow-wrap:anywhere}
