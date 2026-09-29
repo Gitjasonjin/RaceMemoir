@@ -7,7 +7,7 @@
   <img alt="React" src="https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" />
   <img alt="Vite" src="https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white" />
-  <img alt="Version 0.0.1" src="https://img.shields.io/badge/version-0.0.5-6B7D53" />
+  <img alt="Version 0.0.1" src="https://img.shields.io/badge/version-0.0.6-6B7D53" />
   <a href="LICENSE"><img alt="License: AGPL v3" src="https://img.shields.io/badge/License-AGPL_v3-blue" /></a>
 </p>
 
