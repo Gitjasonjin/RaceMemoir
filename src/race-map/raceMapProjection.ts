@@ -1,3 +1,4 @@
+import {AppError} from '../i18n/runtime.ts'
 import {MAX_MAP_SCALE} from '../domain/mapSettings.ts'
 import {geoMercator, geoPath} from 'd3-geo'
 import type {FeatureCollection, Geometry} from 'geojson'
@@ -8,11 +9,11 @@ export type ProvinceMap = FeatureCollection<Geometry, {id: string; name: string}
 export interface MapTransform {x: number; y: number; scale: number}
 export const INITIAL_TRANSFORM: MapTransform = {x: 0, y: 0, scale: 1}
 const labelOffsets: Record<string, [number,number]> = {
-  '北京':[0,-9], '天津':[16,5], '河北':[-15,2], '香港':[24,0], '澳门':[-18,13],
+  "北京":[0,-9], "天津":[16,5], "河北":[-15,2], "香港":[24,0], "澳门":[-18,13],
 }
 
 export function createMapProjection(data: ProvinceMap) {
-  if (data.type !== 'FeatureCollection' || !data.features.length) throw new Error('地图资源加载失败')
+  if (data.type !== 'FeatureCollection' || !data.features.length) throw new AppError("raceMapProjection.001")
   const projection = geoMercator().fitExtent([[65, 55], [MAP_WIDTH - 65, MAP_HEIGHT - 65]], data)
   const path = geoPath(projection)
   return {projection, provinces: data.features.map(feature => {

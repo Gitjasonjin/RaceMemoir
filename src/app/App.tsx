@@ -1,3 +1,7 @@
+import {useNotice} from '../i18n/useNotice'
+import {msg,errorNotice,AppError} from '../i18n/runtime.ts'
+import {t as tr,formatTime} from '../i18n/runtime.ts'
+import {useTranslation} from 'react-i18next'
 import BoardActions from '../board/BoardActions'
 import {preloadBackgroundTextures} from '../shared/MaterialPreview'
 import Minimap from '../board/Minimap'
@@ -65,6 +69,8 @@ import type {ThreadEndpoint} from '../board/threadEndpoints'
 
 
 export default function App() {
+  const {i18n}=useTranslation()
+  useEffect(()=>{document.title=tr("app.documentTitle");document.documentElement.lang=i18n.language},[i18n.language])
   const touchLayout=useTouchLayout()
   const light=useBoardLight()
   const [multiSelect,setMultiSelect]=useState(false)
@@ -98,11 +104,11 @@ export default function App() {
   const [modal, setModal] = useState<BoardModal>(null)
   const [kind, setKind] = useState<Kind>('photo')
   const [draft, setDraft] = useState({title:'',variant:'',image:samplePhotos[0],number:'0826',date:''})
-  const [toast, setToast] = useState('')
+  const [toast, setToast]=useNotice('')
   const boardSave=useBoardSave(board,library.ready&&!dragging)
   const saveError=library.error||library.saveError||boardSave.error
-  const saved=!library.ready?'正在读取收藏…':saveError?'保存失败':library.saving||boardSave.saving||dragging?'保存中…':`已保存到本机 ${[boardSave.time,library.savedAt].sort().at(-1)}`
-  const layerTarget=useLayerTarget({board,selectedIds,viewport,view,commit,onBegin:()=>{closePanel();setSelectedThread(null);setTool('select');setConnecting(null)},onDone:()=>setToast('物件层级已调整')})
+  const saved=!library.ready?tr("App.114"):saveError?tr("App.113"):library.saving||boardSave.saving||dragging?tr("App.112"):tr("App.111",{v1:formatTime(Math.max(boardSave.time,library.savedAt))})
+  const layerTarget=useLayerTarget({board,selectedIds,viewport,view,commit,onBegin:()=>{closePanel();setSelectedThread(null);setTool('select');setConnecting(null)},onDone:()=>setToast(msg("App.110"))})
   const [exporting, setExporting] = useState(false)
   const inputFile = useRef<HTMLInputElement>(null)
   const selectedPhotos=board.items.filter(item=>selectedIds.includes(item.id)&&item.kind==='photo')
@@ -131,12 +137,12 @@ export default function App() {
     commit({...current,items:[],threads:[]})
     setSelected(null);setSelectedThread(null);setConnecting(null);setCursor(null);setTool('select');setMultiSelect(false)
     setGuides([]);setMarquee(null);layerTarget.cancel();closePanel();closeCanvasMenu();setModal(null)
-    setToast('画布已清空，收藏库素材已保留，可撤销恢复')
+    setToast(msg("App.109"))
   }
 
   const removeSelected = useCallback(() => {
     const current = boardRef.current
-    if(lockedSelection(current.items,selectedIds)){setToast('请先解锁物件');return}
+    if(lockedSelection(current.items,selectedIds)){setToast(msg("App.108"));return}
     if (selectedIds.length) {const removed=new Set(boardMembers(current.items.filter(i=>selectedIds.includes(i.id))).map(i=>i.id));commit({...current,items:current.items.filter(i=>!selectedIds.includes(i.id)),threads:current.threads.filter(t=>!removed.has(t.from)&&!removed.has(t.to))})}
     else if (selectedThread) commit({...current,threads:current.threads.filter(t=>t.id!==selectedThread)})
     setSelected(null); setSelectedThread(null);closePanel()
@@ -192,14 +198,14 @@ export default function App() {
   },[dragging])
 
   const connectEndpoint = (endpoint:ThreadEndpoint) => {
-    if(!pointFor(endpoint)){setToast('这个地点暂时不在地图取景内');return}
+    if(!pointFor(endpoint)){setToast(msg("App.107"));return}
     setSelected(null);setSelectedThread(null);closePanel()
     if(!connecting){setConnecting(endpoint);return}
     if(sameEndpoint(connecting,endpoint)){setConnecting(null);return}
     if(!pointFor(connecting)){setConnecting(endpoint);return}
-    if(hasConnection(board.threads,connecting,endpoint)){setToast('这两个连接点已经连在一起了');return}
+    if(hasConnection(board.threads,connecting,endpoint)){setToast(msg("App.106"));return}
     commit({...board,threads:[...board.threads,{id:crypto.randomUUID(),from:connecting.itemId,to:endpoint.itemId,fromRaceId:connecting.raceId,toRaceId:endpoint.raceId}]})
-    setConnecting(endpoint);setToast('红线已连接，继续选择下一段记忆')
+    setConnecting(endpoint);setToast(msg("App.105"))
   }
   const connectItem=(id:string)=>{const item=boardMembers(board.items).find(i=>i.id===id);if(item&&canConnect(item))connectEndpoint({itemId:item.exhibit?.medals[0].id??id})}
   const openMapEditor=(item:Memory,groupKey?:string,choosing=false)=>{
@@ -214,7 +220,7 @@ export default function App() {
       e.stopPropagation();e.preventDefault()
       const r=viewport.current!.getBoundingClientRect(),p=screenToWorld(e.clientX-r.left,e.clientY-r.top,viewRef.current)
       const hits=boardRef.current.items.filter(i=>intersectsSelection(i,{x:p.x,y:p.y,width:0,height:0})).reverse()
-      if(hits.length){const previous=overlap.current,repeat=previous&&Math.hypot(p.x-previous.x,p.y-previous.y)<5/view.scale,index=repeat?hits.findIndex(i=>i.id===previous.id):-1,target=hits[(index+1)%hits.length];overlap.current={...p,id:target.id};setSelected(target.id);setSelectedThread(null);closePanel();if(!target.groupId&&!target.locked)editItem(target);setToast(`已选择：${target.title.replaceAll('\n',' ')} · Alt 单击切换重叠物件`)}return
+      if(hits.length){const previous=overlap.current,repeat=previous&&Math.hypot(p.x-previous.x,p.y-previous.y)<5/view.scale,index=repeat?hits.findIndex(i=>i.id===previous.id):-1,target=hits[(index+1)%hits.length];overlap.current={...p,id:target.id};setSelected(target.id);setSelectedThread(null);closePanel();if(!target.groupId&&!target.locked)editItem(target);setToast(msg("App.104",{v1:target.title.replaceAll('\n',' ')}))}return
     }
     if((e.ctrlKey||multiSelect)&&e.button===0&&tool==='select'&&!space){
       e.stopPropagation();e.preventDefault()
@@ -227,7 +233,7 @@ export default function App() {
     e.stopPropagation(); e.preventDefault()
     const isPan = !item || space || e.button === 1
     const gestureIds=item?(selectedIds.includes(item.id)?selectedIds:expandGroups(boardRef.current.items,[item.id])):[]
-    if (!isPan && item) {if(!selectedIds.includes(item.id))setSelected(item.id); setSelectedThread(null);if(gestureIds.length>1||lockedSelection(boardRef.current.items,gestureIds)){closePanel()}if(lockedSelection(boardRef.current.items,gestureIds)){setToast('物件已锁定，可在底部工具栏解锁');return}}
+    if (!isPan && item) {if(!selectedIds.includes(item.id))setSelected(item.id); setSelectedThread(null);if(gestureIds.length>1||lockedSelection(boardRef.current.items,gestureIds)){closePanel()}if(lockedSelection(boardRef.current.items,gestureIds)){setToast(msg("App.103"));return}}
     else if(!space) {setSelected(null); setSelectedThread(null)}
     pointer.current={x:e.clientX,y:e.clientY}
     // Drag updates are immutable; keep the old board and clone only when committing history.
@@ -291,7 +297,7 @@ export default function App() {
     onDragMove:moveGesture,onDragEnd:endGesture,
     onLongPress:event=>{
       const {item}=touchTarget(event)
-      if(item&&tool==='select'){setMultiSelect(true);setSelectedIds(current=>[...new Set([...current,...expandGroups(boardRef.current.items,[item.id])])]);setSelectedThread(null);closePanel();setToast('已开启多选，点选物件或拖框选择')}
+      if(item&&tool==='select'){setMultiSelect(true);setSelectedIds(current=>[...new Set([...current,...expandGroups(boardRef.current.items,[item.id])])]);setSelectedThread(null);closePanel();setToast(msg("App.102"))}
       else if(!item){layerTarget.cancel();setCanvasMenu({x:event.clientX,y:event.clientY})}
     },
   })
@@ -300,8 +306,8 @@ export default function App() {
     setMultiSelect(false)
     setModal(null);closePanel()
     if(nextKind==='race-map'){
-      if(board.items.length>=500){setToast('每块收藏板最多放置 500 件藏品');return}
-      const item=createMemory('race-map','我的赛事地图','paper','',''),el=viewport.current
+      if(board.items.length>=500){setToast(msg("App.091"));return}
+      const item=createMemory('race-map',tr("App.075"),'paper','',''),el=viewport.current
       item.rotation=0;item.pinStyle='classic'
       if(el){const center=screenToWorld(el.clientWidth/2,el.clientHeight/2,viewRef.current);item.x=center.x-item.w/2;item.y=center.y-item.h/2}
       setTool('select');setConnecting(null);setSelected(null);setSelectedThread(null);openMap({id:item.id,draft:item});return
@@ -318,24 +324,24 @@ export default function App() {
     if(item.recordId){openRecord({mode:'detail',id:item.recordId,origin:'canvas'});return}
     setKind(item.kind);setDraft({title:item.title,variant:item.variant||'',image:item.image||samplePhotos[0],number:item.number||'0826',date:(item.subtitle||'').replaceAll('.','-')});openMemory('edit')
   }
-  const arrangePhotoLine=()=>{if(lockedSelection(boardRef.current.items,selectedIds))return;try{const next=hangPhotos(boardRef.current,selectedIds);if(next===boardRef.current)return;commit(next);closePanel();fit();setToast('照片已挂成绳串，可拖动照片继续调整')}catch(e){setToast(e instanceof Error?e.message:'照片绳创建失败')}}
+  const arrangePhotoLine=()=>{if(lockedSelection(boardRef.current.items,selectedIds))return;try{const next=hangPhotos(boardRef.current,selectedIds);if(next===boardRef.current)return;commit(next);closePanel();fit();setToast(msg("App.101"))}catch(e){setToast(errorNotice(e,msg("App.100")))}}
   const mergeSelection=(layout:ExhibitLayout)=>{
     try{
       const result=mergeMedals(boardRef.current,selectedIds,layout)
       commit(result.board);setSelectedIds([result.item.id]);setSelectedThread(null);setConnecting(null);openExhibit(result.item.id)
-      setToast(`已将 ${result.item.exhibit!.medals.length} 块奖牌合并为展览框`)
-    }catch(e){setToast(e instanceof Error?e.message:'无法合并奖牌')}
+      setToast(msg("App.099",{count:result.item.exhibit!.medals.length}))
+    }catch(e){setToast(errorNotice(e,msg("App.098")))}
   }
   const splitSelection=()=>{
     if(!selected)return
-    try{const result=splitMedals(boardRef.current,selected);commit(result.board);setSelectedIds(result.items.map(i=>i.id));setConnecting(null);closePanel();setToast('展览框已拆分，奖牌和红线关联已保留')}catch(e){setToast(e instanceof Error?e.message:'无法拆分展览框')}
+    try{const result=splitMedals(boardRef.current,selected);commit(result.board);setSelectedIds(result.items.map(i=>i.id));setConnecting(null);closePanel();setToast(msg("App.097"))}catch(e){setToast(errorNotice(e,msg("App.096")))}
   }
   const openExhibitSlot=(item:Memory,slot:number)=>{
     try{
       availableExhibitSlot(boardRef.current,item.id,slot)
       setSelected(item.id);setSelectedThread(null);setTool('select');setConnecting(null);closePanel()
       openRecord({mode:'exhibit-add',exhibitId:item.id,exhibitSlot:slot})
-    }catch(e){setToast(e instanceof Error?e.message:'无法添加奖牌')}
+    }catch(e){setToast(errorNotice(e,msg("App.095")))}
   }
   const changeLayer = (action:LayerAction) => {
     if(lockedSelection(boardRef.current.items,selectedIds))return
@@ -349,13 +355,13 @@ export default function App() {
   const addRecord = async (record: CollectionRecord,layout?:Partial<Memory>) => {
     const current=boardRef.current
     if(recordPanel?.exhibitId&&recordPanel.exhibitSlot!==undefined){
-      if(record.kind!=='medal')throw new Error('展览框只能添加奖牌')
+      if(record.kind!=='medal')throw new AppError("App.094")
       const medal={...createMemory('medal',record.name,record.variant||'bronze','',''),...layout,recordId:record.id}
       commit(addMedalToExhibit(current,recordPanel.exhibitId,recordPanel.exhibitSlot,medal))
-      setSelected(recordPanel.exhibitId);setSelectedThread(null);setTool('select');setConnecting(null);setToast(`奖牌已放入空位 ${recordPanel.exhibitSlot+1}`)
+      setSelected(recordPanel.exhibitId);setSelectedThread(null);setTool('select');setConnecting(null);setToast(msg("App.093",{v1:recordPanel.exhibitSlot+1}))
       return
     }
-    if(current.items.length>=500){setToast('每块收藏板最多放置 500 件藏品');return}
+    if(current.items.length>=500){setToast(msg("App.091"));return}
     const item=createMemory(record.kind==='medal'?'medal':record.kind==='photo'?'photo':record.kind==='bib'?'bib':record.kind==='sticker'?'sticker':'map',record.name,record.kind==='medal'?(record.variant||'bronze'):'blue','','')
     item.recordId=record.id
     if(record.kind==='bib')Object.assign(item,bibLayout(record.width,record.height))
@@ -363,11 +369,11 @@ export default function App() {
     if(layout)Object.assign(item,layout)
     const el=viewport.current
     if(el){const center=screenToWorld(el.clientWidth/2,el.clientHeight/2,viewRef.current);item.x=center.x-item.w/2;item.y=center.y-item.h/2}
-    commit({...current,items:[...current.items,item]});setSelected(item.id);setSelectedThread(null);setTool('select');setConnecting(null);setToast('收藏已放上画布')
+    commit({...current,items:[...current.items,item]});setSelected(item.id);setSelectedThread(null);setTool('select');setConnecting(null);setToast(msg("App.092"))
   }
   const saveRecord = async (record:CollectionRecord,add:boolean,layout?:Partial<Memory>) => {
     if(add&&recordPanel?.exhibitId&&recordPanel.exhibitSlot!==undefined)availableExhibitSlot(boardRef.current,recordPanel.exhibitId,recordPanel.exhibitSlot)
-    if(add&&!(recordPanel?.exhibitId&&recordPanel.exhibitSlot!==undefined)&&boardRef.current.items.length>=500)throw new Error('每块收藏板最多放置 500 件藏品')
+    if(add&&!(recordPanel?.exhibitId&&recordPanel.exhibitSlot!==undefined)&&boardRef.current.items.length>=500)throw new AppError("App.091")
     await library.save([record])
     if(add)await addRecord(record,layout)
     else if(record.kind==='sticker'){
@@ -386,10 +392,10 @@ export default function App() {
     }
   }
   const importPhotos=async(photos:BatchPhoto[])=>{
-    if(fileOperation.current)throw new Error('请等待当前操作完成')
-    if(!photos.length||photos.length>MAX_BATCH_PHOTOS)throw new Error(`每批请选择 1–${MAX_BATCH_PHOTOS} 张图片`)
+    if(fileOperation.current)throw new AppError("App.084")
+    if(!photos.length||photos.length>MAX_BATCH_PHOTOS)throw new AppError("App.090",{v1:MAX_BATCH_PHOTOS})
     const current=boardRef.current
-    if(current.items.length+photos.length>500)throw new Error(`画布最多放置 500 件藏品，目前还可添加 ${Math.max(0,500-current.items.length)} 件，请减少本批数量`)
+    if(current.items.length+photos.length>500)throw new AppError("App.089",{v1:Math.max(0,500-current.items.length)})
     const el=viewport.current
     const center=el?screenToWorld(el.clientWidth/2,el.clientHeight/2,viewRef.current):{x:0,y:0}
     const items=layoutBatchPhotos(photos,center)
@@ -401,44 +407,44 @@ export default function App() {
       setSelectedIds(items.map(item=>item.id));setSelectedThread(null);setConnecting(null);setTool('select')
       closePanel()
       if(el)setView(fitCamera(contentBounds(items,60),el.clientWidth,el.clientHeight))
-      setToast(`已导入 ${items.length} 张照片，可批量移动或逐张调整取景`)
+      setToast(msg("App.088",{count:items.length}))
     }finally{fileOperation.current=false;setExporting(false)}
   }
   const deleteRecord = async (id:string) => {
-    if(fileOperation.current)throw new Error('请等待当前操作完成')
-    if(recordThreadReferences(boardRef.current,id))throw new Error('请先在地图编辑栏移除引用此赛事的连线')
-    if(boardMembers(boardRef.current.items).some(item=>item.recordId===id))throw new Error('请先移除画布上使用此收藏的物件')
+    if(fileOperation.current)throw new AppError("App.084")
+    if(recordThreadReferences(boardRef.current,id))throw new AppError("App.087")
+    if(boardMembers(boardRef.current.items).some(item=>item.recordId===id))throw new AppError("App.086")
     fileOperation.current=true;setExporting(true)
     try{
       // Persist removal from the canvas before releasing the original files.
-      if(!boardSave.retry())throw new Error('请先解决画布保存失败，再彻底删除收藏')
+      if(!boardSave.retry())throw new AppError("App.081")
       await library.remove(id)
       // Undo must never restore an item whose source files were permanently deleted.
-      history.forgetRecord(id);setToast('收藏及原始文件已彻底删除')
+      history.forgetRecord(id);setToast(msg("App.085"))
     }finally{fileOperation.current=false;setExporting(false)}
   }
   const emptyRecycle = async (ids:string[]) => {
-    if(fileOperation.current)throw new Error('请等待当前操作完成')
-    if(ids.some(id=>!library.records.find(r=>r.id===id)?.archived))throw new Error('回收站内容已变化，请重新确认')
-    if(ids.some(id=>recordThreadReferences(boardRef.current,id)||boardMembers(boardRef.current.items).some(item=>item.recordId===id)))throw new Error('部分收藏正在使用，请重新确认')
+    if(fileOperation.current)throw new AppError("App.084")
+    if(ids.some(id=>!library.records.find(r=>r.id===id)?.archived))throw new AppError("App.083")
+    if(ids.some(id=>recordThreadReferences(boardRef.current,id)||boardMembers(boardRef.current.items).some(item=>item.recordId===id)))throw new AppError("App.082")
     fileOperation.current=true;setExporting(true)
     try {
-      if(!boardSave.retry())throw new Error('请先解决画布保存失败，再彻底删除收藏')
+      if(!boardSave.retry())throw new AppError("App.081")
       await library.removeMany(ids)
       ids.forEach(id=>history.forgetRecord(id))
-      setToast(`已彻底删除 ${ids.length} 份收藏`)
+      setToast(msg("App.080",{count:ids.length}))
     }finally{fileOperation.current=false;setExporting(false)}
   }
   const submitMemory = (e: FormEvent) => {
     e.preventDefault()
-    const title=draft.title.trim() || {sticker:'我的贴纸',photo:'山野，留下了答案',medal:'RIDGE 50K',bib:'RIDGE 50K',note:'记住这一刻',map:'走过的每一段路','race-map':'我的赛事地图'}[kind]
+    const title=draft.title.trim() || {sticker:tr("App.079"),photo:tr("App.078"),medal:'RIDGE 50K',bib:'RIDGE 50K',note:tr("App.077"),map:tr("App.076"),'race-map':tr("App.075")}[kind]
     if(memoryPanel==='edit') {
       const current=boardRef.current
-      if(!current.items.some(i=>i.id===memoryEditingId.current)){setToast('该藏品已被移除');closePanel();return}
+      if(!current.items.some(i=>i.id===memoryEditingId.current)){setToast(msg("App.074"));closePanel();return}
       commit({...current,items:current.items.map(i=>i.id===memoryEditingId.current?{...i,title,variant:draft.variant,image:i.kind==='photo'?draft.image:i.image,number:draft.number,subtitle:i.kind==='photo'?draft.date:i.subtitle}:i)})
-      setToast('藏品已保存')
+      setToast(msg("App.073"))
     }
-    else {const item=createMemory(kind,title,draft.variant,draft.image,draft.number);if(kind==='photo')item.subtitle=draft.date;const el=viewport.current;if(el){const center=screenToWorld(el.clientWidth/2,el.clientHeight/2,view);item.x=center.x-item.w/2;item.y=center.y-item.h/2}commit({...board,items:[...board.items,item]});setSelected(item.id);setToast('新的记忆，已放上收藏板')}
+    else {const item=createMemory(kind,title,draft.variant,draft.image,draft.number);if(kind==='photo')item.subtitle=draft.date;const el=viewport.current;if(el){const center=screenToWorld(el.clientWidth/2,el.clientHeight/2,view);item.x=center.x-item.w/2;item.y=center.y-item.h/2}commit({...board,items:[...board.items,item]});setSelected(item.id);setToast(msg("App.072"))}
     setTool('select');setConnecting(null);closePanel()
   }
   const transformItem = (change: Partial<Memory>) => { if(selected&&!selectedItem?.locked) commit({...board,items:board.items.map(i=>i.id===selected?{...i,...change}:i)}) }
@@ -459,8 +465,8 @@ export default function App() {
   const exportJson = async () => {
     if(fileOperation.current)return
     fileOperation.current=true;setExporting(true)
-    try{const blob=await makeZipArchive(boardRef.current,library.records);downloadBlob(blob,`${board.title}.zip`);setToast('已导出布局、收藏记录及原始文件')}
-    catch(e){setToast(e instanceof Error?e.message:'备份导出失败')}
+    try{const blob=await makeZipArchive(boardRef.current,library.records);downloadBlob(blob,`${board.title}.zip`);setToast(msg("App.071"))}
+    catch(e){setToast(errorNotice(e,msg("App.070")))}
     finally{fileOperation.current=false;setExporting(false)}
   }
   const exportImage = async () => {
@@ -469,17 +475,17 @@ export default function App() {
     setSelected(null);setSelectedThread(null);setConnecting(null)
     try {
       const blob=await exportBoardImage(scene.current,boardRef.current,library.records,light.enabled)
-      downloadBlob(blob,`${board.title}.png`);setToast('已导出全部藏品，自动裁切画布范围')
-    } catch {setToast('图片导出失败，请重试或导出收藏板文件')} finally {fileOperation.current=false;setExporting(false)}
+      downloadBlob(blob,`${board.title}.png`);setToast(msg("App.069"))
+    } catch {setToast(msg("App.068"))} finally {fileOperation.current=false;setExporting(false)}
   }
   const importJson = async (file?: File) => {
     if(!file||fileOperation.current)return
     fileOperation.current=true;setExporting(true)
     try{
-      if(file.size>80*1024*1024)throw new Error('备份文件不能超过 80 MB')
+      if(file.size>80*1024*1024)throw new AppError("App.067")
       const data=await readBackup(file);await library.save(data.records)
-      commit(data.board);setSelected(null);setSelectedThread(null);setConnecting(null);closePanel();setModal(null);fit();setToast('收藏板及关联文件已导入')
-    }catch(e){setToast(e instanceof Error?e.message:'无法导入，请选择有效的收藏板文件')}
+      commit(data.board);setSelected(null);setSelectedThread(null);setConnecting(null);closePanel();setModal(null);fit();setToast(msg("App.066"))
+    }catch(e){setToast(errorNotice(e,msg("App.065")))}
     finally{fileOperation.current=false;setExporting(false);if(inputFile.current)inputFile.current.value=''}
   }
   const startPin = connecting?pointFor(connecting):null
@@ -489,9 +495,9 @@ export default function App() {
   const itemStyles=selectedItem?<DecorationPanel embedded board={board} item={selectedItem} scope="selection" onClose={()=>{}} onCurvature={()=>{}} onPinToggle={enabled=>commit(setTapePin(boardRef.current,selectedItem.id,enabled))} onChange={change=>commit(changeDecoration(boardRef.current,change,selectedItem.id))}/>:null
   return <div data-light={light.enabled?'on':'off'} className={`app-shell ${touchLayout?'is-touch':''} ${recordPanel||memoryPanel||mapPanel||exhibitPanel||decorationOpen?'has-editor':''}`}>
     {selectedItem?.exhibit&&exhibitPanel===selectedItem.id&&!selectedItem.locked&&!selectedItem.groupId&&<MedalExhibitEditor item={selectedItem} records={library.records} onAdd={slot=>openExhibitSlot(selectedItem,slot)} onChange={transformItem} onClose={()=>closePanel()} onSplit={splitSelection} onEdit={medal=>{openRecord({mode:'detail',id:medal.recordId,exhibitId:selectedItem.id,medalId:medal.id})}}/>}
-    {(!library.ready||exporting)&&<div className="records-loading" role="status"><div><h2>{exporting?'正在处理收藏板文件…':library.error?'收藏库暂不可用':'正在载入你的收藏…'}</h2>{library.error&&<><p>{library.error}</p><button className="primary-button" onClick={library.retry}>重试</button></>}</div></div>}
-    {saveError&&<div className="save-failure-banner" role="alert">{saveError}。当前修改仍在此页面中，请勿刷新。{boardSave.error&&<button onClick={boardSave.retry}>重试画布保存</button>}<button onClick={()=>setModal('share')}>导出已提交内容</button></div>}
-    {library.ready&&recordPanel&&<RecordPanel exhibitMedal={!!editingExhibitMedal||addingExhibitMedal} onBack={addingExhibitMedal?(recordPanel.mode==='medal'?()=>openRecord({...recordPanel,mode:'exhibit-add'}):returnToExhibit):editingExhibitMedal?returnToExhibit:undefined} onImportPhotos={importPhotos} onBibTemplate={()=>openAdd('bib')} styles={recordPanel.mode==='detail'&&selectedItem?.recordId===recordPanel.id?itemStyles:undefined} item={editingExhibitMedal??(recordPanel.mode==='detail'&&selectedItem&&selectedItem.recordId===recordPanel.id?selectedItem:undefined)} onLayout={editingExhibitMedal?transformExhibitMedal:transformItem} mode={recordPanel} records={library.records} references={id=>boardMembers(board.items).filter(i=>i.recordId===id).length} threadReferences={id=>recordThreadReferences(board,id)} onMode={openRecord} onClose={addingExhibitMedal?returnToExhibit:()=>closePanel()} onSave={saveRecord} onDelete={deleteRecord} onEmptyRecycle={emptyRecycle} onAdd={addingExhibitMedal?record=>addRecord(record):record=>{void addRecord(record).catch(()=>setToast('照片读取失败，请重新上传'))}}/>}
+    {(!library.ready||exporting)&&<div className="records-loading" role="status"><div><h2>{exporting?tr("App.064"):library.error?tr("App.063"):tr("App.062")}</h2>{library.error&&<><p>{library.error}</p><button className="primary-button" onClick={library.retry}>{tr("App.061")}</button></>}</div></div>}
+    {saveError&&<div className="save-failure-banner" role="alert"><span>{saveError}</span><span>{tr("App.060")}</span>{boardSave.error&&<button onClick={boardSave.retry}>{tr("App.059")}</button>}<button onClick={()=>setModal('share')}>{tr("App.058")}</button></div>}
+    {library.ready&&recordPanel&&<RecordPanel exhibitMedal={!!editingExhibitMedal||addingExhibitMedal} onBack={addingExhibitMedal?(recordPanel.mode==='medal'?()=>openRecord({...recordPanel,mode:'exhibit-add'}):returnToExhibit):editingExhibitMedal?returnToExhibit:undefined} onImportPhotos={importPhotos} onBibTemplate={()=>openAdd('bib')} styles={recordPanel.mode==='detail'&&selectedItem?.recordId===recordPanel.id?itemStyles:undefined} item={editingExhibitMedal??(recordPanel.mode==='detail'&&selectedItem&&selectedItem.recordId===recordPanel.id?selectedItem:undefined)} onLayout={editingExhibitMedal?transformExhibitMedal:transformItem} mode={recordPanel} records={library.records} references={id=>boardMembers(board.items).filter(i=>i.recordId===id).length} threadReferences={id=>recordThreadReferences(board,id)} onMode={openRecord} onClose={addingExhibitMedal?returnToExhibit:()=>closePanel()} onSave={saveRecord} onDelete={deleteRecord} onEmptyRecycle={emptyRecycle} onAdd={addingExhibitMedal?record=>addRecord(record):record=>{void addRecord(record).catch(()=>setToast(msg("App.057")))}}/>}
     {memoryPanel&&<MemoryEditor onBibUpload={()=>{openRecord({mode:'bib'})}} memoryPanel={memoryPanel} kind={kind} selectedItem={selectedItem} draft={draft} setDraft={setDraft} transformItem={transformItem} itemStyles={itemStyles} submitMemory={submitMemory} onClose={()=>{closePanel()}}/>}
     {mapItem&&mapPanel&&<RaceMapEditor creating={!!mapPanel.draft} key={mapItem.id} item={mapItem} board={board} records={library.records} groups={mapGroups} groupKey={mapPanel.groupKey} choosing={!!mapPanel.choosing&&tool==='connect'} hiddenThreads={hiddenMapThreads} onClose={()=>{closePanel()}} onSelectGroup={groupKey=>openMap({...mapPanel,groupKey,choosing:false})} onConnect={raceId=>connectEndpoint({itemId:mapItem.id,raceId})} onRemoveThread={id=>commit({...board,threads:board.threads.filter(t=>t.id!==id)})} onSave={change=>{const current=boardRef.current;const next={...mapItem,...change,x:mapItem.x+(mapItem.w-(change.w??mapItem.w))/2,y:mapItem.y+(mapItem.h-(change.h??mapItem.h))/2};if(mapPanel.draft){if(current.items.length>=500)return;commit({...current,items:[...current.items,next]});setSelected(next.id)}else commit({...current,items:current.items.map(i=>i.id===next.id?next:i)})}} onRace={id=>{
       closePanel()
@@ -506,46 +512,46 @@ export default function App() {
       if(decorationScope==='selection' && !target) return
       commit(changeDecoration(board,change,target??undefined))
     }}/>}
-    <main onContextMenu={e=>{e.preventDefault();if(gesture.current||touchGestures.active()||(e.nativeEvent as PointerEvent).pointerType==='touch')return;layerTarget.cancel();setCanvasMenu({x:e.clientX,y:e.clientY})}} className={`board-viewport ${space?'space-mode':''} ${dragging?'is-dragging':''} ${tool==='connect'?'connect-mode':''} ${layerTarget.mode?'layer-target-mode':''}`} ref={viewport} onDoubleClickCapture={e=>{if(tool==='connect'){e.preventDefault();e.stopPropagation();setTool('select');setConnecting(null);setToast('已结束连线')}}}  onPointerMoveCapture={e=>{if(!touchGestures.move(e))layerTarget.onMove(e)}} onPointerUpCapture={e=>touchGestures.up(e)} onPointerCancelCapture={e=>touchGestures.up(e,true)} onLostPointerCaptureCapture={e=>touchGestures.lost(e)} onPointerLeave={()=>{if(layerTarget.mode)layerTarget.clearHover()}} onPointerDownCapture={e=>{if(touchGestures.down(e))return;if(e.button===2){e.stopPropagation();return}if(layerTarget.mode){layerTarget.onDown(e);return}if(e.ctrlKey&&e.button===0&&tool==='select'&&!space)startGesture(e)}} onPointerDown={e=>startGesture(e)} onPointerMove={moveGesture} onPointerUp={()=>endGesture()} onPointerCancel={()=>endGesture(true)} onLostPointerCapture={()=>endGesture()}>
+    <main onContextMenu={e=>{e.preventDefault();if(gesture.current||touchGestures.active()||(e.nativeEvent as PointerEvent).pointerType==='touch')return;layerTarget.cancel();setCanvasMenu({x:e.clientX,y:e.clientY})}} className={`board-viewport ${space?'space-mode':''} ${dragging?'is-dragging':''} ${tool==='connect'?'connect-mode':''} ${layerTarget.mode?'layer-target-mode':''}`} ref={viewport} onDoubleClickCapture={e=>{if(tool==='connect'){e.preventDefault();e.stopPropagation();setTool('select');setConnecting(null);setToast(msg("App.056"))}}}  onPointerMoveCapture={e=>{if(!touchGestures.move(e))layerTarget.onMove(e)}} onPointerUpCapture={e=>touchGestures.up(e)} onPointerCancelCapture={e=>touchGestures.up(e,true)} onLostPointerCaptureCapture={e=>touchGestures.lost(e)} onPointerLeave={()=>{if(layerTarget.mode)layerTarget.clearHover()}} onPointerDownCapture={e=>{if(touchGestures.down(e))return;if(e.button===2){e.stopPropagation();return}if(layerTarget.mode){layerTarget.onDown(e);return}if(e.ctrlKey&&e.button===0&&tool==='select'&&!space)startGesture(e)}} onPointerDown={e=>startGesture(e)} onPointerMove={moveGesture} onPointerUp={()=>endGesture()} onPointerCancel={()=>endGesture(true)} onLostPointerCapture={()=>endGesture()}>
       <CanvasBackground id={board.backgroundStyle} view={view}/>
       <BoardLightWash/>
       <div className="scene cork" ref={scene} style={{width:1,height:1,transform:`translate(${view.x}px,${view.y}px) scale(${view.scale})`}}>
-        {board.items.map(item=><div key={item.id} data-board-item={item.id} role="button" tabIndex={0} aria-label={`${item.exhibit?'奖牌展览框':item.kind==='sticker'?'贴纸':item.kind==='medal'?'奖牌':item.kind==='photo'?'照片':item.kind==='bib'?'号码布':item.kind==='note'?'便签':item.kind==='race-map'?'赛事地图':'路线卡'}：${displayMemory(item,recordFor(item,library.records)).title}`} aria-pressed={selectedIds.includes(item.id)} className={`memory memory-${item.kind} ${item.exhibit?'memory-exhibit':''} ${selectedIds.includes(item.id)?'selected':''} ${item.locked?'is-locked':''} ${item.groupId?'is-grouped':''} ${layerTarget.highlightIds.includes(item.id)?'layer-target-highlight':''} ${connecting?.itemId===item.id?'connection-source':''}`} style={{left:item.x,top:item.y,width:item.w,height:item.h,transform:`rotate(${item.rotation}deg)`}} onPointerDown={e=>startGesture(e,item)} onDoubleClick={e=>{if(!touchLayout&&tool!=='connect'&&!e.ctrlKey&&selectedIds.length<2)editItem(item)}} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();if(tool==='connect')connectItem(item.id);else{setSelected(item.id);setSelectedThread(null);editItem(item)}}}}><ItemMotion item={item} pin={decorations.pin} lifted={dragging&&gesture.current?.type==='item'&&!!gesture.current.ids?.includes(item.id)}><Artwork records={library.records} raceGroups={mapGroups} item={item} record={recordFor(item,library.records)} tapeStyle={item.tapeStyle??decorations.tape}/></ItemMotion><div className="selection-outline"/></div>)}
-        <svg className="threads" width={1} height={1} aria-label="赛事记忆连接线">
+        {board.items.map(item=><div key={item.id} data-board-item={item.id} role="button" tabIndex={0} aria-label={`${item.exhibit?tr("App.027"):item.kind==='sticker'?tr("App.026"):item.kind==='medal'?tr("App.024"):item.kind==='photo'?tr("App.025"):item.kind==='bib'?tr("App.023"):item.kind==='note'?tr("App.022"):item.kind==='race-map'?tr("App.021"):tr("App.020")}：${displayMemory(item,recordFor(item,library.records)).title}`} aria-pressed={selectedIds.includes(item.id)} className={`memory memory-${item.kind} ${item.exhibit?'memory-exhibit':''} ${selectedIds.includes(item.id)?'selected':''} ${item.locked?'is-locked':''} ${item.groupId?'is-grouped':''} ${layerTarget.highlightIds.includes(item.id)?'layer-target-highlight':''} ${connecting?.itemId===item.id?'connection-source':''}`} style={{left:item.x,top:item.y,width:item.w,height:item.h,transform:`rotate(${item.rotation}deg)`}} onPointerDown={e=>startGesture(e,item)} onDoubleClick={e=>{if(!touchLayout&&tool!=='connect'&&!e.ctrlKey&&selectedIds.length<2)editItem(item)}} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();if(tool==='connect')connectItem(item.id);else{setSelected(item.id);setSelectedThread(null);editItem(item)}}}}><ItemMotion item={item} pin={decorations.pin} lifted={dragging&&gesture.current?.type==='item'&&!!gesture.current.ids?.includes(item.id)}><Artwork records={library.records} raceGroups={mapGroups} item={item} record={recordFor(item,library.records)} tapeStyle={item.tapeStyle??decorations.tape}/></ItemMotion><div className="selection-outline"/></div>)}
+        <svg className="threads" width={1} height={1} aria-label={tr("App.055")}>
           <defs><filter id="thread-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="1" dy="2" stdDeviation="1" floodColor="#4c281c" floodOpacity=".5"/></filter></defs>
-          {board.threads.map(thread=>{const from=worldItems.find(i=>i.id===thread.from),to=worldItems.find(i=>i.id===thread.to);if(!from||!to)return null;const [a,b]=threadEndpoints(thread).map(pointFor);if(!a||!b)return null;const d=threadCurve(a,b,thread.curvature).d;return <g key={thread.id} data-board-thread={thread.id} role="button" tabIndex={0} aria-label={`记忆连线：${from.title} → ${to.title}`} aria-pressed={selectedThread===thread.id} onFocus={()=>{setSelectedThread(thread.id);setSelected(null)}} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();setSelectedThread(thread.id);setSelected(null)}}}><path className="thread-hit" d={d} onPointerDown={e=>{if(space)return;e.preventDefault();e.stopPropagation();setSelectedThread(thread.id);setSelected(null)}}/>{selectedThread===thread.id&&<path className="thread-selection" d={d}/>}<ThreadStroke d={d} style={thread.style??decorations.thread} shadow/></g>})}
+          {board.threads.map(thread=>{const from=worldItems.find(i=>i.id===thread.from),to=worldItems.find(i=>i.id===thread.to);if(!from||!to)return null;const [a,b]=threadEndpoints(thread).map(pointFor);if(!a||!b)return null;const d=threadCurve(a,b,thread.curvature).d;return <g key={thread.id} data-board-thread={thread.id} role="button" tabIndex={0} aria-label={tr("App.054",{v1:from.title,v2:to.title})} aria-pressed={selectedThread===thread.id} onFocus={()=>{setSelectedThread(thread.id);setSelected(null)}} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();setSelectedThread(thread.id);setSelected(null)}}}><path className="thread-hit" d={d} onPointerDown={e=>{if(space)return;e.preventDefault();e.stopPropagation();setSelectedThread(thread.id);setSelected(null)}}/>{selectedThread===thread.id&&<path className="thread-selection" d={d}/>}<ThreadStroke d={d} style={thread.style??decorations.thread} shadow/></g>})}
           {tool==='connect' && startPin && cursor && <path className="draft-thread" d={threadCurve(startPin,cursor).d}/>}
         </svg>
         {worldItems.filter(item=>canConnect(item)&&(!item.exhibit||board.threads.some(t=>t.from===item.id||t.to===item.id))&&(hasPin(item)||tool==='connect'||(item.kind==='medal'&&board.threads.some(t=>t.from===item.id||t.to===item.id)))).map(item=>{
           const p=pinPosition(item,decorations.pin), pinned=hasPin(item),owner=ownerOf(board.items,item.id)!
           const mountClass=item.kind==='medal'?'medal-thread-eyelet':pinned?`pushpin pin-${item.pinStyle??decorations.pin}`:'connection-anchor'
-          return <button key={item.id} data-board-anchor={item.id} data-owner-id={owner.id} className={`${mountClass} ${connecting?.itemId===item.id?'pin-active':''}`} aria-label={`${item.kind==='medal'?'奖牌连接环':pinned?(item.pinStyle??decorations.pin)==='clip'?'木夹子':'连接图钉':'连接点'}：${displayMemory(item,recordFor(item,library.records)).title}`} style={{left:p.x,top:p.y,...((item.pinStyle??decorations.pin)==='clip'||item.kind==='medal'?{transform:`translate(-50%,-50%) rotate(${item.rotation}deg)`}:{})}} onPointerDown={e=>{if(space)startGesture(e);else if(tool==='connect'){e.stopPropagation();connectItem(item.id)}else startGesture(e,owner)}} onClick={e=>{if(e.detail===0){if(tool==='connect')connectItem(item.id);else{setSelected(owner.id);setSelectedThread(null);editItem(owner)}}}}>{pinned&&(item.pinStyle??decorations.pin)==='clip'&&<Clothespin/>}</button>
+          return <button key={item.id} data-board-anchor={item.id} data-owner-id={owner.id} className={`${mountClass} ${connecting?.itemId===item.id?'pin-active':''}`} aria-label={`${item.kind==='medal'?tr("App.053"):pinned?(item.pinStyle??decorations.pin)==='clip'?tr("App.052"):tr("App.051"):tr("App.050")}：${displayMemory(item,recordFor(item,library.records)).title}`} style={{left:p.x,top:p.y,...((item.pinStyle??decorations.pin)==='clip'||item.kind==='medal'?{transform:`translate(-50%,-50%) rotate(${item.rotation}deg)`}:{})}} onPointerDown={e=>{if(space)startGesture(e);else if(tool==='connect'){e.stopPropagation();connectItem(item.id)}else startGesture(e,owner)}} onClick={e=>{if(e.detail===0){if(tool==='connect')connectItem(item.id);else{setSelected(owner.id);setSelectedThread(null);editItem(owner)}}}}>{pinned&&(item.pinStyle??decorations.pin)==='clip'&&<Clothespin/>}</button>
         })}
         {board.items.filter(i=>i.kind==='race-map').flatMap(item=>mapGroups.map(group=>{
           const p=racePointOnMap(item,group.races[0]);if(!p)return null
           const pin=item.pinStyle??decorations.pin
           const active=connecting?.itemId===item.id&&group.races.some(r=>r.id===connecting.raceId)
           const activate=()=>{if(tool==='connect'){if(group.races.length===1)connectEndpoint({itemId:item.id,raceId:group.races[0].id});else openMapEditor(item,group.key,true)}else openMapEditor(item,group.key)}
-          return <button key={`${item.id}:${group.key}`} data-map-id={item.id} data-map-group={group.key} className={`pushpin map-place-pin pin-${pin} ${active?'pin-active':''}`} aria-label={`地点钉子：${group.name}，${group.races.length} 场赛事`} style={{left:p.x,top:p.y,...(pin==='clip'?{transform:`translate(-50%,-50%) rotate(${item.rotation}deg)`}:{})}} onPointerDown={e=>{
+          return <button key={`${item.id}:${group.key}`} data-map-id={item.id} data-map-group={group.key} className={`pushpin map-place-pin pin-${pin} ${active?'pin-active':''}`} aria-label={tr("App.049",{v1:group.name,v2:group.races.length})} style={{left:p.x,top:p.y,...(pin==='clip'?{transform:`translate(-50%,-50%) rotate(${item.rotation}deg)`}:{})}} onPointerDown={e=>{
             if(tool==='connect'&&!space){e.stopPropagation();activate();return}
             startGesture(e,item);if(gesture.current?.type==='item')gesture.current.mapGroupKey=group.key
           }} onClick={e=>{if(e.detail===0)activate()}}>{pin==='clip'&&<Clothespin/>}</button>
         }))}
         {snapEnabled&&guides.map((g,index)=><div key={index} className="snap-guide" style={g.axis==='x'?{left:g.value,top:g.start,width:1/view.scale,height:g.end-g.start}:{left:g.start,top:g.value,width:g.end-g.start,height:1/view.scale}}/>)}
         {marquee&&<div className="marquee-selection" style={{left:marquee.x,top:marquee.y,width:marquee.width,height:marquee.height,borderWidth:1.5/view.scale}}/>}
-        {board.items.length===0 && <div className="empty-board" style={{left:visible.x+visible.width/2,top:visible.y+visible.height*.3,width:600}}><MountainLogo/><h1>每段旅程，都值得收藏</h1><p>从一张照片、一块奖牌开始，串起你的山野记忆。</p><button className="primary-button" onPointerDown={e=>e.stopPropagation()} onClick={()=>openAdd('photo')}><Plus size={18}/>添加第一张照片</button></div>}
+        {board.items.length===0 && <div className="empty-board" style={{left:visible.x+visible.width/2,top:visible.y+visible.height*.3,width:600}}><MountainLogo/><h1>{tr("App.048")}</h1><p>{tr("App.047")}</p><button className="primary-button" onPointerDown={e=>e.stopPropagation()} onClick={()=>openAdd('photo')}><Plus size={18}/>{tr("App.046")}</button></div>}
       </div>
     </main>
     {canvasMenu&&<CanvasContextMenu position={canvasMenu} snapEnabled={snapEnabled} onToggle={toggleSnap} onClose={closeCanvasMenu} canClear={canClear} onClear={()=>{closeCanvasMenu();setModal('clear')}}/>}
     <ToolPalette multiSelect={multiSelect} onMultiSelect={()=>{setMultiSelect(value=>!value);setTool('select');setConnecting(null);closePanel()}} tool={tool} onSelect={()=>{setMultiSelect(false);setTool('select');setConnecting(null)}} onConnect={()=>{setMultiSelect(false);setTool(tool==='connect'?'select':'connect');setConnecting(null);setSelected(null);setSelectedThread(null)}} onAdd={openAdd}/>
-    {layerTarget.mode&&<div className="connection-hint layer-target-hint" data-layer-target-hint role="status"><span>{layerTarget.target?`放到「${board.items.find(i=>i.id===layerTarget.target)?.title.replaceAll('\n',' ')||'物件'}」${layerTarget.mode.action==='above'?'上方':'下方'}`:`点击目标物件，放到它的${layerTarget.mode.action==='above'?'上方':'下方'}`}<small>Alt 单击切换重叠目标 · 点击或 Enter 确认 · Esc 取消</small></span><button type="button" onClick={layerTarget.cancel} aria-label="取消指定层级"><X size={16}/></button></div>}
-    <HintGroup><div className="history-controls" data-history={historyTick}><HintButton hint="撤销 · Ctrl+Z" aria-label="撤销" disabled={!history.canUndo || dragging} onClick={undo}><Undo2 size={17}/></HintButton><span/><HintButton hint="重做 · Ctrl+Shift+Z" aria-label="重做" disabled={!history.canRedo || dragging} onClick={redo}><Redo2 size={17}/></HintButton></div></HintGroup>
-    {tool==='connect' && <div className="connection-hint"><span className="red-dot"/>{connecting?'选择下一件藏品，串联这段记忆 · 双击结束':'点击藏品或连接点，开始连接记忆 · 双击结束'}<button onClick={()=>{setTool('select');setConnecting(null)}} aria-label="结束连线"><X size={16}/></button></div>}
-    {!layerTarget.mode&&selectedIds.length>1&&tool==='select'&&<SelectionToolbar>{selectedMedals.length===selectedIds.length&&<MedalMergeMenu count={selectedMedals.length} disabled={selectedMedals.length>8||lockedSelection(board.items,selectedIds)} onMerge={mergeSelection}/>} {layoutControls}<LayerMenu key={selectedIds.join(',')} items={board.items} ids={selectedIds} onChange={changeLayer} onTarget={layerTarget.begin}/><HintButton className="photo-line-action" onClick={arrangePhotoLine} disabled={selectedPhotos.length<2||lockedSelection(board.items,selectedIds)} aria-label="挂成照片绳"><Spline size={17}/><span>挂成照片绳</span></HintButton><HintButton disabled={lockedSelection(board.items,selectedIds)} className="delete-button" onClick={removeSelected} aria-label="删除选中藏品" data-tooltip="删除 · Delete"><Trash2 size={17}/></HintButton>{!touchLayout&&<HintButton onClick={()=>setSelected(null)} aria-label="取消批量选择"><X size={16}/></HintButton>}</SelectionToolbar>}
-    {!layerTarget.mode&&(selectedItem || selectedThread) && tool==='select' && <SelectionToolbar>{selectedItem ? <>{touchLayout&&<HintButton aria-label="编辑物件" disabled={!!selectedItem.locked||!!selectedItem.groupId} onClick={()=>editItem(selectedItem)}><Pencil size={17}/></HintButton>}<span className="selection-label">{selectedItem.exhibit?'奖牌展览框':selectedItem.kind==='sticker'?'贴纸':selectedItem.kind==='photo'?'照片':selectedItem.kind==='medal'?'奖牌':selectedItem.kind==='bib'?'号码布':selectedItem.kind==='note'?'便签':selectedItem.kind==='race-map'?'赛事地图':'路线卡'}</span>{selectedItem.exhibit&&<MedalSplitButton disabled={!!selectedItem.locked||!!selectedItem.groupId} onSplit={splitSelection}/>} {layoutControls}<LayerMenu key={selectedItem.id} items={board.items} ids={selectedIds} onChange={changeLayer} onTarget={layerTarget.begin}/><span className="bar-divider"/><HintButton disabled={!!selectedItem.locked} onClick={()=>transformItem({rotation:selectedItem.rotation-5})} aria-label="向左旋转"><RotateCcw size={17}/></HintButton><HintButton disabled={!!selectedItem.locked} onClick={()=>transformItem({rotation:selectedItem.rotation+5})} aria-label="向右旋转"><RotateCw size={17}/></HintButton></> : <span className="selection-label">记忆连线</span>}{!selectedItem&&<HintButton onClick={()=>{openDecoration('selection')}} aria-label="更换连线样式"><Palette size={17}/></HintButton>}<HintButton disabled={lockedSelection(board.items,selectedIds)} className="delete-button" onClick={removeSelected} aria-label="删除选中项" data-tooltip="删除 · Delete"><Trash2 size={17}/></HintButton>{!touchLayout&&<HintButton onClick={()=>{setSelected(null);setSelectedThread(null)}} aria-label="取消选择"><X size={16}/></HintButton>}</SelectionToolbar>}
-    <div className="bottom-hint"><Move size={13}/><span>{touchLayout?(multiSelect?'点选或拖框多选 · 双指移动画布':'单指拖动 · 双指缩放 · 长按多选'):<>无限画布 · 拖动藏品<span className="hint-dot">·</span>滚轮缩放<span className="hint-dot">·</span>空格平移</>}</span><button onClick={()=>setModal('help')} aria-label="快捷键与帮助"><Keyboard size={15}/></button></div>
-    <div className="board-signature" style={{color:resolveBackground(board.backgroundStyle).ink}}>每一步，都算数。<span>EVERY TRAIL TELLS A STORY</span></div>
-    <HintGroup><div className="zoom-controls"><HintButton aria-label="放大" onClick={()=>zoom(1.2)}><Plus size={21}/></HintButton><HintButton aria-label="缩小" onClick={()=>zoom(1/1.2)}><Minus size={21}/></HintButton><span/><HintButton aria-label="适应画布" hint="适应画布 · 0" onClick={fit}><Maximize size={18}/></HintButton><HintButton className="zoom-value" aria-label="恢复 100%" onClick={()=>{const el=viewport.current;if(el)zoomAt(1,el.clientWidth/2,el.clientHeight/2)}}>{Math.round(view.scale*100)}%</HintButton></div></HintGroup>
+    {layerTarget.mode&&<div className="connection-hint layer-target-hint" data-layer-target-hint role="status"><span>{layerTarget.target?tr("App.045",{v1:board.items.find(i=>i.id===layerTarget.target)?.title.replaceAll('\n',' ')||tr("App.044"),v2:layerTarget.mode.action==='above'?tr("App.042"):tr("App.041")}):tr("App.043",{v1:layerTarget.mode.action==='above'?tr("App.042"):tr("App.041")})}<small>{tr("App.040")}</small></span><button type="button" onClick={layerTarget.cancel} aria-label={tr("App.039")}><X size={16}/></button></div>}
+    <HintGroup><div className="history-controls" data-history={historyTick}><HintButton hint={tr("App.038")} aria-label={tr("App.037")} disabled={!history.canUndo || dragging} onClick={undo}><Undo2 size={17}/></HintButton><span/><HintButton hint={tr("App.036")} aria-label={tr("App.035")} disabled={!history.canRedo || dragging} onClick={redo}><Redo2 size={17}/></HintButton></div></HintGroup>
+    {tool==='connect' && <div className="connection-hint"><span className="red-dot"/>{connecting?tr("App.034"):tr("App.033")}<button onClick={()=>{setTool('select');setConnecting(null)}} aria-label={tr("App.032")}><X size={16}/></button></div>}
+    {!layerTarget.mode&&selectedIds.length>1&&tool==='select'&&<SelectionToolbar>{selectedMedals.length===selectedIds.length&&<MedalMergeMenu count={selectedMedals.length} disabled={selectedMedals.length>8||lockedSelection(board.items,selectedIds)} onMerge={mergeSelection}/>} {layoutControls}<LayerMenu key={selectedIds.join(',')} items={board.items} ids={selectedIds} onChange={changeLayer} onTarget={layerTarget.begin}/><HintButton className="photo-line-action" onClick={arrangePhotoLine} disabled={selectedPhotos.length<2||lockedSelection(board.items,selectedIds)} aria-label={tr("App.031")}><Spline size={17}/><span>{tr("App.031")}</span></HintButton><HintButton disabled={lockedSelection(board.items,selectedIds)} className="delete-button" onClick={removeSelected} aria-label={tr("App.030")} data-tooltip={tr("App.014")}><Trash2 size={17}/></HintButton>{!touchLayout&&<HintButton onClick={()=>setSelected(null)} aria-label={tr("App.029")}><X size={16}/></HintButton>}</SelectionToolbar>}
+    {!layerTarget.mode&&(selectedItem || selectedThread) && tool==='select' && <SelectionToolbar>{selectedItem ? <>{touchLayout&&<HintButton aria-label={tr("App.028")} disabled={!!selectedItem.locked||!!selectedItem.groupId} onClick={()=>editItem(selectedItem)}><Pencil size={17}/></HintButton>}<span className="selection-label">{selectedItem.exhibit?tr("App.027"):selectedItem.kind==='sticker'?tr("App.026"):selectedItem.kind==='photo'?tr("App.025"):selectedItem.kind==='medal'?tr("App.024"):selectedItem.kind==='bib'?tr("App.023"):selectedItem.kind==='note'?tr("App.022"):selectedItem.kind==='race-map'?tr("App.021"):tr("App.020")}</span>{selectedItem.exhibit&&<MedalSplitButton disabled={!!selectedItem.locked||!!selectedItem.groupId} onSplit={splitSelection}/>} {layoutControls}<LayerMenu key={selectedItem.id} items={board.items} ids={selectedIds} onChange={changeLayer} onTarget={layerTarget.begin}/><span className="bar-divider"/><HintButton disabled={!!selectedItem.locked} onClick={()=>transformItem({rotation:selectedItem.rotation-5})} aria-label={tr("App.019")}><RotateCcw size={17}/></HintButton><HintButton disabled={!!selectedItem.locked} onClick={()=>transformItem({rotation:selectedItem.rotation+5})} aria-label={tr("App.018")}><RotateCw size={17}/></HintButton></> : <span className="selection-label">{tr("App.017")}</span>}{!selectedItem&&<HintButton onClick={()=>{openDecoration('selection')}} aria-label={tr("App.016")}><Palette size={17}/></HintButton>}<HintButton disabled={lockedSelection(board.items,selectedIds)} className="delete-button" onClick={removeSelected} aria-label={tr("App.015")} data-tooltip={tr("App.014")}><Trash2 size={17}/></HintButton>{!touchLayout&&<HintButton onClick={()=>{setSelected(null);setSelectedThread(null)}} aria-label={tr("App.013")}><X size={16}/></HintButton>}</SelectionToolbar>}
+    <div className="bottom-hint"><Move size={13}/><span>{touchLayout?(multiSelect?tr("App.012"):tr("App.011")):<>{tr("App.010")}<span className="hint-dot">·</span>{tr("App.009")}<span className="hint-dot">·</span>{tr("App.008")}</>}</span><button onClick={()=>setModal('help')} aria-label={tr("App.007")}><Keyboard size={15}/></button></div>
+    <div className="board-signature" style={{color:resolveBackground(board.backgroundStyle).ink}}>{tr("App.006")}<span>EVERY TRAIL TELLS A STORY</span></div>
+    <HintGroup><div className="zoom-controls"><HintButton aria-label={tr("App.005")} onClick={()=>zoom(1.2)}><Plus size={21}/></HintButton><HintButton aria-label={tr("App.004")} onClick={()=>zoom(1/1.2)}><Minus size={21}/></HintButton><span/><HintButton aria-label={tr("App.003")} hint={tr("App.002")} onClick={fit}><Maximize size={18}/></HintButton><HintButton className="zoom-value" aria-label={tr("App.001")} onClick={()=>{const el=viewport.current;if(el)zoomAt(1,el.clientWidth/2,el.clientHeight/2)}}>{Math.round(view.scale*100)}%</HintButton></div></HintGroup>
     <Minimap board={board} records={library.records} pin={decorations.pin} bounds={boardBounds} view={view} width={viewportSize.width} height={viewportSize.height} onChange={setView}/>
     <input ref={inputFile} type="file" accept=".zip,application/zip,.json,application/json" hidden onChange={e=>void importJson(e.target.files?.[0])}/>
     {toast && <div className="toast" role="status"><Check size={17}/>{toast}</div>}

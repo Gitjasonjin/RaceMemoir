@@ -1,4 +1,6 @@
+import {t as tr} from '../i18n/runtime.ts'
 import {memo} from 'react'
+import {useTranslation} from 'react-i18next'
 import StickerArtwork from './sticker/StickerArtwork'
 import RaceMapArtwork from './race-map/RaceMapArtwork'
 import type {RaceLocationGroup} from '../race-map/raceMapGrouping'
@@ -16,9 +18,10 @@ import DemoRouteArtwork from './route/DemoRouteArtwork'
 
 /** Dispatch only: each item owns its rendering and asset hooks. */
 function Artwork({item:instance,tapeStyle='classic',record,records=[],raceGroups=[]}:{item:Memory;tapeStyle?:TapeStyle;record?:CollectionRecord;records?:CollectionRecord[];raceGroups?:RaceLocationGroup[]}){
+  useTranslation()
   const item=displayMemory(instance,record)
   if(item.exhibit)return <MedalExhibitArtwork item={item} records={records}/>
-  if(item.recordId&&!record)return <div className="missing-record paper"><strong>记录不可用</strong><span>请从收藏库重新添加，或导入完整备份。</span></div>
+  if(item.recordId&&!record)return <div className="missing-record paper"><strong>{tr("Artwork.002")}</strong><span>{tr("Artwork.001")}</span></div>
   switch(item.kind){
     case 'sticker':return record?.kind==='sticker'?<StickerArtwork record={record} border={item.stickerBorder} style={item.stickerStyle}/>:null
     case 'race-map':return <RaceMapArtwork item={item} groups={raceGroups}/>

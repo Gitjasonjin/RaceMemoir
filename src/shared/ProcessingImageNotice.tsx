@@ -1,3 +1,4 @@
+import {t as tr} from '../i18n/runtime.ts'
 import {useEffect,useState} from 'react'
 import {processingImageSize} from '../domain/imageRules'
 import {readImageSize} from './readImageSize'
@@ -12,5 +13,5 @@ export default function ProcessingImageNotice({image}:{image?:Blob}){
   if(!info||info.image!==image)return null
   const size=processingImageSize(info.width,info.height)
   if(size.scale===1)return null
-  return <p className="record-notice" role="status">原图 {info.width} × {info.height} 已保留；处理副本 {size.width} × {size.height}（宽高约 {Math.round(size.scale*100)}%）。</p>
+  return <p className="record-notice" role="status">{tr("ProcessingImageNotice.001",{v1:info.width,v2:info.height,v3:size.width,v4:size.height,v5:Math.round(size.scale*100)})}</p>
 }

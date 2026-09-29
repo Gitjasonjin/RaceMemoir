@@ -1,3 +1,4 @@
+import {AppError} from '../i18n/runtime.ts'
 /** Event area selected manually or derived from a route's GPX start. */
 export interface RaceLocation {
   name: string
@@ -22,7 +23,7 @@ export function validRaceLocation(value: unknown): value is RaceLocation {
 export function coarseCoordinate(value: number) { return Number(value.toFixed(2)) }
 
 export function normalizeRaceLocation(location: RaceLocation): RaceLocation {
-  if (!validRaceLocation(location)) throw new Error('请填写地点名称和有效的经纬度')
+  if (!validRaceLocation(location)) throw new AppError("raceLocation.001")
   return {...location, name: location.name.trim(), region: location.region?.trim(),
     lat: coarseCoordinate(location.lat), lng: coarseCoordinate(location.lng), precise: false}
 }

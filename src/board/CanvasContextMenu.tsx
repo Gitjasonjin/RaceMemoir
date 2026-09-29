@@ -1,3 +1,4 @@
+import {t as tr} from '../i18n/runtime.ts'
 import {useEffect,useMemo} from 'react'
 import {Menu} from '@base-ui/react/menu'
 import {Check,Magnet,Trash2} from 'lucide-react'
@@ -12,10 +13,10 @@ export default function CanvasContextMenu({position,snapEnabled,onToggle,onClose
  },[onClose])
  return <Menu.Root open modal={false} onOpenChange={open=>{if(!open)onClose()}}>
   <Menu.Portal><Menu.Positioner anchor={anchor} side="bottom" align="start" collisionPadding={8} positionMethod="fixed" className="ui-menu-positioner">
-   <Menu.Popup className="canvas-context-menu ui-action-menu" aria-label="画布菜单" data-ui-overlay onContextMenu={e=>e.preventDefault()}>
-    <Menu.CheckboxItem nativeButton render={<button type="button"/>} checked={snapEnabled} onCheckedChange={onToggle} closeOnClick aria-label="吸附模式"><Magnet size={17}/><span>吸附模式</span><Check size={16} className={snapEnabled?'':'unchecked'}/></Menu.CheckboxItem>
+   <Menu.Popup className="canvas-context-menu ui-action-menu" aria-label={tr("CanvasContextMenu.003")} data-ui-overlay onContextMenu={e=>e.preventDefault()}>
+    <Menu.CheckboxItem nativeButton render={<button type="button"/>} checked={snapEnabled} onCheckedChange={onToggle} closeOnClick aria-label={tr("CanvasContextMenu.002")}><Magnet size={17}/><span>{tr("CanvasContextMenu.002")}</span><Check size={16} className={snapEnabled?'':'unchecked'}/></Menu.CheckboxItem>
     <Menu.Separator className="canvas-menu-divider"/>
-    <Menu.Item nativeButton render={<button type="button"/>} className="canvas-clear-action" disabled={!canClear} onClick={onClear}><Trash2 size={17}/><span>清空画布</span></Menu.Item>
+    <Menu.Item nativeButton render={<button type="button"/>} className="canvas-clear-action" disabled={!canClear} onClick={onClear}><Trash2 size={17}/><span>{tr("CanvasContextMenu.001")}</span></Menu.Item>
    </Menu.Popup>
   </Menu.Positioner></Menu.Portal>
  </Menu.Root>

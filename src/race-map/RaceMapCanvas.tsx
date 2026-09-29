@@ -1,3 +1,4 @@
+import {t as tr} from '../i18n/runtime.ts'
 import {useCanvasTouch} from '../board/useCanvasTouch'
 import type {PointerEvent as ReactPointerEvent} from 'react'
 import {MAX_MAP_SCALE} from '../domain/mapSettings'
@@ -37,7 +38,7 @@ export default function RaceMapCanvas({theme,groups=[],selected,onSelect,onPick,
     if(!onPick)return
     const p=toPoint(event.clientX,event.clientY),v=viewRef.current
     const point=p?geography.projection.invert?.([(p.x-v.x)/v.scale,(p.y-v.y)/v.scale]):null
-    if(point&&validRaceLocation({name:'地点',lng:point[0],lat:point[1]}))onPick({lng:coarseCoordinate(point[0]),lat:coarseCoordinate(point[1])})
+    if(point&&validRaceLocation({name:tr("RaceMapCanvas.010"),lng:point[0],lat:point[1]}))onPick({lng:coarseCoordinate(point[0]),lat:coarseCoordinate(point[1])})
   }
   const start=(e:ReactPointerEvent)=>{const p=toPoint(e.clientX,e.clientY);if(p)drag.current={id:e.pointerId,x:p.x,y:p.y,view:{...viewRef.current},moved:false}}
   const move=(e:ReactPointerEvent)=>{
@@ -61,7 +62,7 @@ export default function RaceMapCanvas({theme,groups=[],selected,onSelect,onPick,
     return()=>el.removeEventListener('wheel',wheel)
   },[svg])
   return <div className={`race-map-canvas ${onPick?'is-picking':''}`}>
-    <svg ref={svg} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} aria-label={onPick?'点选赛事地点':'中国赛事地图'}
+    <svg ref={svg} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} aria-label={onPick?tr("RaceMapCanvas.009"):tr("RaceMapCanvas.008")}
       onPointerDownCapture={e=>touch.down(e)} onPointerMoveCapture={e=>touch.move(e)} onPointerUpCapture={e=>touch.up(e)} onPointerCancelCapture={e=>touch.up(e,true)} onLostPointerCaptureCapture={e=>touch.lost(e)}
       onPointerDown={e=>{
         if(e.button!==0||(e.target as Element).closest('.race-marker[role=button]')||drag.current)return
@@ -72,12 +73,12 @@ export default function RaceMapCanvas({theme,groups=[],selected,onSelect,onPick,
       }} onPointerCancel={()=>{drag.current=null}} onLostPointerCapture={()=>{drag.current=null}}>
       <RaceMapDrawing theme={theme} view={view} groups={groups} selected={selected} onSelect={onSelect} location={location}/>
     </svg>
-    <div className="race-map-tools" role="group" aria-label="地图缩放">
-      <button type="button" aria-label="放大地图" disabled={view.scale>=MAX_MAP_SCALE} onClick={()=>setView(v=>zoomMap(v,1.25,MAP_WIDTH/2,MAP_HEIGHT/2))}><Plus size={18}/></button>
+    <div className="race-map-tools" role="group" aria-label={tr("RaceMapCanvas.007")}>
+      <button type="button" aria-label={tr("RaceMapCanvas.006")} disabled={view.scale>=MAX_MAP_SCALE} onClick={()=>setView(v=>zoomMap(v,1.25,MAP_WIDTH/2,MAP_HEIGHT/2))}><Plus size={18}/></button>
       <span aria-live="polite">{Math.round(view.scale*100)}%</span>
-      <button type="button" aria-label="缩小地图" disabled={view.scale<=1} onClick={()=>setView(v=>zoomMap(v,.8,MAP_WIDTH/2,MAP_HEIGHT/2))}><Minus size={18}/></button>
-      <button type="button" aria-label="重置地图" onClick={()=>setView(INITIAL_TRANSFORM)}><Maximize size={17}/></button>
+      <button type="button" aria-label={tr("RaceMapCanvas.005")} disabled={view.scale<=1} onClick={()=>setView(v=>zoomMap(v,.8,MAP_WIDTH/2,MAP_HEIGHT/2))}><Minus size={18}/></button>
+      <button type="button" aria-label={tr("RaceMapCanvas.004")} onClick={()=>setView(INITIAL_TRANSFORM)}><Maximize size={17}/></button>
     </div>
-    <p className="race-map-gesture-hint">{onPick?'点击大致区域选点 · ':''}{window.matchMedia('(pointer: coarse)').matches?'单指平移 · 双指缩放':'拖动平移 · Ctrl / ⌘ + 滚轮缩放'}</p>
+    <p className="race-map-gesture-hint">{onPick?tr("RaceMapCanvas.003"):''}{window.matchMedia('(pointer: coarse)').matches?tr("RaceMapCanvas.002"):tr("RaceMapCanvas.001")}</p>
   </div>
 }

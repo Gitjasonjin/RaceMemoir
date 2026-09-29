@@ -1,3 +1,4 @@
+import {t as tr} from '../i18n/runtime.ts'
 import {useEffect,useRef,useState} from 'react'
 import type {Board,PinStyle} from '../domain/model'
 import type {CollectionRecord} from '../domain/records'
@@ -29,7 +30,7 @@ export default function Minimap(props:Props){
     if(frame.current===null)frame.current=requestAnimationFrame(flush)
   }
   const end=()=>{flush();drag.current=null;setFixed(null)}
-  return <button className="minimap" title="点击或拖动定位画布" aria-label="画布缩略图，点击或拖动定位" style={{touchAction:'none',cursor:fixed?'grabbing':'grab'}}
+  return <button className="minimap" title={tr("Minimap.002")} aria-label={tr("Minimap.001")} style={{touchAction:'none',cursor:fixed?'grabbing':'grab'}}
     onPointerDown={e=>{
       if(e.button!==0||drag.current||!svg.current)return
       const rect=svg.current.getBoundingClientRect();if(!rect.width||!rect.height)return

@@ -1,6 +1,7 @@
+import {AppError} from '../../i18n/runtime.ts'
 export interface Pixels { width:number; height:number; data:Uint8ClampedArray }
 export function restoreMedalPixels(original:Pixels,mask:Pixels){
-  if(original.width!==mask.width||original.height!==mask.height)throw new Error('原图与抠图尺寸不一致，请重新抠图')
+  if(original.width!==mask.width||original.height!==mask.height)throw new AppError("medalPixels.001")
   const data=original.data.slice()
   for(let i=3;i<data.length;i+=4)data[i]=Math.min(original.data[i],mask.data[i])
   return data

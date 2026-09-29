@@ -1,3 +1,4 @@
+import {t as tr} from '../../i18n/runtime.ts'
 import {readImageSize} from '../../shared/readImageSize.ts'
 import type {PhotoRecord} from '../../domain/records'
 import {createMemory} from '../../domain/model.ts'
@@ -8,7 +9,7 @@ export interface BatchPhoto {record:PhotoRecord;width:number;height:number}
 /** Keep original pixels; decode one image at a time to limit peak memory. */
 export async function readBatchPhoto(file:File):Promise<BatchPhoto>{
   const {width,height}=await readImageSize(file)
-  return {width,height,record:{id:crypto.randomUUID(),kind:'photo',name:file.name.replace(/\.[^.]+$/,'').trim().slice(0,200)||'未命名照片',note:'',source:'upload',image:file}}
+  return {width,height,record:{id:crypto.randomUUID(),kind:'photo',name:file.name.replace(/\.[^.]+$/,'').trim().slice(0,200)||tr("batchPhotos.001"),note:'',source:'upload',image:file}}
 }
 
 /** Uniform cells leave room for pins and captions; the final row is centered. */

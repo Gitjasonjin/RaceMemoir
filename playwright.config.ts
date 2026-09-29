@@ -7,6 +7,7 @@ export default defineConfig({
   timeout: 90_000,
   workers: 1,
   use: {
+    locale: 'zh-CN',
     browserName,
     baseURL: 'http://127.0.0.1:5187',
     viewport: {width: 1440, height: 1000},

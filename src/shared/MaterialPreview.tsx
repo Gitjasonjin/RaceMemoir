@@ -1,3 +1,4 @@
+import {t as tr} from '../i18n/runtime.ts'
 import {useLayoutEffect,useRef,useState} from 'react'
 import type {ReactNode} from 'react'
 import {resolveBackground} from '../domain/styleCatalog'
@@ -46,6 +47,6 @@ export default function MaterialPreview({id,scale,className,children}:{id?:strin
       <span className="material-preview-light" style={{backgroundImage:material.light}} aria-hidden="true"/>
       <span className="material-preview-content">{children}</span>
     </span>
-    {failed&&<span className="material-preview-error">材质暂不可用</span>}
+    {failed&&<span className="material-preview-error">{tr("MaterialPreview.001")}</span>}
   </span>
 }

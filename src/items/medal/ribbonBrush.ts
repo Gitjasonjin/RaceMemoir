@@ -1,11 +1,12 @@
+import {AppError} from '../../i18n/runtime.ts'
 export interface PixelImage { width: number; height: number; data: Uint8ClampedArray }
 export interface BrushPoint { x: number; y: number }
 export type RepairMode = 'restore' | 'erase'
 
 /** Paint a continuous capsule, restoring original pixels rather than inventing ribbon colors. */
 export function paintRibbonStroke(target: PixelImage, original: PixelImage, from: BrushPoint, to: BrushPoint, radius: number, mode: RepairMode) {
-  if(target.width!==original.width||target.height!==original.height)throw new Error('原图与抠图尺寸不一致')
-  if(![from.x,from.y,to.x,to.y,radius].every(Number.isFinite)||radius<=0)throw new Error('画笔参数无效')
+  if(target.width!==original.width||target.height!==original.height)throw new AppError("ribbonBrush.002")
+  if(![from.x,from.y,to.x,to.y,radius].every(Number.isFinite)||radius<=0)throw new AppError("ribbonBrush.001")
   const left=Math.max(0,Math.floor(Math.min(from.x,to.x)-radius)),top=Math.max(0,Math.floor(Math.min(from.y,to.y)-radius))
   const right=Math.min(target.width,Math.ceil(Math.max(from.x,to.x)+radius)),bottom=Math.min(target.height,Math.ceil(Math.max(from.y,to.y)+radius))
   const dx=to.x-from.x,dy=to.y-from.y,lengthSquared=dx*dx+dy*dy

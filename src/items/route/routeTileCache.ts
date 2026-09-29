@@ -1,3 +1,4 @@
+import {AppError} from '../../i18n/runtime.ts'
 const CACHE='racememoir-route-tiles-v1',WEEK=7*24*60*60*1000
 const pending=new Map<string,Promise<string>>()
 const memory=new Map<string,{image:string;expires:number}>()
@@ -16,7 +17,7 @@ function expires(response:Response){
   return age?saved+Number(age)*1000:Number.isFinite(until)?until:saved+WEEK
 }
 function dataUrl(blob:Blob):Promise<string>{
-  return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result as string);reader.onerror=()=>reject(new Error('底图读取失败'));reader.readAsDataURL(blob)})
+  return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result as string);reader.onerror=()=>reject(new AppError("routeTileCache.002"));reader.readAsDataURL(blob)})
 }
 async function load(url:string){
   let cache:Cache|undefined,cached:Response|undefined
@@ -26,7 +27,7 @@ async function load(url:string){
     try{
       response=await limited(async()=>{
         const fetched=await fetch(url,{signal:AbortSignal.timeout(15000),referrerPolicy:'strict-origin-when-cross-origin'})
-        if(!fetched.ok||!fetched.headers.get('content-type')?.startsWith('image/'))throw new Error('底图暂不可用')
+        if(!fetched.ok||!fetched.headers.get('content-type')?.startsWith('image/'))throw new AppError("routeTileCache.001")
         const blob=await fetched.blob(),bitmap=await createImageBitmap(blob);bitmap.close()
         const headers=new Headers(fetched.headers)
         headers.set('x-racememoir-cached-at',String(Date.now()-Number(headers.get('age')||0)*1000))

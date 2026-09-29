@@ -1,3 +1,4 @@
+import {t as tr} from '../i18n/runtime.ts'
 import {useEffect,useId,useMemo,useState} from 'react'
 import type {ReactElement} from 'react'
 import {PreviewCard} from '@base-ui/react/preview-card'
@@ -10,7 +11,7 @@ import './recordPreview.css'
 
 function PreviewImage({image,name}:{image:Blob;name:string}){
   const url=useBlobUrl(image),[loaded,setLoaded]=useState(false),[failed,setFailed]=useState(false)
-  return <>{!loaded&&!failed&&<span className="record-preview-message" role="status">正在读取图片…</span>}{failed?<span className="record-preview-message">图片暂不可用，请点击列表项检查素材。</span>:url&&<img src={url} alt={name} draggable={false} onLoad={()=>setLoaded(true)} onError={()=>setFailed(true)}/>}</>
+  return <>{!loaded&&!failed&&<span className="record-preview-message" role="status">{tr("StickerEditor.014")}</span>}{failed?<span className="record-preview-message">{tr("RecordHoverPreview.005")}</span>:url&&<img src={url} alt={name} draggable={false} onLoad={()=>setLoaded(true)} onError={()=>setFailed(true)}/>}</>
 }
 
 function PreviewContent({record}:{record:CollectionRecord}){
@@ -19,9 +20,9 @@ function PreviewContent({record}:{record:CollectionRecord}){
   const date='date' in record?record.date:undefined
   return <>
     <div className={`record-hover-media ${record.kind==='route'?'record-hover-route':''}`}>
-      {image?<PreviewImage image={image} name={record.name}/>:record.kind==='route'?record.trackPoints.length?<RouteArtwork record={record} compact/>:<span className="record-preview-message">示例路线 · 暂无真实轨迹</span>:record.kind==='medal'&&record.source==='demo'?<div className="record-hover-medal"><Artwork item={demo} record={record}/></div>:<span className="record-preview-message">暂无图片</span>}
+      {image?<PreviewImage image={image} name={record.name}/>:record.kind==='route'?record.trackPoints.length?<RouteArtwork record={record} compact/>:<span className="record-preview-message">{tr("RecordHoverPreview.004")}</span>:record.kind==='medal'&&record.source==='demo'?<div className="record-hover-medal"><Artwork item={demo} record={record}/></div>:<span className="record-preview-message">{tr("RecordHoverPreview.003")}</span>}
     </div>
-    <div className="record-hover-caption"><strong>{record.name}</strong>{date&&<span>{date}</span>}{record.kind==='bib'&&record.number&&<span>号码 · {record.number}</span>}{record.note&&<p>{record.note}</p>}</div>
+    <div className="record-hover-caption"><strong>{record.name}</strong>{date&&<span>{date}</span>}{record.kind==='bib'&&record.number&&<span>{tr("RecordHoverPreview.002",{v1:record.number})}</span>}{record.note&&<p>{record.note}</p>}</div>
   </>
 }
 
@@ -39,7 +40,7 @@ export default function RecordHoverPreview({record,disabled,children}:{record:Co
   return <PreviewCard.Root open={open} triggerId={open?id:null} onOpenChange={setOpen}>
     <PreviewCard.Trigger id={id} render={children} delay={350} closeDelay={120} onClick={()=>setOpen(false)}/>
     <PreviewCard.Portal><PreviewCard.Positioner side="left" align="center" sideOffset={12} collisionPadding={12} positionMethod="fixed" className="record-preview-positioner">
-      <PreviewCard.Popup className="record-hover-preview" role="tooltip" aria-label={`${record.name}内容预览`} data-ui-overlay onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();setOpen(false)}}}>
+      <PreviewCard.Popup className="record-hover-preview" role="tooltip" aria-label={tr("RecordHoverPreview.001",{v1:record.name})} data-ui-overlay onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();setOpen(false)}}}>
         {open&&<PreviewContent record={record}/>}
       </PreviewCard.Popup>
     </PreviewCard.Positioner></PreviewCard.Portal>

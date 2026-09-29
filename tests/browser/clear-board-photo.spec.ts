@@ -59,7 +59,7 @@ test('borderless fills the photo, keeps crop and metadata, and survives undo, re
   await expect.poll(async()=>(await board(page)).items[0]).toEqual({...before,photoPaper:'borderless'})
   await page.screenshot({path:info.outputPath('borderless-editor.png')})
   await page.getByRole('button',{name:'Polaroid',exact:true}).click()
-  await expect(item.locator('.photo-footer')).toContainText('2026-09-22')
+  await expect(item.locator('.photo-footer')).toContainText('2026/09/22')
   await page.getByRole('button',{name:'保存修改',exact:true}).click()
   await expect(page.locator('.record-panel')).toHaveCount(0)
   await page.getByRole('button',{name:'撤销',exact:true}).click()

@@ -1,5 +1,6 @@
+import {t as tr} from '../../i18n/runtime.ts'
 export default function DemoRouteMap({ compact = false }: { compact?: boolean }) {
-  return <svg className="route-map" viewBox="0 0 240 245" preserveAspectRatio="xMidYMid meet" aria-label="模拟越野路线地图">
+  return <svg className="route-map" viewBox="0 0 240 245" preserveAspectRatio="xMidYMid meet" aria-label={tr("DemoRouteMap.001")}>
     <rect width="240" height="245" fill={compact ? '#c1cfb7' : '#e4e5d7'}/>
     {Array.from({length:32},(_,i)=><path key={i} d={`M${-60+i*12} -20Q${135+i*3} ${47+i*2} ${40+i*9} 105T${-10+i*11} 265`} fill="none" stroke={compact ? '#98b098' : '#c2cab7'} strokeWidth={i%4===0 ? 1.4 : .65}/>)}
     {Array.from({length:19},(_,i)=><path key={i} d={`M-10 ${i*16}Q${54+i*2} ${i*16-40} 130 ${i*14}T270 ${i*12}`} fill="none" stroke="#f6f1dd" strokeWidth="1"/>)}

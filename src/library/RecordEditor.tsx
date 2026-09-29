@@ -1,3 +1,6 @@
+import {useNotice} from '../i18n/useNotice'
+import {errorNotice,msg,AppError} from '../i18n/runtime.ts'
+import {t as tr} from '../i18n/runtime.ts'
 import AssetPicker from '../shared/AssetPicker'
 import DatePicker from '../shared/ui/DatePicker'
 import PhotoCropPreview from '../items/photo/PhotoCropPreview'
@@ -41,7 +44,7 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
     ? {id:crypto.randomUUID(),kind:'photo',name:'',note:'',source:'upload',image:new Blob()} : props.mode.mode==='medal'
     ? {id:crypto.randomUUID(),kind:'medal',name:'',date:'',note:'',source:'upload',cutout:'original'}
     : {id:crypto.randomUUID(),kind:'route',name:'',note:'',source:'upload',trackPoints:[]}))
-  const [error, setError] = useState(''), [notice, setNotice] = useState(''), [saving, setSaving] = useState(false), [reading, setReading] = useState(false)
+  const [error, setError]=useNotice(''), [notice, setNotice]=useNotice(''), [saving, setSaving] = useState(false), [reading, setReading] = useState(false)
   const pending = useRef(0), mounted = useRef(true)
   useEffect(() => { mounted.current=true;return () => {mounted.current=false;pending.current++} }, [])
   const cutout = useCutout()
@@ -59,7 +62,7 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
     setNotice(''); setShowOriginal(false);setRepairing(false)
     patch({image:blob,cutout:'original'})
     cutout.run(blob, result => {
-      patch({image:result,cutout:'done'});setNotice('自动抠图已完成，请检查奖牌和绶带，满意后保存。')
+      patch({image:result,cutout:'done'});setNotice(msg("RecordEditor.045"))
       requestAnimationFrame(()=>preview.current?.closest('.asset-picker')?.scrollIntoView({block:'start',behavior:'smooth'}))
     }, setNotice)
   }
@@ -74,7 +77,7 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
         patch({originalImage:file,image:file,crop:undefined,cutout:'original',source:'upload',...(!draft.name?{name:file.name.replace(/\.[^.]+$/,'').slice(0,200)}:{})})
         processImage(file)
       } else {
-        if(!file.name.toLowerCase().endsWith('.gpx')||file.size>15*1024*1024)throw new Error('请选择不超过 15 MB 的 GPX 文件')
+        if(!file.name.toLowerCase().endsWith('.gpx')||file.size>15*1024*1024)throw new AppError("RecordEditor.044")
         const text=await file.text(), parsed=parseGpx(text)
         if(token!==pending.current)return
         setDraft(current=>{
@@ -83,55 +86,55 @@ export default function RecordEditor(props: RecordPanelProps & { record?: Collec
           return {...current,name,trackPoints:parsed.points,gpx:new Blob([text],{type:'application/gpx+xml'}),source:'upload',location:locationAfterGpxImport(current.location,parsed.points,name)}
         })
       }
-    } catch(e) { if(token===pending.current)setError(e instanceof Error?e.message:'文件读取失败，请重试') }
+    } catch(e) { if(token===pending.current)setError(errorNotice(e,msg("RecordEditor.043"))) }
     finally {if(token===pending.current)setReading(false)}
   }
   const save = async (event?: FormEvent) => {
     event?.preventDefault(); if(busy)return
-    if(!draft.name.trim()){setError('请填写收藏名称');return}
-    if(draft.kind!=='photo'&&draft.location&&!validRaceLocation(draft.location)){setError('请填写地点名称和有效的经纬度');return}
-    if(draft.source==='upload'&&(draft.kind!=='route'?!draft.image?.size:draft.trackPoints.length<2)){setError(draft.kind!=='route'?'请先上传图片':'请先导入 GPX 文件');return}
+    if(!draft.name.trim()){setError(msg("RecordEditor.042"));return}
+    if(draft.kind!=='photo'&&draft.location&&!validRaceLocation(draft.location)){setError(msg("raceLocation.001"));return}
+    if(draft.source==='upload'&&(draft.kind!=='route'?!draft.image?.size:draft.trackPoints.length<2)){setError(draft.kind!=='route'?msg("RecordEditor.041"):msg("RecordEditor.040"));return}
     setSaving(true);setError('')
     try {await props.onSave({...draft,name:draft.name.trim(),...(draft.kind!=='photo'&&draft.location?{location:normalizeRaceLocation(draft.location)}:{})},!record,draft.kind==='photo'?{w:photoItem.w,h:photoItem.h,variant:photoItem.variant,photoPaper:photoItem.photoPaper,photoZoom:photoItem.photoZoom,photoX:photoItem.photoX,photoY:photoItem.photoY}:draft.kind==='medal'?{w:medalItem.w,h:medalItem.h,medalScale:medalItem.medalScale,medalFrame:medalItem.medalFrame,shadowDepth:medalItem.shadowDepth}:undefined);if(mounted.current)props.onClose()}
-    catch(e){if(mounted.current)setError(e instanceof Error?e.message:'保存失败，请重试')}
+    catch(e){if(mounted.current)setError(errorNotice(e,msg("StickerEditor.029")))}
     finally{if(mounted.current)setSaving(false)}
   }
-  const kindLabel=draft.kind==='medal'?'奖牌':draft.kind==='photo'?'照片':'路线'
+  const kindLabel=draft.kind==='medal'?tr("App.024"):draft.kind==='photo'?tr("App.025"):tr("LibraryRecords.019")
   const demoItem=createMemory(draft.kind==='medal'?'medal':'map',draft.name,draft.kind==='medal'?(draft.variant||'bronze'):'blue','','')
   return <>
-    <div className="record-heading">{props.mode.origin!=='canvas'&&<button disabled={saving} onClick={() => props.onBack?props.onBack():props.onMode({mode:'library'})} aria-label={props.onBack?(props.mode.exhibitSlot!==undefined?'返回奖牌选择':'返回展览框'):'返回收藏库'}><ArrowLeft size={19}/></button>}<div><h2>{record?'编辑':'添加'}{kindLabel}</h2></div><button onClick={props.onClose} aria-label="关闭详情"><X size={20}/></button></div>
+    <div className="record-heading">{props.mode.origin!=='canvas'&&<button disabled={saving} onClick={() => props.onBack?props.onBack():props.onMode({mode:'library'})} aria-label={props.onBack?(props.mode.exhibitSlot!==undefined?tr("RecordEditor.039"):tr("ExhibitMedalPicker.009")):tr("BibEditor.024")}><ArrowLeft size={19}/></button>}<div><h2>{tr(record?'editor.editKind':'editor.addKind',{kind:kindLabel})}</h2></div><button onClick={props.onClose} aria-label={tr("BibEditor.020")}><X size={20}/></button></div>
     <div className="record-scroll">
-    {!repairing&&!cropping&&<AssetPicker hasAsset={draft.kind==='route'?!!draft.trackPoints.length:draft.source==='demo'||!!draft.image?.size} label={reading?'正在读取文件…':draft.kind==='photo'&&!record&&!draft.image.size?'选择照片（可多选）':draft.kind==='route'?(draft.trackPoints.length?'更换 GPX 文件':'选择 GPX 文件'):`${draft.image?.size||draft.source==='demo'?'更换':'选择'}${kindLabel}图片`} inputLabel={draft.kind==='route'?'GPX 文件':`${kindLabel}图片`} accept={draft.kind==='route'?'.gpx':'image/png,image/jpeg,image/webp'} multiple={draft.kind==='photo'&&!record} disabled={saving||reading||repairing||cropping} onFiles={files=>{if(draft.kind==='photo'&&!record&&files.length>1)props.onMode({mode:'photo-batch',files});else void upload(files[0])}}><div ref={preview} className={`record-preview ${draft.kind==='medal'?'medal-preview':''}`}>
-      {draft.kind==='photo'&&image?<PhotoCropPreview key={image} item={photoItem} record={draft} onChange={!busy&&(!record||props.item?.kind==='photo')?changePhoto:undefined}/>:draft.kind!=='route' ? image ? <img src={showOriginal?original:image} alt={`${draft.name||kindLabel}预览`}/> : draft.source==='demo'? <div className="demo-record-preview"><Artwork item={demoItem} record={draft}/></div>:<div className="upload-placeholder">{draft.kind==='photo'?<ImagePlus size={42}/>:<Medal size={42}/>}<span>{draft.kind==='photo'?'上传照片，留下你的山野瞬间':'让这块奖牌，成为你的收藏'}</span></div>
-        : draft.trackPoints.length ? <RouteArtwork record={draft as RouteRecord}/> : <div className="upload-placeholder"><Route size={42}/><span>{draft.source==='demo'?'示例路线 · 尚无真实轨迹':'导入走过的路'}</span></div>}
+    {!repairing&&!cropping&&<AssetPicker hasAsset={draft.kind==='route'?!!draft.trackPoints.length:draft.source==='demo'||!!draft.image?.size} label={reading?tr("RecordEditor.038"):draft.kind==='photo'&&!record&&!draft.image.size?tr("RecordEditor.037"):draft.kind==='route'?(draft.trackPoints.length?tr("RecordEditor.036"):tr("RecordEditor.035")):tr("RecordEditor.034",{v1:draft.image?.size||draft.source==='demo'?tr("RecordEditor.033"):tr("ToolPalette.005"),v2:kindLabel})} inputLabel={draft.kind==='route'?tr("RecordEditor.032"):tr("RecordEditor.031",{v1:kindLabel})} accept={draft.kind==='route'?'.gpx':'image/png,image/jpeg,image/webp'} multiple={draft.kind==='photo'&&!record} disabled={saving||reading||repairing||cropping} onFiles={files=>{if(draft.kind==='photo'&&!record&&files.length>1)props.onMode({mode:'photo-batch',files});else void upload(files[0])}}><div ref={preview} className={`record-preview ${draft.kind==='medal'?'medal-preview':''}`}>
+      {draft.kind==='photo'&&image?<PhotoCropPreview key={image} item={photoItem} record={draft} onChange={!busy&&(!record||props.item?.kind==='photo')?changePhoto:undefined}/>:draft.kind!=='route' ? image ? <img src={showOriginal?original:image} alt={tr("RecordEditor.030",{v1:draft.name||kindLabel})}/> : draft.source==='demo'? <div className="demo-record-preview"><Artwork item={demoItem} record={draft}/></div>:<div className="upload-placeholder">{draft.kind==='photo'?<ImagePlus size={42}/>:<Medal size={42}/>}<span>{draft.kind==='photo'?tr("RecordEditor.029"):tr("RecordEditor.028")}</span></div>
+        : draft.trackPoints.length ? <RouteArtwork record={draft as RouteRecord}/> : <div className="upload-placeholder"><Route size={42}/><span>{draft.source==='demo'?tr("RecordEditor.027"):tr("RecordEditor.026")}</span></div>}
     </div></AssetPicker>}
     {draft.kind==='photo'&&(!record||props.item?.kind==='photo')&&<PhotoComposition item={photoItem} onChange={changePhoto}/>}
     {draft.kind==='medal'&&(!record||props.item?.kind==='medal')&&!repairing&&!cropping&&<>
       <div className="medal-layout-preview"><div style={{width:medalItem.w,height:medalItem.h,transform:`scale(${Math.min(260/medalItem.w,300/medalItem.h)})`}}><>{props.exhibitMedal?<div className="frame-backing"><MedalContent item={medalItem} record={draft}/></div>:<Artwork item={medalItem} record={draft}/>}</></div></div>
-      {props.exhibitMedal?<section className="medal-sizing"><h3>框内奖牌大小</h3><MedalScaleControl value={medalItem.medalScale} disabled={busy} label="显示比例" resetLabel="恢复默认大小" onChange={medalScale=>changeMedal({medalScale})}/></section>:<MedalSizing item={medalItem} aspect={aspect} onChange={changeMedal}/>}
+      {props.exhibitMedal?<section className="medal-sizing"><h3>{tr("MedalScaleControl.001")}</h3><MedalScaleControl value={medalItem.medalScale} disabled={busy} label={tr("RecordEditor.025")} resetLabel={tr("RecordEditor.024")} onChange={medalScale=>changeMedal({medalScale})}/></section>:<MedalSizing item={medalItem} aspect={aspect} onChange={changeMedal}/>}
     </>}
-    {cropping&&draft.kind==='medal'&&draft.image&&<MedalCropEditor original={draft.originalImage} image={draft.image} initial={draft.crop} onApply={crop=>{patch({crop});setCropping(false);setShowOriginal(false);setNotice(`裁剪已应用，点击「${record?'保存修改':props.mode.exhibitSlot!==undefined?'保存并放入展览框':'保存并放上画布'}」保存。`)}} onClose={()=>setCropping(false)}/>}
-    {draft.kind==='medal'&&draft.image&&!repairing&&!cropping&&<div className="record-actions"><button type="button" disabled={busy} onClick={()=>{setCropping(true);setNotice('')}}>手动裁剪</button>{draft.crop&&<button type="button" disabled={busy} onClick={()=>{patch({crop:undefined});setShowOriginal(false);setNotice('已恢复自动显示范围，保存后生效。')}}>恢复裁剪前区域</button>}</div>}
-    {repairing&&draft.kind==='medal'&&draft.originalImage&&draft.image&&<RibbonRepair original={draft.originalImage} image={draft.image} onApply={image=>{patch({image,cutout:'done'});setRepairing(false);setShowOriginal(false);setNotice(`绶带修复已应用，点击「${record?'保存修改':props.mode.exhibitSlot!==undefined?'保存并放入展览框':'保存并放上画布'}」保存到收藏记录。`)}} onClose={()=>setRepairing(false)}/>}
+    {cropping&&draft.kind==='medal'&&draft.image&&<MedalCropEditor original={draft.originalImage} image={draft.image} initial={draft.crop} onApply={crop=>{patch({crop});setCropping(false);setShowOriginal(false);setNotice(msg("RecordEditor.023",{v1:record?msg("BibEditor.002"):props.mode.exhibitSlot!==undefined?msg("RecordEditor.002"):msg("BibEditor.001")}))}} onClose={()=>setCropping(false)}/>}
+    {draft.kind==='medal'&&draft.image&&!repairing&&!cropping&&<div className="record-actions"><button type="button" disabled={busy} onClick={()=>{setCropping(true);setNotice('')}}>{tr("RecordEditor.022")}</button>{draft.crop&&<button type="button" disabled={busy} onClick={()=>{patch({crop:undefined});setShowOriginal(false);setNotice(msg("RecordEditor.020"))}}>{tr("RecordEditor.021")}</button>}</div>}
+    {repairing&&draft.kind==='medal'&&draft.originalImage&&draft.image&&<RibbonRepair original={draft.originalImage} image={draft.image} onApply={image=>{patch({image,cutout:'done'});setRepairing(false);setShowOriginal(false);setNotice(msg("RecordEditor.019",{v1:record?msg("BibEditor.002"):props.mode.exhibitSlot!==undefined?msg("RecordEditor.002"):msg("BibEditor.001")}))}} onClose={()=>setRepairing(false)}/>}
     <form onSubmit={e=>void save(e)}>
       {draft.kind==='medal'&&<ProcessingImageNotice image={draft.originalImage}/>}
-      {cutout.progress&&<div className="record-progress" role="status"><span className="record-spinner"/>{cutout.progress}<button type="button" onClick={()=>{cutout.cancel();setNotice('已取消抠图，使用原图。')}}>取消抠图</button></div>}
-      {draft.kind==='medal'&&draft.originalImage&&!cutout.progress&&!repairing&&!cropping&&<div className="record-actions"><button type="button" disabled={busy} onClick={()=>processImage((draft as MedalRecord).originalImage!)}>自动抠图（含绶带）</button>{draft.cutout==='done'&&<><button type="button" disabled={busy} onClick={()=>{setRepairing(true);setNotice('')}}>手动微调</button><button type="button" onClick={()=>setShowOriginal(!showOriginal)}>{showOriginal?'查看抠图':'对比原图'}</button><button type="button" disabled={saving} onClick={()=>{patch({image:draft.originalImage,cutout:'original'});setShowOriginal(false)}}>使用原图</button></>}</div>}
-      <label className="field-label">{kindLabel}名称<input required maxLength={200} value={draft.name} disabled={saving} onChange={e=>{const name=e.target.value;patch({name,...(draft.kind==='route'&&draft.location?.source==='gpx'?{location:gpxLocation(draft.trackPoints,name)}:{})})}} placeholder={draft.kind==='medal'?'我的第一场越野赛':'山野环线'}/></label>
+      {cutout.progress&&<div className="record-progress" role="status"><span className="record-spinner"/>{cutout.progress}<button type="button" onClick={()=>{cutout.cancel();setNotice(msg("RecordEditor.017"))}}>{tr("RecordEditor.018")}</button></div>}
+      {draft.kind==='medal'&&draft.originalImage&&!cutout.progress&&!repairing&&!cropping&&<div className="record-actions"><button type="button" disabled={busy} onClick={()=>processImage((draft as MedalRecord).originalImage!)}>{tr("RecordEditor.016")}</button>{draft.cutout==='done'&&<><button type="button" disabled={busy} onClick={()=>{setRepairing(true);setNotice('')}}>{tr("RecordEditor.015")}</button><button type="button" onClick={()=>setShowOriginal(!showOriginal)}>{showOriginal?tr("RecordEditor.014"):tr("RecordEditor.013")}</button><button type="button" disabled={saving} onClick={()=>{patch({image:draft.originalImage,cutout:'original'});setShowOriginal(false)}}>{tr("StickerEditor.012")}</button></>}</div>}
+      <label className="field-label">{tr('editor.nameKind',{kind:kindLabel})}<input required maxLength={200} value={draft.name} disabled={saving} onChange={e=>{const name=e.target.value;patch({name,...(draft.kind==='route'&&draft.location?.source==='gpx'?{location:gpxLocation(draft.trackPoints,name)}:{})})}} placeholder={draft.kind==='medal'?tr("RecordEditor.012"):tr("RecordEditor.011")}/></label>
       {draft.kind==='photo'&&<DatePicker value={draft.date||''} disabled={saving} onChange={date=>patch({date})}/>}
-      {draft.kind!=='photo'&&<label className="field-label">备注<textarea rows={3} maxLength={5000} value={draft.note} disabled={saving} onChange={e=>patch({note:e.target.value})} placeholder="记下这段旅程的故事…"/></label>}
+      {draft.kind!=='photo'&&<label className="field-label">{tr("RecordEditor.010")}<textarea rows={3} maxLength={5000} value={draft.note} disabled={saving} onChange={e=>patch({note:e.target.value})} placeholder={tr("RecordEditor.009")}/></label>}
       {draft.kind==='route'&&<section className="route-location-settings">
-        <p className="record-muted" aria-live="polite">{draft.location?.source==='gpx'?'已从 GPX 自动定位':draft.location?'已保留赛事地点':draft.trackPoints.length?'尚未设置赛事地点':'导入 GPX 后自动定位'}{draft.location&&<span> · {draft.location.name}</span>}</p>
-        <details className="race-location-manual"><summary>修改位置</summary>
+        <p className="record-muted" aria-live="polite">{draft.location?.source==='gpx'?tr("RecordEditor.008"):draft.location?tr("RecordEditor.007"):draft.trackPoints.length?tr("RecordEditor.006"):tr("RecordEditor.005")}{draft.location&&<span> · {draft.location.name}</span>}</p>
+        <details className="race-location-manual"><summary>{tr("RecordEditor.004")}</summary>
           <RaceLocationEditor value={draft.location} onChange={location=>patch({location:location?{...location,source:'manual'}:undefined})} disabled={busy}/>
-          {draft.trackPoints.length>0&&draft.location?.source!=='gpx'&&<button className="race-location-pick" type="button" disabled={busy} onClick={()=>patch({location:gpxLocation(draft.trackPoints,draft.name)})}>使用 GPX 起点</button>}
+          {draft.trackPoints.length>0&&draft.location?.source!=='gpx'&&<button className="race-location-pick" type="button" disabled={busy} onClick={()=>patch({location:gpxLocation(draft.trackPoints,draft.name)})}>{tr("RecordEditor.003")}</button>}
         </details>
       </section>}
       {error&&<p className="record-error" role="alert">{error}</p>}{notice&&<p className="record-notice" role="status">{notice}</p>}
       {props.styles}
-      <button className="primary-button full-width" type="submit" disabled={busy}><Check size={17}/>{saving?'正在保存…':record?'保存修改':props.mode.exhibitSlot!==undefined?'保存并放入展览框':'保存并放上画布'}</button>
+      <button className="primary-button full-width" type="submit" disabled={busy}><Check size={17}/>{saving?tr("BibEditor.003"):record?tr("BibEditor.002"):props.mode.exhibitSlot!==undefined?tr("RecordEditor.002"):tr("BibEditor.001")}</button>
     </form>
-    {record?.archived&&<div className="record-footer"><button type="button" disabled={busy} onClick={async()=>{setSaving(true);setError('');try{await props.onSave({...draft,archived:false},false);if(mounted.current)props.onClose()}catch(e){if(mounted.current){setError(e instanceof Error?e.message:'恢复失败');setSaving(false)}}}}>恢复收藏</button></div>}
+    {record?.archived&&<div className="record-footer"><button type="button" disabled={busy} onClick={async()=>{setSaving(true);setError('');try{await props.onSave({...draft,archived:false},false);if(mounted.current)props.onClose()}catch(e){if(mounted.current){setError(errorNotice(e,msg("RecordEditor.001")));setSaving(false)}}}}>{tr("LibraryRecords.016")}</button></div>}
     </div>
   </>
 }

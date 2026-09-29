@@ -1,3 +1,4 @@
+import {t as tr} from '../i18n/runtime.ts'
 import {validImageBlob,MAX_IMAGE_PIXELS} from './imageRules.ts'
 export {IMAGE_TYPES} from './imageRules.ts'
 import {validErasures} from '../items/bib/bibErasure.ts'
@@ -45,7 +46,7 @@ export function migrateBoard(board: Board, existing: CollectionRecord[]) {
     // Stable ids make retries and StrictMode initialization idempotent.
     const id=`legacy-${item.kind}-${item.id}`
     if(!available.has(id)){
-      const base={id,name:item.title||'未命名记忆',note:item.kind==='map'?item.title:'',source:'demo' as const}
+      const base={id,name:item.title||tr("records.001"),note:item.kind==='map'?item.title:'',source:'demo' as const}
       const record:CollectionRecord=item.kind==='medal'?{...base,kind:'medal',date:item.subtitle||'',cutout:'original',variant:item.variant}:{...base,kind:'route',trackPoints:[],date:item.subtitle}
       available.set(id,record);created.push(record)
     }

@@ -1,3 +1,4 @@
+import {AppError} from '../../i18n/runtime.ts'
 import {validErasures} from './bibErasure'
 import type {BibErasure} from './bibErasure'
 import {outputSize,perspectiveTransform} from './bibGeometry'
@@ -5,11 +6,11 @@ import type {Quad} from './bibGeometry'
 
 /** Always resample the original, never an earlier processed preview. */
 export async function processBibImage(original:Blob,quad:Quad,signal:AbortSignal,erasures:BibErasure[]=[]){
- if(!validErasures(erasures))throw new Error('抹除区域无效')
+ if(!validErasures(erasures))throw new AppError("processBibImage.004")
  const bitmap=await createImageBitmap(original)
  try{
   const project=perspectiveTransform(quad),size=outputSize(quad,bitmap.width,bitmap.height)
-  if(size.width<16||size.height<16||size.width*size.height>25_000_000)throw new Error('选区过小或分辨率超过 2500 万像素')
+  if(size.width<16||size.height<16||size.width*size.height>25_000_000)throw new AppError("processBibImage.003")
   const source=document.createElement('canvas');source.width=bitmap.width;source.height=bitmap.height
   const ctx=source.getContext('2d',{willReadFrequently:true})!;ctx.drawImage(bitmap,0,0)
   for(const rect of erasures){ctx.fillStyle=rect.color;const x=Math.floor(rect.x*source.width),y=Math.floor(rect.y*source.height);ctx.fillRect(x,y,Math.ceil((rect.x+rect.width)*source.width)-x,Math.ceil((rect.y+rect.height)*source.height)-y)}
@@ -28,9 +29,9 @@ export async function processBibImage(original:Blob,quad:Quad,signal:AbortSignal
    }
   }
   out.putImageData(result,0,0)
-  const image=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('无法生成号码布图片')),'image/png'))
+  const image=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new AppError("processBibImage.002")),'image/png'))
   signal.throwIfAborted()
-  if(image.size>20*1024*1024)throw new Error('处理后的图片超过 20 MB，请缩小选区')
+  if(image.size>20*1024*1024)throw new AppError("processBibImage.001")
   return {image,...size}
  }finally{bitmap.close()}
 }

@@ -1,0 +1,12 @@
+.language-trigger{display:flex;align-items:center;justify-content:center;gap:3px;width:40px;height:36px;flex-shrink:0;border-radius:7px;color:var(--ui-forest)}
+.language-trigger:hover,.language-trigger[data-popup-open]{background:var(--ui-forest-soft)}
+.language-trigger:focus-visible{outline:2px solid var(--ui-forest);outline-offset:2px}
+.language-positioner{z-index:160}
+.language-popup{min-width:150px;padding:5px;background:var(--ui-paper);color:var(--ui-ink);border:1px solid var(--ui-border);border-radius:9px;box-shadow:0 8px 24px #302b262b;outline:none}
+.language-option{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:38px;padding:8px 10px;border-radius:5px;font-size:13px;cursor:pointer;outline:none}
+.language-option[data-highlighted]{background:var(--ui-forest-soft)}
+html[lang=ja]{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,"Noto Sans JP",sans-serif}
+html[lang=en] .handwritten,html[lang=ja] .handwritten{font-family:inherit}
+html:not([lang=zh-CN]) .field-label,html:not([lang=zh-CN]) .record-muted{line-height:1.5}
+html:not([lang=zh-CN]) .surface-options button{overflow-wrap:anywhere;white-space:normal}
+@media(max-width:760px){.language-trigger{width:32px;height:36px;gap:1px}.language-trigger>svg:last-child{display:none}.language-option{min-height:44px}.header-actions{gap:5px}html:not([lang=zh-CN]) .brand>span{display:none}}

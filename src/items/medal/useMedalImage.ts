@@ -1,3 +1,5 @@
+import {useNotice} from '../../i18n/useNotice'
+import {msg,AppError} from '../../i18n/runtime.ts'
 import { useEffect,useState } from 'react'
 import { medalBounds,restoreMedalPixels } from './medalPixels'
 import { useBlobUrl } from '../../shared/useBlobUrl'
@@ -21,14 +23,14 @@ async function prepare(original:Blob,image:Blob,crop?:MedalCrop){
     const bounds=crop?{x,y,width:Math.max(1,Math.min(source.width,Math.ceil((crop.x+crop.width)*source.width))-x),height:Math.max(1,Math.min(source.height,Math.ceil((crop.y+crop.height)*source.height))-y)}:medalBounds(result)
     canvas.width=bounds.width;canvas.height=bounds.height
     ctx.putImageData(result,-bounds.x,-bounds.y)
-    const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('无法生成奖牌预览')),'image/png'))
+    const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new AppError("useMedalImage.002")),'image/png'))
     return {blob,aspect:bounds.width/bounds.height}
   }finally{source.close();mask?.close()}
 }
 export function useMedalImage(original?:Blob,image?:Blob,crop?:MedalCrop){
   const key=crop?`${crop.x},${crop.y},${crop.width},${crop.height}`:'auto'
   const [prepared,setPrepared]=useState<{source:Blob;original:Blob;key:string;blob:Blob;aspect:number}|null>(null)
-  const [error,setError]=useState('')
+  const [error,setError]=useNotice('')
   useEffect(()=>{
     let active=true;setError('')
     if(!image)return
@@ -37,7 +39,7 @@ export function useMedalImage(original?:Blob,image?:Blob,crop?:MedalCrop){
     let variants=images.get(image);if(!variants){variants=new Map();images.set(image,variants)}
     let task=variants.get(key)
     if(!task){task=prepare(source,image,crop);variants.set(key,task);void task.catch(()=>variants!.delete(key))}
-    void task.then(result=>{if(active)setPrepared({...result,source:image,original:source,key})}).catch(()=>{if(active)setError('奖牌图片无法读取，请重新选择图片')})
+    void task.then(result=>{if(active)setPrepared({...result,source:image,original:source,key})}).catch(()=>{if(active)setError(msg("useMedalImage.001"))})
     return()=>{active=false}
   },[original,image,key])
   const current=prepared?.source===image&&prepared?.original===(original||image)&&prepared?.key===key?prepared:null

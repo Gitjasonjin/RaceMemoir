@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {MAX_IMAGE_PIXELS,MAX_UPLOAD_IMAGE_PIXELS,processingImageSize} from '../src/domain/imageRules.ts'
 import {readImageSize} from '../src/shared/readImageSize.ts'
 import {readBatchPhoto} from '../src/items/photo/batchPhotos.ts'
+import {AppError} from '../src/i18n/runtime.ts'
 
 test('processing budget preserves small images and fits high resolution photos proportionally',()=>{
   assert.deepEqual(processingImageSize(6000,4000),{width:6000,height:4000,scale:1})
@@ -30,13 +31,13 @@ test('uploads accept 48MP originals, batch preserves bytes, bib keeps its old li
   }})
   const file=new File(['[8064,6048]'],'48mp.png',{type:'image/png'})
   assert.deepEqual(await readImageSize(file),{width:8064,height:6048})
-  await assert.rejects(readImageSize(file,MAX_IMAGE_PIXELS),/2500 万/)
+  await assert.rejects(readImageSize(file,MAX_IMAGE_PIXELS),e=>e instanceof AppError&&e.detail.key==='image.resolutionLimit'&&e.detail.values?.pixels==='25,000,000')
   const photo=await readBatchPhoto(file)
   assert.equal(photo.record.image,file)
   assert.equal(await photo.record.image.text(),'[8064,6048]')
   assert.equal(decodes,1)
   assert.equal(closes,1)
   assert.deepEqual(await readImageSize(new Blob(['[10000,5000]'],{type:'image/png'})),{width:10000,height:5000})
-  await assert.rejects(readImageSize(new Blob(['[10000,5001]'],{type:'image/png'})),/5000 万/)
+  await assert.rejects(readImageSize(new Blob(['[10000,5001]'],{type:'image/png'})),e=>e instanceof AppError&&e.detail.key==='image.resolutionLimit'&&e.detail.values?.pixels==='50,000,000')
   assert.equal(closes,3)
 })

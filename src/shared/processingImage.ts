@@ -1,3 +1,4 @@
+import {AppError} from '../i18n/runtime.ts'
 import {processingImageSize} from '../domain/imageRules.ts'
 import {readImageSize} from './readImageSize.ts'
 
@@ -18,7 +19,7 @@ export async function processingImage(blob:Blob){
   try{
     const canvas=new OffscreenCanvas(bitmap.width,bitmap.height)
     const ctx=canvas.getContext('2d')
-    if(!ctx)throw new Error('无法创建图片处理副本')
+    if(!ctx)throw new AppError("processingImage.001")
     ctx.drawImage(bitmap,0,0)
     return await canvas.convertToBlob({type:'image/png'})
   }finally{bitmap.close()}

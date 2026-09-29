@@ -1,3 +1,4 @@
+import {t as tr} from '../i18n/runtime.ts'
 import {useRef} from 'react'
 import type {ReactNode} from 'react'
 import {Plus,Camera,FileUp} from 'lucide-react'
@@ -8,7 +9,7 @@ export default function AssetPicker({children,hasAsset,label,inputLabel,accept,m
   const input=useRef<HTMLInputElement>(null)
   const choose=()=>{if(!disabled)input.current?.click()}
   const isRoute=accept==='.gpx'
-  const actionLabel=label.startsWith('更换')?(isRoute?'更换 GPX':'更换'):label
+  const actionLabel=hasAsset?(isRoute?tr("AssetPicker.001"):tr("RecordEditor.033")):label
   return <div className={`record-upload asset-picker ${hasAsset?'has-asset':'is-empty'}`}>
     <input ref={input} hidden type="file" aria-label={inputLabel} accept={accept} multiple={multiple} disabled={disabled} onChange={event=>{
       const files=Array.from(event.currentTarget.files??[])

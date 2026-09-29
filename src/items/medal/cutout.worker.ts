@@ -1,3 +1,4 @@
+import {errorNotice,msg} from '../../i18n/runtime.ts'
 import {removeBackground} from '@imgly/background-removal'
 import {keepRibbon} from './keepRibbon'
 import {restoreMedalPixels} from './medalPixels'
@@ -31,6 +32,6 @@ self.onmessage = async (event: MessageEvent<{blob:Blob;subject:'medal'|'sticker'
     const image=event.data.subject==='medal'?await keepRibbon(input,cutout).catch(()=>cutout):await keepOriginalPixels(input,cutout)
     self.postMessage({ type: 'done', image })
   } catch (error) {
-    self.postMessage({ type: 'error', message: error instanceof Error ? error.message : '无法完成抠图' })
+    self.postMessage({ type: 'error', message: errorNotice(error,msg("cutout.worker.001")) })
   }
 }

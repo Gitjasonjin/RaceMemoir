@@ -1,3 +1,4 @@
+import {AppError} from '../i18n/runtime.ts'
 import type {Board,Memory,Thread} from '../domain/model.ts'
 import {pinPosition} from '../domain/model.ts'
 
@@ -25,6 +26,6 @@ export function hangPhotos(board:Board,ids:readonly string[]):Board{
     const thread:Thread={id:index>=0?threads[index].id:crypto.randomUUID(),from,to,style:'hemp',curvature:.025}
     if(index>=0)threads[index]=thread;else threads.push(thread)
   }
-  if(threads.length>2000)throw new Error('连接数量已达上限，请先移除部分连线')
+  if(threads.length>2000)throw new AppError("photoLine.001")
   return {...board,items:board.items.map(i=>arranged.get(i.id)??i),threads}
 }

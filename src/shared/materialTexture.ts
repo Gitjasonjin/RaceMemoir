@@ -1,3 +1,4 @@
+import {AppError} from '../i18n/runtime.ts'
 import {BACKGROUND_STYLES,resolveBackground} from '../domain/styleCatalog'
 
 type Texture = {tile?:HTMLCanvasElement;promise:Promise<HTMLCanvasElement|null>}
@@ -17,7 +18,7 @@ export function loadMaterialTexture(id?:string):Texture {
     tile.width=Math.min(image.naturalWidth,material.tileSize*2,1024)
     tile.height=Math.round(tile.width*image.naturalHeight/image.naturalWidth)
     const context=tile.getContext('2d',{alpha:false})
-    if(!context)throw new Error('无法绘制材质')
+    if(!context)throw new AppError("materialTexture.001")
     context.drawImage(image,0,0,tile.width,tile.height)
     entry.tile=tile
     return tile

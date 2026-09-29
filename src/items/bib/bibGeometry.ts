@@ -1,3 +1,4 @@
+import {AppError} from '../../i18n/runtime.ts'
 export interface Point {x:number;y:number}
 export type Quad=[Point,Point,Point,Point]
 export const fullQuad=():Quad=>[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}]
@@ -12,13 +13,13 @@ export function outputSize(quad:Quad,width:number,height:number){
 }
 /** Maps a unit output rectangle into the four selected source corners. */
 export function perspectiveTransform(quad:Quad){
- if(!validQuad(quad))throw new Error('四角不能交叉或重叠，请按左上、右上、右下、左下调整')
+ if(!validQuad(quad))throw new AppError("bibGeometry.002")
  const matrix:number[][]=[]
  fullQuad().forEach(({x:u,y:v},i)=>{const {x,y}=quad[i];matrix.push([u,v,1,0,0,0,-x*u,-x*v,x],[0,0,0,u,v,1,-y*u,-y*v,y])})
  for(let col=0;col<8;col++){
   let pivot=col;for(let row=col+1;row<8;row++)if(Math.abs(matrix[row][col])>Math.abs(matrix[pivot][col]))pivot=row
   ;[matrix[col],matrix[pivot]]=[matrix[pivot],matrix[col]]
-  const factor=matrix[col][col];if(Math.abs(factor)<1e-10)throw new Error('选区过窄，请重新调整四角')
+  const factor=matrix[col][col];if(Math.abs(factor)<1e-10)throw new AppError("bibGeometry.001")
   for(let j=col;j<9;j++)matrix[col][j]/=factor
   for(let row=0;row<8;row++){if(row===col)continue;const f=matrix[row][col];for(let j=col;j<9;j++)matrix[row][j]-=f*matrix[col][j]}
  }

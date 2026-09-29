@@ -1,3 +1,4 @@
+import {AppError} from '../i18n/runtime.ts'
 import {toBlob} from 'html-to-image'
 import type {CollectionRecord} from '../domain/records'
 import type {Board} from '../domain/model'
@@ -12,23 +13,23 @@ export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:
   try{
     await Promise.all(board.items.filter(i=>i.kind==='sticker').map(item=>{
       const record=records.find(r=>r.id===item.recordId)
-      if(record?.kind!=='sticker')throw new Error('贴纸记录丢失，无法导出')
+      if(record?.kind!=='sticker')throw new AppError("exportImage.009")
       return prepareSticker(stickerSource(record),item.stickerBorder??2,item.stickerStyle)
     }))
     const routeMaps=Array.from(scene.querySelectorAll<SVGSVGElement>('[data-route-map-state]'))
     routeMaps.forEach(map=>map.dispatchEvent(new Event('prepare-route-map')))
     const mapDeadline=performance.now()+45000
     while(routeMaps.some(map=>map.dataset.routeMapState==='idle'||map.dataset.routeMapState==='loading')){
-      if(performance.now()>mapDeadline)throw new Error('地图背景尚未加载完成，请联网重试后导出')
+      if(performance.now()>mapDeadline)throw new AppError("exportImage.008")
       await new Promise<void>(resolve=>setTimeout(resolve,50))
     }
-    if(routeMaps.some(map=>map.dataset.routeMapState==='error'))throw new Error('有线路卡底图加载失败，请点击卡片上的重试后导出')
+    if(routeMaps.some(map=>map.dataset.routeMapState==='error'))throw new AppError("exportImage.007")
     const deadline=performance.now()+10000
     while(scene.querySelector('[data-sticker-state="loading"]')){
-      if(performance.now()>deadline)throw new Error('贴纸尚未生成，请稍后重试导出')
+      if(performance.now()>deadline)throw new AppError("exportImage.006")
       await new Promise<void>(resolve=>setTimeout(resolve,30))
     }
-    if(scene.querySelector('[data-sticker-state="error"]'))throw new Error('贴纸图片不可用，请重新上传后再导出')
+    if(scene.querySelector('[data-sticker-state="error"]'))throw new AppError("exportImage.005")
     await document.fonts.ready;await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()))
     await Promise.all(Array.from(scene.querySelectorAll('img')).map(img=>img.decode()))
     const bounds=contentBounds(board.items,60,board.threads,getDecorations(board).pin,records)
@@ -41,7 +42,7 @@ export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:
     // Pseudo-element image URLs are not embedded by html-to-image.
     if(scene.querySelector('.pin-spool')){
       const response=await fetch('/spool-pin.svg')
-      if(!response.ok)throw new Error('工字钉图片读取失败')
+      if(!response.ok)throw new AppError("exportImage.004")
       wrapper.style.setProperty('--spool-pin-image',`url("data:image/svg+xml,${encodeURIComponent(await response.text())}")`)
     }
     const clone=scene.cloneNode(true) as HTMLDivElement
@@ -67,7 +68,7 @@ export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:
     wrapper.append(clone)
     if(lighting){
       const shell=scene.closest('.app-shell'),sourceWash=shell?.querySelector('.board-light-wash'),sourceLamp=shell?.querySelector('.board-light-fixtures .pendant-lamp')
-      if(!sourceWash||!sourceLamp)throw new Error('灯光资源尚未就绪，请稍后重试')
+      if(!sourceWash||!sourceLamp)throw new AppError("exportImage.003")
       const wash=sourceWash.cloneNode(true) as HTMLElement
       wash.style.setProperty('--light-origin-y',`${34*size.scale}px`)
       wash.querySelectorAll<HTMLElement>('div').forEach(el=>{el.style.transition='none';el.style.opacity='1'})
@@ -81,8 +82,8 @@ export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:
     }
     document.body.append(wrapper)
     const blob=await toBlob(wrapper,{pixelRatio:1,width:size.width,height:size.height,style:{position:'relative',inset:'auto',insetInline:'auto',insetBlock:'auto',left:'0',top:'0'}})
-    if(!blob||!blob.size)throw new Error('无法生成 PNG 图片')
-    const bitmap=await createImageBitmap(blob);if(bitmap.width!==size.width||bitmap.height!==size.height){bitmap.close();throw new Error('图片尺寸异常')}bitmap.close()
+    if(!blob||!blob.size)throw new AppError("exportImage.002")
+    const bitmap=await createImageBitmap(blob);if(bitmap.width!==size.width||bitmap.height!==size.height){bitmap.close();throw new AppError("exportImage.001")}bitmap.close()
     return blob
   }finally{wrapper.remove()}
 }

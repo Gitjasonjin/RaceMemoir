@@ -1,3 +1,4 @@
+import {AppError} from '../../i18n/runtime.ts'
 import type {StickerRecord} from '../../domain/records'
 import type {StickerStyle} from '../../domain/model'
 import {alphaBounds,stickerPadding,outlineAlpha,transparentBackground} from './stickerGeometry.ts'
@@ -14,7 +15,7 @@ export async function inspectSticker(blob:Blob){
     const canvas=new OffscreenCanvas(bitmap.width,bitmap.height),ctx=canvas.getContext('2d',{willReadFrequently:true})!
     ctx.drawImage(bitmap,0,0)
     const pixels=ctx.getImageData(0,0,bitmap.width,bitmap.height),bounds=alphaBounds(pixels.data,bitmap.width,bitmap.height)
-    if(!bounds)throw new Error('图片中没有可见主体，请重试抠图或使用原图')
+    if(!bounds)throw new AppError("stickerImage.002")
     return {width:bounds.width,height:bounds.height,transparent:transparentBackground(pixels.data,bitmap.width,bitmap.height)}
   }finally{bitmap.close()}
 }
@@ -24,7 +25,7 @@ async function render(blob:Blob,border:number,style:StickerStyle){
     const canvas=new OffscreenCanvas(bitmap.width,bitmap.height),ctx=canvas.getContext('2d',{willReadFrequently:true})!
     ctx.drawImage(bitmap,0,0)
     const source=ctx.getImageData(0,0,bitmap.width,bitmap.height),bounds=alphaBounds(source.data,bitmap.width,bitmap.height)
-    if(!bounds)throw new Error('贴纸没有可见主体')
+    if(!bounds)throw new AppError("stickerImage.001")
     const padding=stickerPadding(bounds.width,bounds.height,border,style),width=bounds.width+2*padding,height=bounds.height+2*padding
     canvas.width=width;canvas.height=height
     if(border>0){

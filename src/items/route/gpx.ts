@@ -1,12 +1,14 @@
+import {AppError} from '../../i18n/runtime.ts'
+import {t as tr} from '../../i18n/runtime.ts'
 import type { TrackPoint } from '../../domain/records.ts'
 import { MAX_POINTS } from '../../domain/records.ts'
 
 export function parseGpx(xml:string, parser:Pick<DOMParser,'parseFromString'>=new DOMParser()) {
-  if(xml.length>15*1024*1024)throw new Error('GPX 文件不能超过 15 MB')
-  if(/<!DOCTYPE|<!ENTITY/i.test(xml))throw new Error('不支持包含外部实体的 GPX 文件')
+  if(xml.length>15*1024*1024)throw new AppError("gpx.008")
+  if(/<!DOCTYPE|<!ENTITY/i.test(xml))throw new AppError("gpx.007")
   let doc:Document
-  try{doc=parser.parseFromString(xml,'application/xml')}catch{throw new Error('GPX XML 格式无效')}
-  if(doc.getElementsByTagName('parsererror').length||doc.documentElement?.localName!=='gpx')throw new Error('请选择有效的 GPX 文件')
+  try{doc=parser.parseFromString(xml,'application/xml')}catch{throw new AppError("gpx.006")}
+  if(doc.getElementsByTagName('parsererror').length||doc.documentElement?.localName!=='gpx')throw new AppError("gpx.005")
   const points:TrackPoint[]=[]
   const segments=Array.from(doc.getElementsByTagNameNS('*','trkseg'))
   // GPX routes are also accepted; do not connect separate segments across gaps.
@@ -16,16 +18,16 @@ export function parseGpx(xml:string, parser:Pick<DOMParser,'parseFromString'>=ne
     for(const node of Array.from(group.getElementsByTagNameNS('*',tag))){
       const latText=node.getAttribute('lat'),lonText=node.getAttribute('lon')
       const lat=Number(latText),lon=Number(lonText)
-      if(!latText?.trim()||!lonText?.trim()||!Number.isFinite(lat)||Math.abs(lat)>90||!Number.isFinite(lon)||Math.abs(lon)>180)throw new Error('GPX 中存在无效的经纬度')
+      if(!latText?.trim()||!lonText?.trim()||!Number.isFinite(lat)||Math.abs(lat)>90||!Number.isFinite(lon)||Math.abs(lon)>180)throw new AppError("gpx.004")
       const elevationText=node.getElementsByTagNameNS('*','ele')[0]?.textContent?.trim()
       const timeText=node.getElementsByTagNameNS('*','time')[0]?.textContent?.trim()
       const elevation=elevationText?Number(elevationText):undefined
       points.push({lat,lon,segment,...(elevation!==undefined&&Number.isFinite(elevation)?{elevation}:{}),...(timeText&&Number.isFinite(Date.parse(timeText))?{time:new Date(timeText).toISOString()}:{})})
-      if(points.length>MAX_POINTS)throw new Error('轨迹点超过 100,000 个，请先简化 GPX')
+      if(points.length>MAX_POINTS)throw new AppError("gpx.003")
     }
   })
-  if(points.length<2)throw new Error('GPX 至少需要两个有效轨迹点')
-  const name=doc.getElementsByTagNameNS('*','name')[0]?.textContent?.trim().slice(0,200)||'我的山野路线'
+  if(points.length<2)throw new AppError("gpx.002")
+  const name=doc.getElementsByTagNameNS('*','name')[0]?.textContent?.trim().slice(0,200)||tr("gpx.001")
   return {name,points}
 }
 export function routeGeometry(points:TrackPoint[]){

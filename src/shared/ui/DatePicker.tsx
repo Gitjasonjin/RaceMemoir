@@ -1,9 +1,10 @@
+import {t as tr,locale,formatDate} from '../../i18n/runtime.ts'
 import {useState} from 'react'
 import {Popover} from '@base-ui/react/popover'
 import {Select} from '@base-ui/react/select'
 import {DayPicker,useDayPicker} from 'react-day-picker'
 import type {DropdownProps} from 'react-day-picker'
-import {zhCN} from 'react-day-picker/locale'
+import {zhCN,enUS,ja} from 'react-day-picker/locale'
 import {CalendarDays,Check,ChevronDown} from 'lucide-react'
 import 'react-day-picker/style.css'
 import './datePicker.css'
@@ -27,7 +28,7 @@ function YearSelect(props:DropdownProps){
   return <CalendarSelect {...props} onSelect={year=>goToMonth(new Date(year,months[0].date.getMonth(),1))}/>
 }
 
-export default function DatePicker({value,onChange,disabled=false,label='拍摄日期'}:{value:string;onChange:(value:string)=>void;disabled?:boolean;label?:string}){
+export default function DatePicker({value,onChange,disabled=false,label=tr("DatePicker.010")}:{value:string;onChange:(value:string)=>void;disabled?:boolean;label?:string}){
   const [open,setOpen]=useState(false)
   const selected=/^\d{4}-\d{2}-\d{2}$/.test(value)?new Date(`${value}T12:00:00`):undefined
   const choose=(date:Date|undefined)=>{
@@ -35,10 +36,10 @@ export default function DatePicker({value,onChange,disabled=false,label='拍摄�
     setOpen(false)
   }
   return <div className="field-label"><span>{label}</span><Popover.Root open={open&&!disabled} onOpenChange={setOpen}>
-    <Popover.Trigger className="date-picker-trigger" disabled={disabled} aria-label={label}><span>{value||'选择日期'}</span><CalendarDays size={17}/></Popover.Trigger>
-    <Popover.Portal><Popover.Positioner sideOffset={8} collisionPadding={12} className="date-picker-positioner"><Popover.Popup className="date-picker-popup" aria-label={`选择${label}`} data-ui-overlay>
-      <DayPicker components={{MonthsDropdown:MonthSelect,YearsDropdown:YearSelect}} mode="single" locale={zhCN} selected={selected} defaultMonth={selected} onSelect={choose} autoFocus captionLayout="dropdown" startMonth={new Date(1900,0)} endMonth={new Date(2100,11)} labels={{labelDayButton:date=>`${date.getFullYear()}年${date.getMonth()+1}月${date.getDate()}日`,labelNext:()=> '下个月',labelPrevious:()=> '上个月',labelMonthDropdown:()=> '月份',labelYearDropdown:()=> '年份'}}/>
-      <div className="date-picker-actions"><button type="button" onClick={()=>choose(undefined)}>清除日期</button><button type="button" onClick={()=>choose(new Date())}>今天</button></div>
+    <Popover.Trigger className="date-picker-trigger" disabled={disabled} aria-label={label}><span>{(value?formatDate(value):'')||tr("DatePicker.009")}</span><CalendarDays size={17}/></Popover.Trigger>
+    <Popover.Portal><Popover.Positioner sideOffset={8} collisionPadding={12} className="date-picker-positioner"><Popover.Popup className="date-picker-popup" aria-label={tr("DatePicker.008",{v1:label})} data-ui-overlay>
+      <DayPicker components={{MonthsDropdown:MonthSelect,YearsDropdown:YearSelect}} mode="single" locale={{"zh-CN":zhCN,en:enUS,ja}[locale()]} selected={selected} defaultMonth={selected} onSelect={choose} autoFocus captionLayout="dropdown" startMonth={new Date(1900,0)} endMonth={new Date(2100,11)} labels={{labelDayButton:date=>new Intl.DateTimeFormat(locale(),{dateStyle:'full'}).format(date),labelNext:()=> tr("DatePicker.006"),labelPrevious:()=> tr("DatePicker.005"),labelMonthDropdown:()=> tr("DatePicker.004"),labelYearDropdown:()=> tr("DatePicker.003")}}/>
+      <div className="date-picker-actions"><button type="button" onClick={()=>choose(undefined)}>{tr("DatePicker.002")}</button><button type="button" onClick={()=>choose(new Date())}>{tr("DatePicker.001")}</button></div>
     </Popover.Popup></Popover.Positioner></Popover.Portal>
   </Popover.Root></div>
 }

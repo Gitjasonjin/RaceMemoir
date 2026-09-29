@@ -1,3 +1,4 @@
+import {t as tr} from '../../i18n/runtime.ts'
 import type {CSSProperties,ReactNode} from 'react'
 import type {Memory} from '../../domain/model'
 import type {CollectionRecord} from '../../domain/records'
@@ -7,7 +8,7 @@ import DemoMedal from './DemoMedal'
 
 export function MedalContent({item,record}:{item:Memory;record?:CollectionRecord}){
   const {url:imageUrl}=useMedalImage(record?.kind==='medal'?record.originalImage:undefined,record?.kind==='medal'?record.image:undefined,record?.kind==='medal'?record.crop:undefined)
-  if(item.recordId&&!record)return <div className="missing-record">记录不可用</div>
+  if(item.recordId&&!record)return <div className="missing-record">{tr("Artwork.002")}</div>
   return record?.source==='upload'?<img className="real-medal" style={{transform:`scale(${item.medalScale??1})`}} src={imageUrl||undefined} alt={record.name} draggable={false}/>:<DemoMedal item={item}/>
 }
 export function MedalFrame({item,children}:{item:Memory;children:ReactNode}){
