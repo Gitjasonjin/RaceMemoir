@@ -1,7 +1,6 @@
 # 黑板背景材质
 
 - 来源：OpenAI 内置 `image_gen` 工具生成，2026-09-17。AI 生成的写实材质，不是实拍照片，无外部摄影来源。
-- 原始文件：`C:/Users/hj/.codex/generated_images/01a0ad65-c1d0-7b22-941c-d1a63cfe7c48/exec-a3c277c2-4374-4c82-912f-9d8f340855aa.png`。
 - 项目资产：`public/textures/chalkboard-photo.webp`。
 - 分辨率：1254 × 1254 px（工具实际输出；提示词目标为约 1024 × 1024 px）。
 - 转码：Pillow，仅将 PNG 转为 WebP，quality=92、method=6；没有裁切、缩放、颜色调整或纹理编辑。

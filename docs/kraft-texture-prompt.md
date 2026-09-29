@@ -2,7 +2,6 @@
 
 - 生成来源：OpenAI 内置 `image_gen`，AI 生成的写实材质，非实际摄影素材。
 - 生成日期：2026-09-17。
-- 原始文件：`C:/Users/hj/.codex/generated_images/01a0ad65-7ea7-74a1-b450-7bc877f9dfa5/exec-9af04173-8d6f-48dd-b348-e111e98333e8.png`。
 - 项目资产：`public/textures/kraft-photo.webp`。
 - 实际分辨率：1254 × 1254 像素（提示词目标 1024 × 1024；保留工具原始输出尺寸）。
 - 格式转换：Pillow 仅将 PNG 转码为 WebP，quality=92、method=6；未裁剪、缩放、调色或修改纹理。

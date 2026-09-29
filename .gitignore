@@ -1,7 +1,38 @@
-node_modules
-dist
-*.local
+# Dependencies and generated builds
+node_modules/
+dist/
 *.tsbuildinfo
-.codegraph
-test-results/
+
+# Local configuration and credentials (examples contain placeholders only)
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+*.local
+!.env.example
+!.env.*.example
+!.dev.vars.example
+*.pem
+*.key
+*.p12
+*.pfx
+.wrangler/
+
+# Local analysis, test output and caches
+.codegraph/
+test-results*/
 playwright-report/
+blob-report/
+coverage/
+*.log
+__pycache__/
+*.py[cod]
+
+# Private board exports and backups
+/exports/
+/backups/
+
+# Operating system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

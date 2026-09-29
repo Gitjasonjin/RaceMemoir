@@ -2,7 +2,6 @@
 
 - 来源：OpenAI 内置 `image_gen` 工具，AI 生成的写实木材纹理，并非真实摄影或图库照片。
 - 生成日期：2026-09-17。
-- 原始文件：`C:/Users/hj/.codex/generated_images/01a0ad65-376f-77c0-87e5-39070cfeb116/exec-614ace5c-ac64-45f4-a234-9e988e72369b.png`。
 - 最终资产：`public/textures/dark-wood-photo.webp`。
 - 实际分辨率：1254 × 1254 px；提示中请求约 1024 × 1024，工具返回以上原始尺寸，已保留。
 - 转码：Pillow 仅将 PNG 转为 WebP，quality=92、method=6；未裁剪、缩放、调色或合成。
@@ -22,4 +21,3 @@ Color palette: Low-saturation warm dark brown walnut, rich but restrained, modes
 Materials/textures: Natural fine walnut fibers, delicate pores, understated flowing grain; only very faint occasional knots and no large distinctive knots.
 Constraints: Seamlessly tileable in BOTH X and Y directions; the left edge must continue naturally into the right edge, and the top into the bottom. No borders, no frame, no text, no logos, no watermark, no perspective. No strong repeated knot patterns, no glossy varnish, no weathering, no scratches, no nails. Produce only the material texture.
 ```
-
