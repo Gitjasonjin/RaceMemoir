@@ -36,6 +36,7 @@ async function selectSeason(page:Page,year:number){
   await openYears(page);await trigger(page).click()
   await page.locator('.year-capsule-menu').getByRole('menuitemradio',{name:String(year),exact:true}).click()
   await expect(trigger(page)).toContainText(String(year))
+  await expect(page.locator('.board-viewport')).not.toHaveAttribute('data-season-transition')
 }
 const previous=(page:Page)=>capsule(page).getByRole('button',{name:'上一年',exact:true}).click()
 const next=(page:Page)=>capsule(page).getByRole('button',{name:'下一年',exact:true}).click()
@@ -84,6 +85,8 @@ test('rename, add and drag followed by an immediate season switch keep the lates
   // Deliberately do not wait for the debounced board save before leaving.
   await previous(page);await expect(page.locator('[data-board-item]')).toHaveCount(0)
   await next(page);await expect(note(page,'Just added current')).toBeVisible()
+  // Physical dragging starts after the visual switch releases the canvas.
+  await expect(page.locator('.board-viewport')).not.toHaveAttribute('data-season-transition')
   const item=page.locator('[data-board-item=current-a]'),before=await item.evaluate(el=>({x:parseFloat((el as HTMLElement).style.left),y:parseFloat((el as HTMLElement).style.top)}))
   const box=(await item.boundingBox())!
   await page.mouse.move(box.x+box.width/2,box.y+box.height/2)

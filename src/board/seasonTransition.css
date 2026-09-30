@@ -1,0 +1,8 @@
+.season-canvas-layer,.season-canvas-snapshot{position:absolute;inset:0;transform-origin:50% 50%;isolation:isolate}
+.season-canvas-snapshot{z-index:1;pointer-events:none;overflow:hidden}
+.season-transition-running{pointer-events:none}
+.season-transition-running>.season-canvas-layer,.season-canvas-snapshot{will-change:filter,opacity}
+.season-snapshot-scene{position:absolute;transform-origin:0 0;isolation:isolate;background:none;will-change:transform}
+.season-snapshot-item{position:absolute;outline:0;touch-action:none;will-change:transform}
+.season-transition-glow{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse 85% 115% at 50% 0,#fff3d33d,transparent 70%),linear-gradient(#f8e7b326,transparent 65%);mix-blend-mode:soft-light}
+@media(prefers-reduced-motion:reduce){.season-transition-running>.season-canvas-layer{will-change:opacity}}

@@ -33,6 +33,7 @@ import type {LayerAction} from '../board/itemLayers'
 import Topbar from './Topbar'
 import {useCanvasCamera} from '../board/useCanvasCamera'
 import {useSeasonBoards} from '../board/useSeasonBoards'
+import {useSeasonTransition} from '../board/useSeasonTransition'
 import Clothespin from '../appearance/Clothespin'
 import { hangPhotos } from '../board/photoLine'
 import { threadCurve } from '../board/threadCurve'
@@ -88,6 +89,8 @@ export default function App() {
   const gesture = useRef<Gesture | null>(null)
   const {view,setView,viewRef,viewport,viewportSize,fit,zoom,zoomAt}=useCanvasCamera(boardRef,gesture,library.records,history.restoreView)
   const scene = useRef<HTMLDivElement>(null)
+  const canvasLayer=useRef<HTMLDivElement>(null)
+  const seasonTransition=useSeasonTransition(canvasLayer)
   const pointer = useRef({x:0,y:0})
   const [guides,setGuides]=useState<Guide[]>([])
   const [snapEnabled,setSnapEnabled]=useState(()=>{try{return localStorage.getItem('racememoir-snap-enabled')==='true'}catch{return false}})
@@ -129,8 +132,8 @@ export default function App() {
     if(focused instanceof SVGElement && focused.matches('.threads [role=button]') && focused.getAttribute('aria-pressed')!=='true')focused.blur()
   },[selectedThread])
 
-  const undo = useCallback(() => {if(history.undo()){setSelected(null);setSelectedThread(null)}},[history.undo,setSelected])
-  const redo = useCallback(() => {if(history.redo()){setSelected(null);setSelectedThread(null)}},[history.redo,setSelected])
+  const undo = useCallback(() => {if(!seasonTransition.activeRef.current&&history.undo()){setSelected(null);setSelectedThread(null)}},[history.undo,setSelected])
+  const redo = useCallback(() => {if(!seasonTransition.activeRef.current&&history.redo()){setSelected(null);setSelectedThread(null)}},[history.redo,setSelected])
   useEffect(() => { if (!toast) return; const timer = setTimeout(()=>setToast(''),3200); return () => clearTimeout(timer) }, [toast])
 
   const canClear=library.ready&&!exporting&&!library.saving&&(board.items.length>0||board.threads.length>0)
@@ -153,7 +156,7 @@ export default function App() {
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || !library.ready || fileOperation.current || (e.target instanceof HTMLElement && (e.target.closest('input,textarea,select,[contenteditable],[data-record-panel],[data-decoration-panel],[data-ui-overlay]') || modal))) return
+      if (e.defaultPrevented || !library.ready || fileOperation.current || seasonTransition.activeRef.current || (e.target instanceof HTMLElement && (e.target.closest('input,textarea,select,[contenteditable],[data-record-panel],[data-decoration-panel],[data-ui-overlay]') || modal))) return
       if (e.code === 'Space' && !(e.target instanceof HTMLElement && e.target.closest('button,[data-decoration-panel]'))) { e.preventDefault(); setSpace(true) }
       if (e.key === 'Escape') { if(gesture.current?.type==='marquee'){gesture.current=null;setMarquee(null)} setConnecting(null); setTool('select'); setSelected(null); setSelectedThread(null);  closePanel() }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); if(e.shiftKey) redo(); else undo() }
@@ -217,6 +220,7 @@ export default function App() {
     openMap({id:item.id,groupKey,choosing})
   }
   const startGesture = (e: ReactPointerEvent, item?: Memory) => {
+    if(seasonTransition.activeRef.current)return
     if (e.button !== 0 && e.button !== 1) return
     if (gesture.current) return
     if(e.altKey&&e.button===0&&tool==='select'&&!space){
@@ -310,14 +314,17 @@ export default function App() {
     if(!library.ready||library.saving||fileOperation.current||gesture.current||touchGestures.active())return
     if(memoryPanel||mapPanel||exhibitPanel||(recordPanel&&recordPanel.mode!=='library')){setToast(msg('season.closeEditor'));return}
     if(!history.switchYear(year,viewRef.current)){setToast(msg('season.saveFailed'));return}
+    const finishTransition=seasonTransition.beforeSwitch()
     closePanel();setSelected(null);setSelectedThread(null);setConnecting(null);setCursor(null);setTool('select');setMultiSelect(false)
     setGuides([]);setMarquee(null);setSpace(false);setModal(null);closeCanvasMenu();layerTarget.cancel();overlap.current=null;memoryEditingId.current=null
     const el=viewport.current
     const nextView=history.restoreView??fitCamera(contentBounds(boardRef.current.items,60,boardRef.current.threads,getDecorations(boardRef.current).pin,library.records),el?.clientWidth??viewportSize.width,el?.clientHeight??viewportSize.height)
     viewRef.current=nextView;setView(nextView)
+    finishTransition()
   }
 
   const openAdd = (nextKind: Kind) => {
+    seasonTransition.cancel()
     setMultiSelect(false)
     setModal(null);closePanel()
     if(nextKind==='race-map'){
@@ -532,6 +539,7 @@ export default function App() {
       commit(changeDecoration(board,change,target??undefined))
     }}/>}
     <main onContextMenu={e=>{e.preventDefault();if(gesture.current||touchGestures.active()||(e.nativeEvent as PointerEvent).pointerType==='touch')return;layerTarget.cancel();setCanvasMenu({x:e.clientX,y:e.clientY})}} className={`board-viewport ${space?'space-mode':''} ${dragging?'is-dragging':''} ${tool==='connect'?'connect-mode':''} ${layerTarget.mode?'layer-target-mode':''}`} ref={viewport} onDoubleClickCapture={e=>{if(tool==='connect'){e.preventDefault();e.stopPropagation();setTool('select');setConnecting(null);setToast(msg("App.056"))}}}  onPointerMoveCapture={e=>{if(!touchGestures.move(e))layerTarget.onMove(e)}} onPointerUpCapture={e=>touchGestures.up(e)} onPointerCancelCapture={e=>touchGestures.up(e,true)} onLostPointerCaptureCapture={e=>touchGestures.lost(e)} onPointerLeave={()=>{if(layerTarget.mode)layerTarget.clearHover()}} onPointerDownCapture={e=>{if(touchGestures.down(e))return;if(e.button===2){e.stopPropagation();return}if(layerTarget.mode){layerTarget.onDown(e);return}if(e.ctrlKey&&e.button===0&&tool==='select'&&!space)startGesture(e)}} onPointerDown={e=>startGesture(e)} onPointerMove={moveGesture} onPointerUp={()=>endGesture()} onPointerCancel={()=>endGesture(true)} onLostPointerCapture={()=>endGesture()}>
+      <div className="season-canvas-layer" ref={canvasLayer}>
       <CanvasBackground id={board.backgroundStyle} view={view}/>
       <BoardLightWash/>
       <div className="scene cork" ref={scene} style={{width:1,height:1,transform:`translate(${view.x}px,${view.y}px) scale(${view.scale})`}}>
@@ -560,18 +568,19 @@ export default function App() {
         {marquee&&<div className="marquee-selection" style={{left:marquee.x,top:marquee.y,width:marquee.width,height:marquee.height,borderWidth:1.5/view.scale}}/>}
         {board.items.length===0 && <div className="empty-board" style={{left:visible.x+visible.width/2,top:visible.y+visible.height*.3,width:600}}><MountainLogo/><h1>{tr("App.048")}</h1><p>{tr("App.047")}</p><button className="primary-button" onPointerDown={e=>e.stopPropagation()} onClick={()=>openAdd('photo')}><Plus size={18}/>{tr("App.046")}</button></div>}
       </div>
+      </div>
     </main>
     {canvasMenu&&<CanvasContextMenu position={canvasMenu} snapEnabled={snapEnabled} onToggle={toggleSnap} onClose={closeCanvasMenu} canClear={canClear} onClear={()=>{closeCanvasMenu();setModal('clear')}}/>}
     <ToolPalette multiSelect={multiSelect} onMultiSelect={()=>{setMultiSelect(value=>!value);setTool('select');setConnecting(null);closePanel()}} tool={tool} onSelect={()=>{setMultiSelect(false);setTool('select');setConnecting(null)}} onConnect={()=>{setMultiSelect(false);setTool(tool==='connect'?'select':'connect');setConnecting(null);setSelected(null);setSelectedThread(null)}} onAdd={openAdd}/>
     {layerTarget.mode&&<div className="connection-hint layer-target-hint" data-layer-target-hint role="status"><span>{layerTarget.target?tr("App.045",{v1:board.items.find(i=>i.id===layerTarget.target)?.title.replaceAll('\n',' ')||tr("App.044"),v2:layerTarget.mode.action==='above'?tr("App.042"):tr("App.041")}):tr("App.043",{v1:layerTarget.mode.action==='above'?tr("App.042"):tr("App.041")})}<small>{tr("App.040")}</small></span><button type="button" onClick={layerTarget.cancel} aria-label={tr("App.039")}><X size={16}/></button></div>}
-    <HintGroup><div className="history-controls" data-history={historyTick}><HintButton hint={tr("App.038")} aria-label={tr("App.037")} disabled={!history.canUndo || dragging} onClick={undo}><Undo2 size={17}/></HintButton><span/><HintButton hint={tr("App.036")} aria-label={tr("App.035")} disabled={!history.canRedo || dragging} onClick={redo}><Redo2 size={17}/></HintButton></div></HintGroup>
+    <HintGroup><div className="history-controls" data-history={historyTick}><HintButton hint={tr("App.038")} aria-label={tr("App.037")} disabled={!history.canUndo || dragging||seasonTransition.busy} onClick={undo}><Undo2 size={17}/></HintButton><span/><HintButton hint={tr("App.036")} aria-label={tr("App.035")} disabled={!history.canRedo || dragging||seasonTransition.busy} onClick={redo}><Redo2 size={17}/></HintButton></div></HintGroup>
     {tool==='connect' && <div className="connection-hint"><span className="red-dot"/>{connecting?tr("App.034"):tr("App.033")}<button onClick={()=>{setTool('select');setConnecting(null)}} aria-label={tr("App.032")}><X size={16}/></button></div>}
     {!layerTarget.mode&&selectedIds.length>1&&tool==='select'&&<SelectionToolbar>{selectedMedals.length===selectedIds.length&&<MedalMergeMenu count={selectedMedals.length} disabled={selectedMedals.length>8||lockedSelection(board.items,selectedIds)} onMerge={mergeSelection}/>} {layoutControls}<LayerMenu key={selectedIds.join(',')} items={board.items} ids={selectedIds} onChange={changeLayer} onTarget={layerTarget.begin}/><HintButton className="photo-line-action" onClick={arrangePhotoLine} disabled={selectedPhotos.length<2||lockedSelection(board.items,selectedIds)} aria-label={tr("App.031")}><Spline size={17}/><span>{tr("App.031")}</span></HintButton><HintButton disabled={lockedSelection(board.items,selectedIds)} className="delete-button" onClick={removeSelected} aria-label={tr("App.030")} data-tooltip={tr("App.014")}><Trash2 size={17}/></HintButton>{!touchLayout&&<HintButton onClick={()=>setSelected(null)} aria-label={tr("App.029")}><X size={16}/></HintButton>}</SelectionToolbar>}
     {!layerTarget.mode&&(selectedItem || selectedThread) && tool==='select' && <SelectionToolbar>{selectedItem ? <>{touchLayout&&<HintButton aria-label={tr("App.028")} disabled={!!selectedItem.locked||!!selectedItem.groupId} onClick={()=>editItem(selectedItem)}><Pencil size={17}/></HintButton>}<span className="selection-label">{selectedItem.exhibit?tr("App.027"):selectedItem.kind==='sticker'?tr("App.026"):selectedItem.kind==='photo'?tr("App.025"):selectedItem.kind==='medal'?tr("App.024"):selectedItem.kind==='bib'?tr("App.023"):selectedItem.kind==='note'?tr("App.022"):selectedItem.kind==='race-map'?tr("App.021"):tr("App.020")}</span>{selectedItem.exhibit&&<MedalSplitButton disabled={!!selectedItem.locked||!!selectedItem.groupId} onSplit={splitSelection}/>} {layoutControls}<LayerMenu key={selectedItem.id} items={board.items} ids={selectedIds} onChange={changeLayer} onTarget={layerTarget.begin}/><span className="bar-divider"/><HintButton disabled={!!selectedItem.locked} onClick={()=>transformItem({rotation:selectedItem.rotation-5})} aria-label={tr("App.019")}><RotateCcw size={17}/></HintButton><HintButton disabled={!!selectedItem.locked} onClick={()=>transformItem({rotation:selectedItem.rotation+5})} aria-label={tr("App.018")}><RotateCw size={17}/></HintButton></> : <span className="selection-label">{tr("App.017")}</span>}{!selectedItem&&<HintButton onClick={()=>{openDecoration('selection')}} aria-label={tr("App.016")}><Palette size={17}/></HintButton>}<HintButton disabled={lockedSelection(board.items,selectedIds)} className="delete-button" onClick={removeSelected} aria-label={tr("App.015")} data-tooltip={tr("App.014")}><Trash2 size={17}/></HintButton>{!touchLayout&&<HintButton onClick={()=>{setSelected(null);setSelectedThread(null)}} aria-label={tr("App.013")}><X size={16}/></HintButton>}</SelectionToolbar>}
     <div className="bottom-hint"><Move size={13}/><span>{touchLayout?(multiSelect?tr("App.012"):tr("App.011")):<>{tr("App.010")}<span className="hint-dot">·</span>{tr("App.009")}<span className="hint-dot">·</span>{tr("App.008")}</>}</span><button onClick={()=>setModal('help')} aria-label={tr("App.007")}><Keyboard size={15}/></button></div>
     <div className="board-signature" style={{color:resolveBackground(board.backgroundStyle).ink}}>{tr("App.006")}<span>EVERY TRAIL TELLS A STORY</span></div>
-    <HintGroup><div className="zoom-controls"><HintButton aria-label={tr("App.005")} onClick={()=>zoom(1.2)}><Plus size={21}/></HintButton><HintButton aria-label={tr("App.004")} onClick={()=>zoom(1/1.2)}><Minus size={21}/></HintButton><span/><HintButton aria-label={tr("App.003")} hint={tr("App.002")} onClick={fit}><Maximize size={18}/></HintButton><HintButton className="zoom-value" aria-label={tr("App.001")} onClick={()=>{const el=viewport.current;if(el)zoomAt(1,el.clientWidth/2,el.clientHeight/2)}}>{Math.round(view.scale*100)}%</HintButton></div></HintGroup>
-    <Minimap board={board} records={library.records} pin={decorations.pin} bounds={boardBounds} view={view} width={viewportSize.width} height={viewportSize.height} onChange={setView}/>
+    <HintGroup><div className="zoom-controls"><HintButton aria-label={tr("App.005")} onClick={()=>{seasonTransition.cancel();zoom(1.2)}}><Plus size={21}/></HintButton><HintButton aria-label={tr("App.004")} onClick={()=>{seasonTransition.cancel();zoom(1/1.2)}}><Minus size={21}/></HintButton><span/><HintButton aria-label={tr("App.003")} hint={tr("App.002")} onClick={()=>{seasonTransition.cancel();fit()}}><Maximize size={18}/></HintButton><HintButton className="zoom-value" aria-label={tr("App.001")} onClick={()=>{seasonTransition.cancel();const el=viewport.current;if(el)zoomAt(1,el.clientWidth/2,el.clientHeight/2)}}>{Math.round(view.scale*100)}%</HintButton></div></HintGroup>
+    <Minimap board={board} records={library.records} pin={decorations.pin} bounds={boardBounds} view={view} width={viewportSize.width} height={viewportSize.height} onChange={next=>{seasonTransition.cancel();setView(next)}}/>
     <input ref={inputFile} type="file" accept=".zip,application/zip,.json,application/json" hidden onChange={e=>void importJson(e.target.files?.[0])}/>
     {toast && <div className="toast" role="status"><Check size={17}/>{toast}</div>}
     <BoardDialog onClear={clearBoard} canClear={canClear} modal={modal} board={board} exporting={exporting} exportImage={exportImage} exportJson={exportJson} onImport={()=>inputFile.current?.click()} onClose={()=>setModal(null)}/>
