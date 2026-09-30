@@ -3,6 +3,7 @@ import {msg,errorNotice,AppError} from '../i18n/runtime.ts'
 import {t as tr,formatTime} from '../i18n/runtime.ts'
 import {useTranslation} from 'react-i18next'
 import BoardActions from '../board/BoardActions'
+import YearCapsule from '../board/YearCapsule'
 import {preloadBackgroundTextures} from '../shared/MaterialPreview'
 import Minimap from '../board/Minimap'
 import {HintButton,HintGroup} from '../shared/ui/Hint'
@@ -29,10 +30,9 @@ import type {LayoutAction,Guide} from '../board/layout'
 import LayerMenu from '../board/LayerMenu'
 import {reorderItems} from '../board/itemLayers'
 import type {LayerAction} from '../board/itemLayers'
-import {loadBoard} from '../persistence/boardStore'
 import Topbar from './Topbar'
 import {useCanvasCamera} from '../board/useCanvasCamera'
-import {useBoardHistory} from '../board/useBoardHistory'
+import {useSeasonBoards} from '../board/useSeasonBoards'
 import Clothespin from '../appearance/Clothespin'
 import { hangPhotos } from '../board/photoLine'
 import { threadCurve } from '../board/threadCurve'
@@ -75,8 +75,10 @@ export default function App() {
   useEffect(()=>{document.title=tr("app.documentTitle");document.documentElement.lang=i18n.language},[i18n.language])
   const touchLayout=useTouchLayout()
   const light=useBoardLight()
+  const [yearExpanded,setYearExpanded]=useState(false)
+  const yearButton=useRef<HTMLButtonElement>(null)
   const [multiSelect,setMultiSelect]=useState(false)
-  const history=useBoardHistory(loadBoard)
+  const history=useSeasonBoards()
   const {board,boardRef,setBoard,remember,commit,historyTick}=history
   const library = useRecords(board, next => {boardRef.current=next;setBoard(next)})
   useEffect(()=>{preloadBackgroundTextures()},[])
@@ -84,7 +86,7 @@ export default function App() {
   const memoryEditingId = useRef<string|null>(null)
   const {active:fileOperation,state:operation,run:runFileOperation,busy:exporting}=useFileOperation()
   const gesture = useRef<Gesture | null>(null)
-  const {view,setView,viewRef,viewport,viewportSize,fit,zoom,zoomAt}=useCanvasCamera(boardRef,gesture,library.records)
+  const {view,setView,viewRef,viewport,viewportSize,fit,zoom,zoomAt}=useCanvasCamera(boardRef,gesture,library.records,history.restoreView)
   const scene = useRef<HTMLDivElement>(null)
   const pointer = useRef({x:0,y:0})
   const [guides,setGuides]=useState<Guide[]>([])
@@ -107,7 +109,7 @@ export default function App() {
   const [kind, setKind] = useState<Kind>('photo')
   const [draft, setDraft] = useState({title:'',variant:'',image:samplePhotos[0],number:'0826',date:''})
   const [toast, setToast]=useNotice('')
-  const boardSave=useBoardSave(board,library.ready&&!dragging)
+  const boardSave=useBoardSave(board,library.ready&&!dragging,()=>history.flush(viewRef.current),history.saveTick)
   const saveError=library.error||library.saveError||boardSave.error
   const saved=!library.ready?tr("App.114"):saveError?tr("App.113"):library.saving||boardSave.saving||dragging?tr("App.112"):tr("App.111",{v1:formatTime(Math.max(boardSave.time,library.savedAt))})
   const layerTarget=useLayerTarget({board,selectedIds,viewport,view,commit,onBegin:()=>{closePanel();setSelectedThread(null);setTool('select');setConnecting(null)},onDone:()=>setToast(msg("App.110"))})
@@ -303,6 +305,18 @@ export default function App() {
     },
   })
 
+  const switchSeason=(year:number)=>{
+    if(year===history.year)return
+    if(!library.ready||library.saving||fileOperation.current||gesture.current||touchGestures.active())return
+    if(memoryPanel||mapPanel||exhibitPanel||(recordPanel&&recordPanel.mode!=='library')){setToast(msg('season.closeEditor'));return}
+    if(!history.switchYear(year,viewRef.current)){setToast(msg('season.saveFailed'));return}
+    closePanel();setSelected(null);setSelectedThread(null);setConnecting(null);setCursor(null);setTool('select');setMultiSelect(false)
+    setGuides([]);setMarquee(null);setSpace(false);setModal(null);closeCanvasMenu();layerTarget.cancel();overlap.current=null;memoryEditingId.current=null
+    const el=viewport.current
+    const nextView=history.restoreView??fitCamera(contentBounds(boardRef.current.items,60,boardRef.current.threads,getDecorations(boardRef.current).pin,library.records),el?.clientWidth??viewportSize.width,el?.clientHeight??viewportSize.height)
+    viewRef.current=nextView;setView(nextView)
+  }
+
   const openAdd = (nextKind: Kind) => {
     setMultiSelect(false)
     setModal(null);closePanel()
@@ -378,18 +392,21 @@ export default function App() {
     await library.save([record])
     if(add)await addRecord(record,layout)
     else if(record.kind==='sticker'){
-      const current=boardRef.current
-      const items=current.items.map(item=>{
-        if(item.recordId!==record.id)return item
-        const change=resizeSticker(item,record.width,record.height,item.id===selected?layout?.stickerBorder??item.stickerBorder??2:item.stickerBorder??2,item.id===selected&&layout?.w&&layout?.h?Math.max(layout.w,layout.h):Math.max(item.w,item.h),item.id===selected?layout?.stickerStyle??item.stickerStyle:item.stickerStyle)
-        return change.w===item.w&&change.h===item.h&&change.stickerBorder===(item.stickerBorder??2)&&change.stickerStyle===(item.stickerStyle??'contour')?item:{...item,...change}
+      history.updateBoards(current=>{
+        const items=current.items.map(item=>{
+          if(item.recordId!==record.id)return item
+          const editing=current===boardRef.current&&item.id===selected
+          const change=resizeSticker(item,record.width,record.height,editing?layout?.stickerBorder??item.stickerBorder??2:item.stickerBorder??2,editing&&layout?.w&&layout?.h?Math.max(layout.w,layout.h):Math.max(item.w,item.h),editing?layout?.stickerStyle??item.stickerStyle:item.stickerStyle)
+          return change.w===item.w&&change.h===item.h&&change.stickerBorder===(item.stickerBorder??2)&&change.stickerStyle===(item.stickerStyle??'contour')?item:{...item,...change}
+        })
+        return items.some((item,index)=>item!==current.items[index])?{...current,items}:current
       })
-      if(items.some((item,index)=>item!==current.items[index]))commit({...current,items})
     }
     else if(record.kind==='bib'){
-      const current=boardRef.current
-      const items=current.items.map(item=>{if(item.recordId!==record.id)return item;const size=bibLayout(record.width,record.height,item.id===selected?layout?.w??item.w:item.w);return size.w===item.w&&size.h===item.h?item:{...item,...size,x:item.x+(item.w-size.w)/2,y:item.y+(item.h-size.h)/2}})
-      if(items.some((item,index)=>item!==current.items[index]))commit({...current,items})
+      history.updateBoards(current=>{
+        const items=current.items.map(item=>{if(item.recordId!==record.id)return item;const size=bibLayout(record.width,record.height,current===boardRef.current&&item.id===selected?layout?.w??item.w:item.w);return size.w===item.w&&size.h===item.h?item:{...item,...size,x:item.x+(item.w-size.w)/2,y:item.y+(item.h-size.h)/2}})
+        return items.some((item,index)=>item!==current.items[index])?{...current,items}:current
+      })
     }
   }
   const importPhotos=async(photos:BatchPhoto[])=>{
@@ -412,8 +429,8 @@ export default function App() {
   }
   const deleteRecord = async (id:string) => {
     if(fileOperation.current)throw new AppError("App.084")
-    if(recordThreadReferences(boardRef.current,id))throw new AppError("App.087")
-    if(boardMembers(boardRef.current.items).some(item=>item.recordId===id))throw new AppError("App.086")
+    if(history.allBoards.some(board=>recordThreadReferences(board,id)))throw new AppError("App.087")
+    if(history.allBoards.some(board=>boardMembers(board.items).some(item=>item.recordId===id)))throw new AppError("App.086")
     await runFileOperation(null,async()=>{
       // Persist removal from the canvas before releasing the original files.
       if(!boardSave.retry())throw new AppError("App.081")
@@ -425,7 +442,7 @@ export default function App() {
   const emptyRecycle = async (ids:string[]) => {
     if(fileOperation.current)throw new AppError("App.084")
     if(ids.some(id=>!library.records.find(r=>r.id===id)?.archived))throw new AppError("App.083")
-    if(ids.some(id=>recordThreadReferences(boardRef.current,id)||boardMembers(boardRef.current.items).some(item=>item.recordId===id)))throw new AppError("App.082")
+    if(ids.some(id=>history.allBoards.some(board=>recordThreadReferences(board,id)||boardMembers(board.items).some(item=>item.recordId===id))))throw new AppError("App.082")
     await runFileOperation(null,async()=>{
       if(!boardSave.retry())throw new AppError("App.081")
       await library.removeMany(ids)
@@ -493,12 +510,12 @@ export default function App() {
   const boardBounds=useMemo(()=>contentBounds(board.items,60,board.threads,decorations.pin,library.records),[board.items,board.threads,decorations.pin,library.records])
 
   const itemStyles=selectedItem?<DecorationPanel embedded board={board} item={selectedItem} scope="selection" onClose={()=>{}} onCurvature={()=>{}} onPinToggle={enabled=>commit(setTapePin(boardRef.current,selectedItem.id,enabled))} onChange={change=>commit(changeDecoration(boardRef.current,change,selectedItem.id))}/>:null
-  return <div data-light={light.enabled?'on':'off'} className={`app-shell ${touchLayout?'is-touch':''} ${recordPanel||memoryPanel||mapPanel||exhibitPanel||decorationOpen?'has-editor':''}`}>
+  return <div data-light={light.enabled?'on':'off'} data-season={history.year} className={`app-shell ${touchLayout?'is-touch':''} ${recordPanel||memoryPanel||mapPanel||exhibitPanel||decorationOpen?'has-editor':''}`}>
     {selectedItem?.exhibit&&exhibitPanel===selectedItem.id&&!selectedItem.locked&&!selectedItem.groupId&&<MedalExhibitEditor item={selectedItem} records={library.records} onAdd={slot=>openExhibitSlot(selectedItem,slot)} onChange={transformItem} onClose={()=>closePanel()} onSplit={splitSelection} onEdit={medal=>{openRecord({mode:'detail',id:medal.recordId,exhibitId:selectedItem.id,medalId:medal.id})}}/>}
     {!library.ready&&<div className="records-loading" role="status"><div><h2>{library.error?tr("App.063"):tr("App.062")}</h2>{library.error&&<><p>{library.error}</p><button className="primary-button" onClick={library.retry}>{tr("App.061")}</button></>}</div></div>}
     <FileOperationOverlay operation={operation}/>
     {saveError&&<div className="save-failure-banner" role="alert"><span>{saveError}</span><span>{tr("App.060")}</span>{boardSave.error&&<button onClick={boardSave.retry}>{tr("App.059")}</button>}<button onClick={()=>setModal('share')}>{tr("App.058")}</button></div>}
-    {library.ready&&recordPanel&&<RecordPanel exhibitMedal={!!editingExhibitMedal||addingExhibitMedal} onBack={addingExhibitMedal?(recordPanel.mode==='medal'?()=>openRecord({...recordPanel,mode:'exhibit-add'}):returnToExhibit):editingExhibitMedal?returnToExhibit:undefined} onImportPhotos={importPhotos} onBibTemplate={()=>openAdd('bib')} styles={recordPanel.mode==='detail'&&selectedItem?.recordId===recordPanel.id?itemStyles:undefined} item={editingExhibitMedal??(recordPanel.mode==='detail'&&selectedItem&&selectedItem.recordId===recordPanel.id?selectedItem:undefined)} onLayout={editingExhibitMedal?transformExhibitMedal:transformItem} mode={recordPanel} records={library.records} references={id=>boardMembers(board.items).filter(i=>i.recordId===id).length} threadReferences={id=>recordThreadReferences(board,id)} onMode={openRecord} onClose={addingExhibitMedal?returnToExhibit:()=>closePanel()} onSave={saveRecord} onDelete={deleteRecord} onEmptyRecycle={emptyRecycle} onAdd={addingExhibitMedal?record=>addRecord(record):record=>{void addRecord(record).catch(()=>setToast(msg("App.057")))}}/>}
+    {library.ready&&recordPanel&&<RecordPanel exhibitMedal={!!editingExhibitMedal||addingExhibitMedal} onBack={addingExhibitMedal?(recordPanel.mode==='medal'?()=>openRecord({...recordPanel,mode:'exhibit-add'}):returnToExhibit):editingExhibitMedal?returnToExhibit:undefined} onImportPhotos={importPhotos} onBibTemplate={()=>openAdd('bib')} styles={recordPanel.mode==='detail'&&selectedItem?.recordId===recordPanel.id?itemStyles:undefined} item={editingExhibitMedal??(recordPanel.mode==='detail'&&selectedItem&&selectedItem.recordId===recordPanel.id?selectedItem:undefined)} onLayout={editingExhibitMedal?transformExhibitMedal:transformItem} mode={recordPanel} records={library.records} references={id=>history.allBoards.reduce((count,board)=>count+boardMembers(board.items).filter(i=>i.recordId===id).length,0)} threadReferences={id=>history.allBoards.reduce((count,board)=>count+recordThreadReferences(board,id),0)} onMode={openRecord} onClose={addingExhibitMedal?returnToExhibit:()=>closePanel()} onSave={saveRecord} onDelete={deleteRecord} onEmptyRecycle={emptyRecycle} onAdd={addingExhibitMedal?record=>addRecord(record):record=>{void addRecord(record).catch(()=>setToast(msg("App.057")))}}/>}
     {memoryPanel&&<MemoryEditor onBibUpload={()=>{openRecord({mode:'bib'})}} memoryPanel={memoryPanel} kind={kind} selectedItem={selectedItem} draft={draft} setDraft={setDraft} transformItem={transformItem} itemStyles={itemStyles} submitMemory={submitMemory} onClose={()=>{closePanel()}}/>}
     {mapItem&&mapPanel&&<RaceMapEditor creating={!!mapPanel.draft} key={mapItem.id} item={mapItem} board={board} records={library.records} groups={mapGroups} groupKey={mapPanel.groupKey} choosing={!!mapPanel.choosing&&tool==='connect'} hiddenThreads={hiddenMapThreads} onClose={()=>{closePanel()}} onSelectGroup={groupKey=>openMap({...mapPanel,groupKey,choosing:false})} onConnect={raceId=>connectEndpoint({itemId:mapItem.id,raceId})} onRemoveThread={id=>commit({...board,threads:board.threads.filter(t=>t.id!==id)})} onSave={change=>{const current=boardRef.current;const next={...mapItem,...change,x:mapItem.x+(mapItem.w-(change.w??mapItem.w))/2,y:mapItem.y+(mapItem.h-(change.h??mapItem.h))/2};if(mapPanel.draft){if(current.items.length>=500)return;commit({...current,items:[...current.items,next]});setSelected(next.id)}else commit({...current,items:current.items.map(i=>i.id===next.id?next:i)})}} onRace={id=>{
       closePanel()
@@ -506,8 +523,9 @@ export default function App() {
       if(item){const el=viewport.current;if(el)setView(v=>({...v,x:el.clientWidth/2-(item.x+item.w/2)*v.scale,y:el.clientHeight/2-(item.y+item.h/2)*v.scale}));editItem(item)}else{setSelected(null);openRecord({mode:'detail',id,origin:'canvas'})}
     }}/>}
     <Topbar board={board} saved={saved} saveError={saveError} saveFailed={!!boardSave.error} onRetry={boardSave.retry} onRename={title=>commit({...board,title})} onShare={()=>setModal('share')}/>
+    {!touchLayout&&<YearCapsule expanded={yearExpanded} onCollapse={()=>setYearExpanded(false)} launcherRef={yearButton} lighting={light.enabled} year={history.year} years={history.years} onYearChange={switchSeason} disabled={!library.ready||library.saving||exporting||dragging}/>}
     {light.enabled&&<BoardLighting/>}
-    <BoardActions decorationOpen={decorationOpen} libraryOpen={recordPanel?.mode==='library'} onDecoration={()=>decorationOpen?closePanel():openDecoration('board')} onLibrary={()=>openRecord({mode:'library'})}/>
+    <BoardActions decorationOpen={decorationOpen} libraryOpen={recordPanel?.mode==='library'} onDecoration={()=>decorationOpen?closePanel():openDecoration('board')} onLibrary={()=>openRecord({mode:'library'})} yearControl={touchLayout?undefined:{expanded:yearExpanded,onToggle:()=>setYearExpanded(value=>!value),buttonRef:yearButton}}/>
     {decorationOpen && <DecorationPanel lighting={light} onBackground={id=>{if(resolveBackground(boardRef.current.backgroundStyle).id!==id)commit({...boardRef.current,backgroundStyle:id})}} onCurvature={curvature=>{const current=boardRef.current;commit({...current,threads:current.threads.map(t=>t.id===selectedThread?{...t,curvature}:t)})}} board={board} thread={board.threads.find(t=>t.id===selectedThread)} scope={decorationScope} onClose={()=>closePanel()} onPinToggle={enabled=>{if(selected)commit(setTapePin(board,selected,enabled))}} onChange={change=>{
       const target = decorationScope==='selection' ? (change.kind==='thread'?selectedThread:selected) : undefined
       if(decorationScope==='selection' && !target) return

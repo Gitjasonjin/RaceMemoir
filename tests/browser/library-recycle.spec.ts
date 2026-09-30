@@ -10,6 +10,8 @@ test('recycle bulk delete confirms across filters and preserves referenced recor
   await page.addInitScript(()=>{
     if(sessionStorage.getItem('recycle-seeded'))return
     sessionStorage.setItem('recycle-seeded','1')
+    // Replace the fixture via legacy migration, rather than an existing season workspace.
+    localStorage.removeItem('racememoir-season-workspace-v1')
     localStorage.setItem('racememoir-board-v1',JSON.stringify({title:'Recycle',items:[{id:'protected',kind:'photo',recordId:'protected-photo',title:'protected',variant:'polaroid',x:200,y:200,w:200,h:240,rotation:0}],threads:[]}))
   })
   await page.reload();await page.locator('.records-loading').waitFor({state:'hidden'})

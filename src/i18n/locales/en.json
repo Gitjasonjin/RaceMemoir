@@ -814,5 +814,16 @@
   "fileOperation.restore.detail": "Reading and validating the backup, then restoring assets and layout.",
   "fileOperation.elapsed": "Elapsed: {{seconds}} s",
   "fileOperation.doneDetail": "All done. This message will close automatically.",
-  "fileOperation.errorDetail": "The operation could not finish. Check the error message and try again."
+  "fileOperation.errorDetail": "The operation could not finish. Check the error message and try again.",
+  "yearCapsule.label": "Season selector",
+  "yearCapsule.previous": "Previous year",
+  "yearCapsule.next": "Next year",
+  "yearCapsule.choose": "Choose year",
+  "yearCapsule.all": "All",
+  "yearCapsule.allYears": "All years",
+  "yearCapsule.collapse": "Collapse season selector",
+  "yearCapsule.expand": "Expand season selector",
+  "yearCapsule.launcher": "Select season",
+  "season.closeEditor": "Save or close the editor before switching seasons.",
+  "season.saveFailed": "This season could not be saved. The board was not switched. Please retry saving."
 }

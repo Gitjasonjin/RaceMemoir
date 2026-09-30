@@ -7,9 +7,10 @@ import {contentBounds,fitCamera} from './canvas'
 import type {Gesture,View} from './types'
 const clamp=(value:number,min:number,max:number)=>Math.min(max,Math.max(min,value))
 
-export function useCanvasCamera(boardRef:RefObject<Board>,gesture:RefObject<Gesture|null>,records:CollectionRecord[]=[]){
+export function useCanvasCamera(boardRef:RefObject<Board>,gesture:RefObject<Gesture|null>,records:CollectionRecord[]=[],initialView?:View){
+  const initial=useRef(initialView)
   const recordsRef=useRef(records);recordsRef.current=records
-  const [view,setView]=useState<View>({x:0,y:0,scale:1})
+  const [view,setView]=useState<View>(initialView??{x:0,y:0,scale:1})
   const viewRef=useRef(view);viewRef.current=view
   const viewport=useRef<HTMLDivElement>(null)
   const [viewportSize,setViewportSize]=useState({width:1440,height:900})
@@ -17,7 +18,7 @@ export function useCanvasCamera(boardRef:RefObject<Board>,gesture:RefObject<Gest
   useEffect(() => {
     const el=viewport.current; if(!el)return
     let previous={width:el.clientWidth,height:el.clientHeight}
-    setViewportSize(previous); fit()
+    setViewportSize(previous);if(initial.current)setView(initial.current);else fit()
     const observer = new ResizeObserver(()=>{
       const next={width:el.clientWidth,height:el.clientHeight}
       setView(v=>({...v,x:v.x+(next.width-previous.width)/2,y:v.y+(next.height-previous.height)/2}))

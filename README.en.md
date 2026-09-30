@@ -40,6 +40,7 @@ Frame your medals, pin up photos, tape down race bibs, and turn GPX tracks into 
 - ✅ **Collect keepsakes**: Organize and reuse medals, photos, race bibs, notes, stickers, and route cards in one library.
 - ✅ **Prepare images**: Import photos in batches, remove medal backgrounds, crop and correct bib perspectives, and create cutout stickers with adjustable white borders.
 - ✅ **Arrange freely**: Use an infinite canvas with grouping, locking, alignment, equal spacing, snapping guides, and undo/redo.
+- ✅ **Season boards**: Start with the current and previous year, each keeping its own layouts, threads, backgrounds, and views with a shared library. Your existing board stays in the current year; image and ZIP exports use the selected season.
 - ✅ **Touch controls**: Zoom and pan with two fingers, long-press to select multiple items, and adjust photo crops and map views with gestures.
 - ✅ **Personalize your board**: Customize photo paper and frames, combine medals in display cases, and connect memories with adjustable curved red threads.
 - ✅ **Map your memories**: Add paper maps to the canvas, mark race locations with red circles and pins, and connect them to keepsakes.

@@ -806,5 +806,16 @@
   "fileOperation.restore.detail": "正在读取并校验备份，恢复藏品素材与画板布局。",
   "fileOperation.elapsed": "已用时 {{seconds}} 秒",
   "fileOperation.doneDetail": "操作已完成，此提示将自动关闭。",
-  "fileOperation.errorDetail": "未能完成此操作，请查看错误提示后重试。"
+  "fileOperation.errorDetail": "未能完成此操作，请查看错误提示后重试。",
+  "yearCapsule.label": "赛季选择",
+  "yearCapsule.previous": "上一年",
+  "yearCapsule.next": "下一年",
+  "yearCapsule.choose": "选择年份",
+  "yearCapsule.all": "全部",
+  "yearCapsule.allYears": "全部年份",
+  "yearCapsule.collapse": "收起赛季选择器",
+  "yearCapsule.expand": "展开赛季选择器",
+  "yearCapsule.launcher": "赛季选择",
+  "season.closeEditor": "请先保存或关闭编辑栏，再切换赛季。",
+  "season.saveFailed": "当前赛季保存失败，未切换画布。请重试保存。"
 }

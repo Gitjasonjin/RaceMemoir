@@ -806,5 +806,16 @@
   "fileOperation.restore.detail": "バックアップを確認し、素材とレイアウトを復元しています。",
   "fileOperation.elapsed": "経過時間：{{seconds}} 秒",
   "fileOperation.doneDetail": "完了しました。このメッセージは自動的に閉じます。",
-  "fileOperation.errorDetail": "操作を完了できませんでした。エラー内容を確認して、もう一度お試しください。"
+  "fileOperation.errorDetail": "操作を完了できませんでした。エラー内容を確認して、もう一度お試しください。",
+  "yearCapsule.label": "シーズン選択",
+  "yearCapsule.previous": "前年",
+  "yearCapsule.next": "翌年",
+  "yearCapsule.choose": "年を選択",
+  "yearCapsule.all": "すべて",
+  "yearCapsule.allYears": "すべての年",
+  "yearCapsule.collapse": "シーズン選択を閉じる",
+  "yearCapsule.expand": "シーズン選択を開く",
+  "yearCapsule.launcher": "シーズン選択",
+  "season.closeEditor": "編集を保存するか閉じてから、シーズンを切り替えてください。",
+  "season.saveFailed": "現在のシーズンを保存できなかったため、ボードを切り替えていません。保存を再試行してください。"
 }
