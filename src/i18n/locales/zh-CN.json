@@ -817,5 +817,7 @@
   "yearCapsule.expand": "展开赛季选择器",
   "yearCapsule.launcher": "赛季选择",
   "season.closeEditor": "请先保存或关闭编辑栏，再切换赛季。",
-  "season.saveFailed": "当前赛季保存失败，未切换画布。请重试保存。"
+  "season.saveFailed": "当前赛季保存失败，未切换画布。请重试保存。",
+  "image.animationUnsupported": "暂不支持动画图片，请选择静态 PNG、JPG 或 WebP 图片",
+  "image.importBudget": "本次导入的图片总量超过 {{pixels}} 像素或 {{mb}} MB，请分批导入"
 }

@@ -4,6 +4,7 @@ import type { Board } from '../domain/model.ts'
 import { migrateBoard, validRecord } from '../domain/records.ts'
 import type { CollectionRecord } from '../domain/records.ts'
 import {boardMembers} from '../domain/medalExhibit.ts'
+import {validateArchiveImages} from './archiveImageBudget.ts'
 
 async function encodeBlob(blob:Blob){
   const bytes=new Uint8Array(await blob.arrayBuffer());let binary=''
@@ -33,7 +34,7 @@ export async function makeArchive(board:Board,records:CollectionRecord[]){
   if(new Blob([json]).size>80*1024*1024)throw new AppError("recordArchive.008")
   return json
 }
-export function readArchive(text:string):{board:Board;records:CollectionRecord[]}{
+export async function readArchive(text:string):Promise<{board:Board;records:CollectionRecord[]}>{
   if(text.length>80*1024*1024)throw new AppError("App.067")
   const raw:unknown=JSON.parse(text)
   let board:Board, records:CollectionRecord[]
@@ -51,6 +52,7 @@ export function readArchive(text:string):{board:Board;records:CollectionRecord[]
       return decoded
     })
   }
+  await validateArchiveImages(records)
   return restoreArchive(board,records)
 }
 export function restoreArchive(board:Board,records:CollectionRecord[]){

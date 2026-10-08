@@ -1,3 +1,4 @@
+import {pngBlob} from './helpers/imageFixture.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import 'fake-indexeddb/auto'
@@ -7,8 +8,8 @@ import type { MedalRecord, RouteRecord } from '../src/domain/records.ts'
 import { deleteRecord, deleteRecords, readRecords, putRecords } from '../src/persistence/recordStore.ts'
 import { makeArchive, readArchive } from '../src/persistence/recordArchive.ts'
 
-const original=new Blob(['original-image'],{type:'image/jpeg'})
-const processed=new Blob(['transparent-png'],{type:'image/png'})
+const original=pngBlob(2,2,30)
+const processed=pngBlob(2,2,60)
 const medal:MedalRecord={id:'real-medal',kind:'medal',name:'山野五十公里',date:'2026-09-14',note:'完赛纪念',source:'upload',originalImage:original,image:processed,cutout:'done'}
 const route:RouteRecord={id:'real-route',kind:'route',name:'山脊环线',note:'清晨出发',source:'upload',gpx:new Blob(['<gpx/>'],{type:'application/gpx+xml'}),trackPoints:[{lat:30,lon:120,elevation:100,segment:0},{lat:30.01,lon:120.01,elevation:110,segment:0}]}
 
@@ -39,7 +40,7 @@ test('彻底删除释放整条收藏及文件，重新读取不恢复且不影�
 })
 
 test('上传照片通过本地存储和完整备份恢复原始字节及物件关联',async()=>{
-  const photo={id:'uploaded-photo',kind:'photo' as const,name:'山野照片',note:'',source:'upload' as const,image:new Blob([new Uint8Array([1,2,3,255])],{type:'image/png'})}
+  const photo={id:'uploaded-photo',kind:'photo' as const,name:'山野照片',note:'',source:'upload' as const,image:pngBlob()}
   assert.ok(validRecord(photo))
   assert.equal(validRecord({...photo,image:new Blob([],{type:'image/png'})}),false)
   assert.equal(validRecord({...photo,image:new Blob(['x'],{type:'image/svg+xml'})}),false)
@@ -49,11 +50,11 @@ test('上传照片通过本地存储和完整备份恢复原始字节及物件�
   const item={...seed.items.find(i=>i.kind==='photo')!,recordId:photo.id}
   const board={...seed,items:[item],threads:[]}
   assert.ok(isBoard(board))
-  const restored=readArchive(await makeArchive(board,[stored]))
+  const restored=await readArchive(await makeArchive(board,[stored]))
   const result=restored.records[0]
   assert.equal(result.kind,'photo')
   if(result.kind!=='photo')throw new Error('Expected photo')
-  assert.deepEqual(new Uint8Array(await result.image.arrayBuffer()),new Uint8Array([1,2,3,255]))
+  assert.deepEqual(new Uint8Array(await result.image.arrayBuffer()),new Uint8Array(await photo.image.arrayBuffer()))
   assert.notEqual(result.id,photo.id)
   assert.equal(recordFor(restored.board.items[0],restored.records),result)
 })
@@ -105,7 +106,7 @@ test('IndexedDB 原图、透明图片、GPX 和轨迹可跨连接恢复；失败
 test('完整备份恢复二进制文件，重分配记录 ID 且保留共享引用',async()=>{
   const item={...seed.items[0],recordId:medal.id},map={...seed.items[4],recordId:route.id}
   const board={title:'真实收藏',items:[item,{...item,id:'second',x:-999},map],threads:[{id:'line',from:item.id,to:map.id}]}
-  const json=await makeArchive(board,[medal,route]),restored=readArchive(json)
+  const json=await makeArchive(board,[medal,route]),restored=await readArchive(json)
   assert.equal(isBoard(restored.board),true)
   assert.notEqual(restored.board.items[0].recordId,medal.id)
   assert.equal(restored.board.items[0].recordId,restored.board.items[1].recordId)
@@ -117,18 +118,18 @@ test('完整备份恢复二进制文件，重分配记录 ID 且保留共享引�
   assert.equal(await m.originalImage!.text(),await original.text())
   assert.equal(await r.gpx!.text(),'<gpx/>')
   assert.deepEqual(r.trackPoints,route.trackPoints)
-  assert.notEqual(readArchive(json).records[0].id,m.id)
+  assert.notEqual((await readArchive(json)).records[0].id,m.id)
 })
 
 test('兼容旧版备份，拒绝不完整引用、重复 ID、非法资产和未知版本',async()=>{
-  const legacy=readArchive(JSON.stringify(seed))
+  const legacy=await readArchive(JSON.stringify(seed))
   assert.equal(legacy.records.length,4)
   assert.deepEqual(legacy.board.threads,seed.threads)
   const valid=JSON.parse(await makeArchive(legacy.board,legacy.records))
-  assert.throws(()=>readArchive(JSON.stringify({...valid,version:99})))
-  assert.throws(()=>readArchive(JSON.stringify({...valid,records:[]})),/缺少/)
-  assert.throws(()=>readArchive(JSON.stringify({...valid,records:[...valid.records,valid.records[0]]})),/重复/)
-  assert.throws(()=>readArchive(JSON.stringify({...valid,records:valid.records.map((r:object,i:number)=>i===0?{...r,image:'data:text/html;base64,SGVsbG8='}:r)})),/格式/)
+  await assert.rejects(()=>readArchive(JSON.stringify({...valid,version:99})))
+  await assert.rejects(()=>readArchive(JSON.stringify({...valid,records:[]})),/缺少/)
+  await assert.rejects(()=>readArchive(JSON.stringify({...valid,records:[...valid.records,valid.records[0]]})),/重复/)
+  await assert.rejects(()=>readArchive(JSON.stringify({...valid,records:valid.records.map((r:object,i:number)=>i===0?{...r,image:'data:text/html;base64,SGVsbG8='}:r)})),/格式/)
   await assert.rejects(makeArchive(legacy.board,[]),/丢失/)
 })
 

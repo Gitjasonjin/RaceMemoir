@@ -1,3 +1,4 @@
+import {pngBlob} from './helpers/imageFixture.ts'
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
 import {seed,isBoard,pinPosition} from '../src/domain/model.ts'
@@ -98,7 +99,7 @@ test('migration skips container and keeps nested races in map aggregation',()=>{
 })
 test('ZIP roundtrip remaps member records, preserves bytes and protects missing nested records',async()=>{
   const migrated=migrateBoard(source,[]),{board,item}=mergeMedals(migrated.board,ids,'2x4')
-  const image=new Blob([new Uint8Array([1,2,3])],{type:'image/png'})
+  const image=pngBlob()
   const records=migrated.created.map(r=>r.kind==='medal'?{...r,source:'upload' as const,image,originalImage:image}:r)
   const result=await readBackup(await makeZipArchive(board,records)),restored=result.board.items.find(i=>i.id===item.id)!
   assert.ok(isBoard(result.board))

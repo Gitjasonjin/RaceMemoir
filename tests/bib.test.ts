@@ -1,3 +1,4 @@
+import {pngBlob} from './helpers/imageFixture.ts'
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
 import 'fake-indexeddb/auto'
@@ -11,7 +12,7 @@ import {makeZipArchive,readBackup} from '../src/persistence/zipArchive.ts'
 import {putRecords,readRecords,deleteRecord} from '../src/persistence/recordStore.ts'
 import {validErasures,surroundingColor} from '../src/items/bib/bibErasure.ts'
 
-const originalImage=new Blob(['original-pixels'],{type:'image/png'}),image=new Blob(['rectified-pixels'],{type:'image/png'})
+const originalImage=pngBlob(1600,1200,30),image=pngBlob(1000,600,60)
 const record:BibRecord={id:'bib1',kind:'bib',source:'upload',name:'测试号码布',number:'A174',note:'',originalImage,image,originalWidth:1600,originalHeight:1200,width:1000,height:600,quad:[{x:.1,y:.1},{x:.9,y:.2},{x:.8,y:.8},{x:.2,y:.9}],processing:'perspective'}
 
 test('perspective maps rectangle corners exactly and rejects degenerate selections',()=>{
@@ -47,7 +48,7 @@ test('bib ZIP stores original and processed files separately and remaps shared r
 test('local bib records preserve original bytes through recycle and restore',async()=>{
  await putRecords([record]);assert.equal((await readRecords()).find(r=>r.id===record.id)?.kind,'bib')
  await putRecords([{...record,archived:true}]);assert.equal((await readRecords())[0].archived,true)
- await putRecords([{...record,archived:false}]);assert.equal(await ((await readRecords())[0] as BibRecord).originalImage.text(),'original-pixels')
+ await putRecords([{...record,archived:false}]);assert.equal(await ((await readRecords())[0] as BibRecord).originalImage.text(),await originalImage.text())
  await deleteRecord(record.id);assert.equal((await readRecords()).length,0)
 })
 

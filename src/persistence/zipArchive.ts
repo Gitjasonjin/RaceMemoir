@@ -1,11 +1,13 @@
 import {AppError} from '../i18n/runtime.ts'
-import {zip,unzip,strToU8,strFromU8} from 'fflate'
-import type {AsyncZippable,Unzipped} from 'fflate'
+import {zip,strToU8,strFromU8} from 'fflate'
+import type {AsyncZippable} from 'fflate'
+import {unzipBackup} from './unzipBackup.ts'
 import type {Board} from '../domain/model'
 import {isBoard} from '../domain/model.ts'
 import type {CollectionRecord} from '../domain/records'
 import {validRecord} from '../domain/records.ts'
 import {readArchive,restoreArchive} from './recordArchive.ts'
+import {validateArchiveImages} from './archiveImageBudget.ts'
 
 const LIMIT=80*1024*1024
 const META_LIMIT=16*1024*1024
@@ -38,18 +40,13 @@ export async function makeZipArchive(board:Board,records:CollectionRecord[]):Pro
   return new Blob([bytes],{type:'application/zip'})
 }
 
-export async function readBackup(file:Blob){
+export async function readBackup(file:Blob,signal?:AbortSignal){
+  signal?.throwIfAborted()
   if(file.size>LIMIT)throw new AppError("App.067")
   const bytes=new Uint8Array(await file.arrayBuffer())
+  signal?.throwIfAborted()
   if(bytes[0]!==0x50||bytes[1]!==0x4b)return readArchive(new TextDecoder().decode(bytes))
-  let total=0,count=0,invalid=false
-  const entries=await new Promise<Unzipped>((resolve,reject)=>unzip(bytes,{filter:entry=>{
-    total+=entry.originalSize;count++
-    const allowed=entry.name==='manifest.json'||/^assets\/[a-f0-9]{64}\.(png|jpg|webp|gpx|xml)$/.test(entry.name)
-    if(!allowed||count>10000||!Number.isFinite(entry.originalSize)||entry.originalSize>(entry.name==='manifest.json'?META_LIMIT:20*1024*1024)||total>LIMIT){invalid=true;return false}
-    return true
-  }},(error,result)=>error?reject(new AppError("zipArchive.008")):resolve(result)))
-  if(invalid||!entries['manifest.json'])throw new AppError("zipArchive.007")
+  const entries=await unzipBackup(bytes,signal)
   const manifest=JSON.parse(strFromU8(entries['manifest.json']))
   if(!manifest||manifest.format!=='racememoir'||![3,4,5,6,7,8].includes(manifest.version)||!isBoard(manifest.board)||!Array.isArray(manifest.records)||manifest.records.length>10000)throw new AppError("zipArchive.006")
   const cache=new Map<string,Blob>()
@@ -74,5 +71,7 @@ export async function readBackup(file:Blob){
     if(!validRecord(decoded))throw new AppError("zipArchive.001")
     records.push(decoded)
   }
+  await validateArchiveImages(records)
+  signal?.throwIfAborted()
   return restoreArchive(manifest.board as Board,records)
 }

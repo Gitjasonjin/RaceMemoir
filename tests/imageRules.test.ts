@@ -4,6 +4,8 @@ import {MAX_IMAGE_PIXELS,MAX_UPLOAD_IMAGE_PIXELS,processingImageSize} from '../s
 import {readImageSize} from '../src/shared/readImageSize.ts'
 import {readBatchPhoto} from '../src/items/photo/batchPhotos.ts'
 import {AppError} from '../src/i18n/runtime.ts'
+import {readImageHeader} from '../src/shared/imageHeader.ts'
+import {headerPng} from './helpers/imageFixture.ts'
 
 test('processing budget preserves small images and fits high resolution photos proportionally',()=>{
   assert.deepEqual(processingImageSize(6000,4000),{width:6000,height:4000,scale:1})
@@ -26,18 +28,19 @@ test('uploads accept 48MP originals, batch preserves bytes, bib keeps its old li
   t.after(()=>{if(descriptor)Object.defineProperty(globalThis,'createImageBitmap',descriptor);else Reflect.deleteProperty(globalThis,'createImageBitmap')})
   Object.defineProperty(globalThis,'createImageBitmap',{configurable:true,value:async(file:Blob)=>{
     decodes++
-    const [width,height]=JSON.parse(await file.text())
+    const {width,height}=await readImageHeader(file)
     return {width,height,close(){closes++}}
   }})
-  const file=new File(['[8064,6048]'],'48mp.png',{type:'image/png'})
+  const file=new File([headerPng(8064,6048)],'48mp.png',{type:'image/png'})
   assert.deepEqual(await readImageSize(file),{width:8064,height:6048})
   await assert.rejects(readImageSize(file,MAX_IMAGE_PIXELS),e=>e instanceof AppError&&e.detail.key==='image.resolutionLimit'&&e.detail.values?.pixels==='25,000,000')
   const photo=await readBatchPhoto(file)
   assert.equal(photo.record.image,file)
-  assert.equal(await photo.record.image.text(),'[8064,6048]')
+  assert.deepEqual(await photo.record.image.arrayBuffer(),await file.arrayBuffer())
   assert.equal(decodes,1)
   assert.equal(closes,1)
-  assert.deepEqual(await readImageSize(new Blob(['[10000,5000]'],{type:'image/png'})),{width:10000,height:5000})
-  await assert.rejects(readImageSize(new Blob(['[10000,5001]'],{type:'image/png'})),e=>e instanceof AppError&&e.detail.key==='image.resolutionLimit'&&e.detail.values?.pixels==='50,000,000')
-  assert.equal(closes,3)
+  assert.deepEqual(await readImageSize(headerPng(10000,5000)),{width:10000,height:5000})
+  await assert.rejects(readImageSize(headerPng(10000,5001)),e=>e instanceof AppError&&e.detail.key==='image.resolutionLimit'&&e.detail.values?.pixels==='50,000,000')
+  assert.equal(closes,2)
+  assert.equal(decodes,2)
 })

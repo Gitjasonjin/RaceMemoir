@@ -1,3 +1,4 @@
+import {pngBlob} from './helpers/imageFixture.ts'
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
 import {unzipSync,zipSync,strFromU8,strToU8} from 'fflate'
@@ -6,7 +7,7 @@ import {makeZipArchive,readBackup} from '../src/persistence/zipArchive.ts'
 import {makeArchive} from '../src/persistence/recordArchive.ts'
 import type {CollectionRecord} from '../src/domain/records.ts'
 
-const image=new Blob([new Uint8Array([1,2,3,4,5])],{type:'image/png'})
+const image=pngBlob()
 const records:CollectionRecord[]=[
   {id:'photo',kind:'photo',name:'照片',note:'',date:'2026-09-14',source:'upload',image},
   {id:'medal',kind:'medal',name:'奖牌',note:'',date:'',source:'upload',image,originalImage:image,cutout:'done'},
@@ -34,7 +35,7 @@ test('ZIP rejects missing assets, corrupted content and unsafe references before
   const manifest=JSON.parse(strFromU8(original['manifest.json'])),path=manifest.records[0].image.path
   const missing={...original};delete missing[path]
   await assert.rejects(readBackup(new Blob([zipSync(missing)])),/缺少/)
-  await assert.rejects(readBackup(new Blob([zipSync({...original,[path]:new Uint8Array([5,4,3,2,1])})])),/校验/)
+  await assert.rejects(readBackup(new Blob([zipSync({...original,[path]:new Uint8Array(original[path].length).fill(5)})])),/校验/)
   manifest.records[0].image.path='../outside.png'
   await assert.rejects(readBackup(new Blob([zipSync({...original,'manifest.json':strToU8(JSON.stringify(manifest))})])),/引用/)
   await assert.rejects(readBackup(new Blob([zipSync({...original,'../bad':new Uint8Array([1])})])),/内容无效/)

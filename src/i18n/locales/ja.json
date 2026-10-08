@@ -817,5 +817,7 @@
   "yearCapsule.expand": "シーズン選択を開く",
   "yearCapsule.launcher": "シーズン選択",
   "season.closeEditor": "編集を保存するか閉じてから、シーズンを切り替えてください。",
-  "season.saveFailed": "現在のシーズンを保存できなかったため、ボードを切り替えていません。保存を再試行してください。"
+  "season.saveFailed": "現在のシーズンを保存できなかったため、ボードを切り替えていません。保存を再試行してください。",
+  "image.animationUnsupported": "アニメーション画像には対応していません。静止画の PNG、JPG、WebP を選択してください。",
+  "image.importBudget": "今回の画像の合計が {{pixels}} 画素または {{mb}} MB を超えています。分けて読み込んでください。"
 }

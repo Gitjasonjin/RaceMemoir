@@ -7,9 +7,10 @@ import {ArrowLeft,Check,ImagePlus,Trash2,X} from 'lucide-react'
 import {useBlobUrl} from '../shared/useBlobUrl'
 import {MAX_BATCH_PHOTOS,readBatchPhoto} from '../items/photo/batchPhotos'
 import type {BatchPhoto} from '../items/photo/batchPhotos'
+import {ImageImportBudget} from '../shared/imageBudget'
 
 function PhotoRow({photo,onRename,onRemove,disabled}:{photo:BatchPhoto;onRename:(name:string)=>void;onRemove:()=>void;disabled:boolean}){
-  const url=useBlobUrl(photo.record.image)
+  const url=useBlobUrl(photo.preview)
   return <li className="batch-photo-row"><img src={url||undefined} alt={photo.record.name}/>
     <div><label className="batch-photo-name">{tr("BatchPhotoImport.018")}<input type="text" value={photo.record.name} maxLength={200} required pattern={'.*\\S.*'} title={tr("BatchPhotoImport.017")} disabled={disabled} onChange={e=>onRename(e.currentTarget.value)}/></label><small>{photo.width} × {photo.height}</small></div>
     <button type="button" disabled={disabled} aria-label={tr("BatchPhotoImport.016",{v1:photo.record.name})} onClick={onRemove}><Trash2 size={16}/></button>
@@ -21,14 +22,19 @@ export default function BatchPhotoImport({initialFiles,onBack,onClose,onImport}:
   const [progress,setProgress]=useState<{done:number;total:number}|null>(null),[saving,setSaving]=useState(false),[error,setError]=useNotice('')
   const token=useRef(0),active=useRef(true),initial=useRef(initialFiles),busy=!!progress||saving
   const list=useRef<HTMLUListElement>(null)
+  const controller=useRef<AbortController|null>(null)
   const read=async(files:File[])=>{
     if(!files.length)return
     const run=++token.current
+    controller.current?.abort()
+    const abort=new AbortController();controller.current=abort
+    const budget=new ImageImportBudget()
     setPhotos([]);setError('');setIssues([]);setProgress({done:0,total:files.length})
     if(files.length>MAX_BATCH_PHOTOS){setIssues([{reason:msg("BatchPhotoImport.015",{v1:MAX_BATCH_PHOTOS})}]);setProgress(null);return}
     const accepted:BatchPhoto[]=[],failed:{file?:string;reason:Notice}[]=[]
     for(const [index,file] of files.entries()){
-      try{accepted.push(await readBatchPhoto(file))}catch(e){failed.push({file:file.name,reason:errorNotice(e,msg("BatchPhotoImport.014"))})}
+      if(abort.signal.aborted)return
+      try{accepted.push(await readBatchPhoto(file,{budget,preview:true,signal:abort.signal}))}catch(e){failed.push({file:file.name,reason:errorNotice(e,msg("BatchPhotoImport.014"))})}
       if(!active.current||run!==token.current)return
       setProgress({done:index+1,total:files.length})
     }
@@ -37,7 +43,7 @@ export default function BatchPhotoImport({initialFiles,onBack,onClose,onImport}:
   useEffect(()=>{
     active.current=true
     if(initial.current?.length)void read(initial.current)
-    return()=>{active.current=false;token.current++}
+    return()=>{active.current=false;token.current++;controller.current?.abort()}
   },[])
   const save=async()=>{
     if(busy||!photos.length)return

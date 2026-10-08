@@ -28,7 +28,7 @@ test('legacy and unavailable styles fall back without altering saved content or 
   const saved={title:'test',items:[item],threads:[],backgroundStyle:'unavailable-background'}
   assert.equal(resolveStyle('photo',item.variant).id,'polaroid')
   assert.equal(resolveBackground(saved.backgroundStyle).id,'cork')
-  const restored=readArchive(await makeArchive(saved,[]))
+  const restored=await readArchive(await makeArchive(saved,[]))
   assert.deepEqual(restored.board,saved)
   assert.equal(hasPin({...seed.items[5],variant:'paper'}),true)
   assert.equal(hasPin({...seed.items[5],variant:'yellow'}),false)

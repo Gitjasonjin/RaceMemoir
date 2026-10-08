@@ -1,3 +1,4 @@
+import {pngBlob} from './helpers/imageFixture.ts'
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
 import {unzipSync,strFromU8} from 'fflate'
@@ -13,7 +14,7 @@ import {tornContourAlpha} from '../src/items/sticker/tornPaper.ts'
 
 import {sketchContour,applyWashiFinish} from '../src/items/sticker/stickerFinish.ts'
 
-const image=new Blob(['original'],{type:'image/png'}),cutout=new Blob(['alpha'],{type:'image/png'})
+const image=pngBlob(150,300,30),cutout=pngBlob(150,300,60)
 const record:StickerRecord={id:'sticker-record',kind:'sticker',source:'upload',name:'山野',note:'',originalImage:image,image:cutout,imageMode:'cutout',width:150,height:300}
 const item={...createMemory('sticker','山野','','',''),recordId:record.id,stickerBorder:2}
 
@@ -112,7 +113,7 @@ test('v8 ZIP keeps both originals and cutouts as separate assets and remaps reus
   assert.notEqual(manifest.records[0].originalImage.path,manifest.records[0].image.path)
   const restored=await readBackup(zip),next=restored.records[0] as StickerRecord
   assert.notEqual(next.id,record.id);assert.equal(restored.board.items[0].recordId,next.id);assert.equal(restored.board.items[1].recordId,next.id)
-  assert.equal(await next.originalImage.text(),'original');assert.equal(await next.image!.text(),'alpha')
+  assert.equal(await next.originalImage.text(),await image.text());assert.equal(await next.image!.text(),await cutout.text())
   assert.equal(next.imageMode,'cutout');assert.equal(restored.board.items[1].stickerBorder,0)
   assert.equal(restored.board.items[1].stickerAdhesion,'wrinkled');assert.equal(restored.board.items[0].stickerAdhesion,undefined)
   assert.equal(restored.board.items[2].stickerStyle,'sketch');assert.equal(restored.board.items[3].stickerStyle,'washi')

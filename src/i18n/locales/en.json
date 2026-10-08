@@ -825,5 +825,7 @@
   "yearCapsule.expand": "Expand season selector",
   "yearCapsule.launcher": "Select season",
   "season.closeEditor": "Save or close the editor before switching seasons.",
-  "season.saveFailed": "This season could not be saved. The board was not switched. Please retry saving."
+  "season.saveFailed": "This season could not be saved. The board was not switched. Please retry saving.",
+  "image.animationUnsupported": "Animated images are not supported. Choose a still PNG, JPG, or WebP image.",
+  "image.importBudget": "This import exceeds {{pixels}} total image pixels or {{mb}} MB. Import fewer images at a time."
 }

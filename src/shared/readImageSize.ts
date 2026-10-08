@@ -1,6 +1,6 @@
 import {AppError} from '../i18n/runtime.ts'
-import {formatNumber} from '../i18n/runtime.ts'
-import {MAX_UPLOAD_IMAGE_PIXELS,validImageBlob} from '../domain/imageRules.ts'
+import {MAX_UPLOAD_IMAGE_PIXELS} from '../domain/imageRules.ts'
+import {readImageHeader} from './imageHeader.ts'
 
 const sizes=new WeakMap<Blob,Promise<{width:number;height:number}>>()
 async function decodeSize(file:Blob){
@@ -9,12 +9,13 @@ async function decodeSize(file:Blob){
   try{return {width:bitmap.width,height:bitmap.height}}finally{bitmap.close()}
 }
 
-/** Check uploads consistently and release the decoded bitmap even on validation failure. */
+/** Enforce the caller's limit before any decoder allocation, including cached reads. */
 export async function readImageSize(file:Blob,maxPixels=MAX_UPLOAD_IMAGE_PIXELS){
-  if(!validImageBlob(file))throw new AppError("readImageSize.002")
+  const header=await readImageHeader(file,maxPixels)
   let task=sizes.get(file)
   if(!task){task=decodeSize(file);sizes.set(file,task);void task.catch(()=>sizes.delete(file))}
   const {width,height}=await task
-  if(width*height>maxPixels)throw new AppError("image.resolutionLimit",{pixels:formatNumber(maxPixels)})
+  // EXIF orientation can swap axes; it cannot change either dimension or pixel count.
+  if(!((width===header.width&&height===header.height)||(width===header.height&&height===header.width)))throw new AppError('readImageSize.003')
   return {width,height}
 }

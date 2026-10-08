@@ -8,7 +8,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "check:i18n": "node scripts/check-i18n.mjs",
-    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test": "node --experimental-strip-types --import ./tests/helpers/zipWorker.ts --test tests/*.test.ts",
     "test:browser": "playwright test"
   },
   "keywords": [],
