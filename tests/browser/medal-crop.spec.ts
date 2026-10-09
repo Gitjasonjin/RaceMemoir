@@ -10,7 +10,7 @@ test('manual medal crop supports drag, cancel, restore, persistence and backup w
     await putRecords([{id:'crop-medal',kind:'medal',source:'upload',name:'裁剪测试',note:'',date:'',cutout:'done',originalImage:image,image}])
     sessionStorage.setItem('crop-fixture-board',JSON.stringify({title:'裁剪验收',items:[{id:'m',kind:'medal',recordId:'crop-medal',title:'裁剪测试',variant:'bronze',x:300,y:200,w:180,h:270,rotation:0}],threads:[]}))
   })
-  await page.addInitScript(()=>{const board=sessionStorage.getItem('crop-fixture-board');if(board){localStorage.setItem('racememoir-board-v1',board);sessionStorage.removeItem('crop-fixture-board')}})
+  await page.addInitScript(()=>{const board=sessionStorage.getItem('crop-fixture-board');if(board){localStorage.setItem('racememoir-board-v1',board);localStorage.removeItem('racememoir-season-workspace-v1');sessionStorage.removeItem('crop-fixture-board')}})
   await page.reload();await page.locator('.records-loading').waitFor({state:'hidden'})
   const button=(name:string)=>page.getByRole('button',{name,exact:true})
   await page.locator('.scene>.memory-medal').press('Enter');await button('手动裁剪').click();await expect(button('应用裁剪')).toBeEnabled()

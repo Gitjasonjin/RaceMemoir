@@ -7,9 +7,9 @@ import {useMedalImage} from './useMedalImage'
 import DemoMedal from './DemoMedal'
 
 export function MedalContent({item,record}:{item:Memory;record?:CollectionRecord}){
-  const {url:imageUrl}=useMedalImage(record?.kind==='medal'?record.originalImage:undefined,record?.kind==='medal'?record.image:undefined,record?.kind==='medal'?record.crop:undefined)
+  const {url:imageUrl,ready,error}=useMedalImage(record?.kind==='medal'?record.originalImage:undefined,record?.kind==='medal'?record.image:undefined,record?.kind==='medal'?record.crop:undefined)
   if(item.recordId&&!record)return <div className="missing-record">{tr("Artwork.002")}</div>
-  return record?.source==='upload'?<img className="real-medal" style={{transform:`scale(${item.medalScale??1})`}} src={imageUrl||undefined} alt={record.name} draggable={false}/>:<DemoMedal item={item}/>
+  return record?.source==='upload'?<img className="real-medal" data-medal-state={error?'error':ready?'ready':'loading'} style={{transform:`scale(${item.medalScale??1})`}} src={imageUrl||undefined} alt={record.name} draggable={false}/>:<DemoMedal item={item}/>
 }
 export function MedalFrame({item,children}:{item:Memory;children:ReactNode}){
     const frame=resolveMedalFrame(item.medalFrame).id,depth=(item.shadowDepth??50)/50

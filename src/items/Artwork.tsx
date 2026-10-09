@@ -1,5 +1,6 @@
 import {t as tr} from '../i18n/runtime.ts'
 import {memo} from 'react'
+import {useDeferredArtwork} from '../shared/useDeferredArtwork'
 import {useTranslation} from 'react-i18next'
 import StickerArtwork from './sticker/StickerArtwork'
 import RaceMapArtwork from './race-map/RaceMapArtwork'
@@ -17,7 +18,8 @@ import RouteArtwork from './route/RouteArtwork'
 import DemoRouteArtwork from './route/DemoRouteArtwork'
 
 /** Dispatch only: each item owns its rendering and asset hooks. */
-function Artwork({item:instance,tapeStyle='classic',record,records=[],raceGroups=[]}:{item:Memory;tapeStyle?:TapeStyle;record?:CollectionRecord;records?:CollectionRecord[];raceGroups?:RaceLocationGroup[]}){
+interface ArtworkProps {item:Memory;tapeStyle?:TapeStyle;record?:CollectionRecord;records?:CollectionRecord[];raceGroups?:RaceLocationGroup[]}
+function ArtworkContent({item:instance,tapeStyle='classic',record,records=[],raceGroups=[]}:ArtworkProps){
   useTranslation()
   const item=displayMemory(instance,record)
   if(item.exhibit)return <MedalExhibitArtwork item={item} records={records}/>
@@ -31,6 +33,11 @@ function Artwork({item:instance,tapeStyle='classic',record,records=[],raceGroups
     case 'note':return <NoteArtwork item={item}/>
     case 'map':return record?.kind==='route'&&record.source==='upload'?<RouteArtwork record={record} compact={resolveStyle('map',item.variant).compact}/>:<DemoRouteArtwork item={item}/>
   }
+}
+function Artwork(props:ArtworkProps){
+  const {marker,active}=useDeferredArtwork()
+  // The hidden marker adds no box: item bounds, pins and selection remain in the canvas.
+  return <><span ref={marker} hidden aria-hidden="true" data-artwork-state={active?'active':'deferred'}/>{active&&<ArtworkContent {...props}/>}</>
 }
 // Camera movement changes the parent transform, not the contents of each keepsake.
 export default memo(Artwork)

@@ -5,18 +5,27 @@ import type {Board} from '../domain/model'
 import {getDecorations} from '../domain/model'
 import {backgroundStyle} from '../domain/styleCatalog'
 import {contentBounds,exportSize} from '../board/canvas'
-import {prepareSticker,stickerSource} from '../items/sticker/stickerImage'
+import {forceBoardArtwork} from '../shared/useDeferredArtwork'
 import {exportFontCSS} from './exportFonts'
 
 /** Render a detached snapshot; export fixes stay shared across every item type. */
 export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:CollectionRecord[]=[],lighting=false):Promise<Blob>{
   const wrapper=document.createElement('div')
+  const releaseArtwork=forceBoardArtwork(scene)
   try{
-    await Promise.all(board.items.filter(i=>i.kind==='sticker').map(item=>{
+    board.items.filter(i=>i.kind==='sticker').forEach(item=>{
       const record=records.find(r=>r.id===item.recordId)
       if(record?.kind!=='sticker')throw new AppError("exportImage.009")
-      return prepareSticker(stickerSource(record),item.stickerBorder??2,item.stickerStyle)
-    }))
+    })
+    // Unseen artwork is deliberately absent until export. Wait for both its React
+    // mount and pixel processing before taking the detached snapshot.
+    const imageDeadline=performance.now()+180000
+    while(scene.querySelector('[data-artwork-state="deferred"],[data-sticker-state="loading"],[data-medal-state="loading"]')){
+      if(scene.querySelector('[data-sticker-state="error"],[data-medal-state="error"]'))throw new AppError("exportImage.011")
+      if(performance.now()>imageDeadline)throw new AppError("exportImage.010")
+      await new Promise<void>(resolve=>setTimeout(resolve,30))
+    }
+    if(scene.querySelector('[data-sticker-state="error"],[data-medal-state="error"]'))throw new AppError("exportImage.011")
     const routeMaps=Array.from(scene.querySelectorAll<SVGSVGElement>('[data-route-map-state]'))
     routeMaps.forEach(map=>map.dispatchEvent(new Event('prepare-route-map')))
     const mapDeadline=performance.now()+45000
@@ -25,12 +34,6 @@ export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:
       await new Promise<void>(resolve=>setTimeout(resolve,50))
     }
     if(routeMaps.some(map=>map.dataset.routeMapState==='error'))throw new AppError("exportImage.007")
-    const deadline=performance.now()+10000
-    while(scene.querySelector('[data-sticker-state="loading"]')){
-      if(performance.now()>deadline)throw new AppError("exportImage.006")
-      await new Promise<void>(resolve=>setTimeout(resolve,30))
-    }
-    if(scene.querySelector('[data-sticker-state="error"]'))throw new AppError("exportImage.005")
     await document.fonts.ready;await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()))
     await Promise.all(Array.from(scene.querySelectorAll('img')).map(img=>img.decode()))
     const bounds=contentBounds(board.items,60,board.threads,getDecorations(board).pin,records)
@@ -65,7 +68,7 @@ export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:
       Object.assign(el.style,{transform:'none',filter:lighting?'drop-shadow(var(--light-shadow-x,0px) var(--light-shadow-y,5px) var(--light-shadow-blur,3px) #271d146b)':'none',transition:'none'})
     })
     clone.style.transform=`translate(${-bounds.x*size.scale}px,${-bounds.y*size.scale}px) scale(${size.scale})`
-    clone.querySelectorAll('.snap-guide,.thread-hit,.marquee-selection,.photo-resize-handle,.selection-outline,.thread-selection,.draft-thread,.connection-anchor,.empty-board').forEach(node=>node.remove())
+    clone.querySelectorAll('[data-artwork-state],.snap-guide,.thread-hit,.marquee-selection,.photo-resize-handle,.selection-outline,.thread-selection,.draft-thread,.connection-anchor,.empty-board').forEach(node=>node.remove())
     wrapper.append(clone)
     if(lighting){
       const shell=scene.closest('.app-shell'),sourceWash=shell?.querySelector('.board-light-wash'),sourceLamp=shell?.querySelector('.board-light-fixtures .pendant-lamp')
@@ -90,5 +93,5 @@ export async function exportBoardImage(scene:HTMLDivElement,board:Board,records:
     if(!blob||!blob.size)throw new AppError("exportImage.002")
     const bitmap=await createImageBitmap(blob);if(bitmap.width!==size.width||bitmap.height!==size.height){bitmap.close();throw new AppError("exportImage.001")}bitmap.close()
     return blob
-  }finally{wrapper.remove()}
+  }finally{releaseArtwork();wrapper.remove()}
 }
