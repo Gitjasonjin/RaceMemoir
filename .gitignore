@@ -2,6 +2,8 @@
 node_modules/
 dist/
 *.tsbuildinfo
+# Verified model/runtime assets are prepared for dev and build from the resource lock.
+/public/background-removal/
 
 # Local configuration and credentials (examples contain placeholders only)
 .env

@@ -745,6 +745,7 @@
   "useBackgroundRemoval.006": "自动抠图未完成，已保留原图。可重试，或直接使用原图。",
   "useBackgroundRemoval.007": "正在自动抠取主体，首次使用需要下载模型…",
   "useBackgroundRemoval.008": "自动抠取奖牌和绶带，首次使用需要下载模型…",
+  "useBackgroundRemoval.009": "抠图资源校验失败，已停止处理并保留原图。请重新加载页面或联系部署者检查资源。",
   "app.documentTitle": "山径线索板 · 我的越野记忆",
   "editor.addKind": "添加{{kind}}",
   "editor.editKind": "编辑{{kind}}",

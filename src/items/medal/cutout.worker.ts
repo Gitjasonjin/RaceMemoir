@@ -3,6 +3,8 @@ import {removeBackground} from '@imgly/background-removal'
 import {keepRibbon} from './keepRibbon'
 import {restoreMedalPixels} from './medalPixels'
 import {processingImage} from '../../shared/processingImage'
+import {secureBackgroundRemovalResources} from '../../shared/backgroundRemovalResources'
+import {ResourceIntegrityError} from '../../shared/verifiedResourceFetch'
 
 async function keepOriginalPixels(original:Blob,mask:Blob){
  const source=await createImageBitmap(original);let result:ImageBitmap|undefined
@@ -18,12 +20,14 @@ async function keepOriginalPixels(original:Blob,mask:Blob){
 
 
 self.onmessage = async (event: MessageEvent<{blob:Blob;subject:'medal'|'sticker'}>) => {
+  let blockedResource=false
   try {
     self.postMessage({type:'progress',key:'compute:resize',current:0,total:1})
     const input=await processingImage(event.data.blob)
+    const publicPath=secureBackgroundRemovalResources(self.location.origin,import.meta.env.BASE_URL,()=>{blockedResource=true})
     const cutout = await removeBackground(input, {
       // Keep the higher precision model for fine foreground details such as ribbons.
-      device: 'cpu', model: 'isnet_fp16', proxyToWorker: false,
+      device: 'cpu', model: 'isnet_fp16', proxyToWorker: false, publicPath,
       progress: (key, current, total) => self.postMessage({ type: 'progress', key, current, total }),
       output: { format: 'image/png', quality: 1 },
     })
@@ -32,6 +36,6 @@ self.onmessage = async (event: MessageEvent<{blob:Blob;subject:'medal'|'sticker'
     const image=event.data.subject==='medal'?await keepRibbon(input,cutout).catch(()=>cutout):await keepOriginalPixels(input,cutout)
     self.postMessage({ type: 'done', image })
   } catch (error) {
-    self.postMessage({ type: 'error', message: errorNotice(error,msg("cutout.worker.001")) })
+    self.postMessage({ type: 'error', code:blockedResource||error instanceof ResourceIntegrityError?'resource-integrity':undefined, message: errorNotice(error,msg("cutout.worker.001")) })
   }
 }

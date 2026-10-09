@@ -745,6 +745,7 @@
   "useBackgroundRemoval.006": "自動背景除去を完了できませんでした。元の画像は保持されています。再試行するか、元の画像をそのまま使用できます。",
   "useBackgroundRemoval.007": "被写体の背景を自動除去中。初回はモデルのダウンロードが必要です…",
   "useBackgroundRemoval.008": "メダルとリボンの背景を自動除去中。初回はモデルのダウンロードが必要です…",
+  "useBackgroundRemoval.009": "背景除去用リソースの検証に失敗しました。処理を停止し、元の画像を保持しました。ページを再読み込みするか、サイト管理者にリソースの確認を依頼してください。",
   "app.documentTitle": "RaceMemoir · 私のトレイルの思い出",
   "editor.addKind": "{{kind}}を追加",
   "editor.editKind": "{{kind}}を編集",

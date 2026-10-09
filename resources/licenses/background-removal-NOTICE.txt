@@ -1,0 +1,18 @@
+RaceMemoir background-removal resources
+
+ONNX Runtime Web 1.21.0
+Copyright (c) Microsoft Corporation. Licensed under MIT.
+Source: https://github.com/microsoft/onnxruntime/tree/v1.21.0
+The runtime MJS and WASM are copied from the npm package pinned by package-lock.json.
+See onnxruntime-MIT.txt.
+
+ISNET FP16 model distributed by IMG.LY background-removal-data 1.7.0
+Source: https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/
+Upstream model: https://github.com/xuebinqin/DIS
+IMG.LY's @imgly/background-removal 1.7.0 ThirdPartyLicenses.json identifies ISNET as MIT.
+The upstream DIS repository LICENSE.md retrieved on 2026-10-09 instead contains
+Apache License 2.0. Both provenance facts are recorded; the upstream license text
+is reproduced without alteration in ISNET-LICENSE.txt.
+
+Resource bytes and source provenance are pinned in resources/background-removal.lock.json.
+The @imgly/background-removal SDK itself remains under its AGPL-3.0 license.

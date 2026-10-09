@@ -745,6 +745,7 @@
   "useBackgroundRemoval.006": "Background removal did not finish. The original image has been kept. Try again or use the original.",
   "useBackgroundRemoval.007": "Removing the background. A model download is required on first use…",
   "useBackgroundRemoval.008": "Isolating the medal and ribbon. A model download is required on first use…",
+  "useBackgroundRemoval.009": "Background-removal resources failed verification. Processing stopped and the original image was kept. Reload the page or ask the site owner to check the resources.",
   "app.documentTitle": "RaceMemoir · My trail running memories",
   "editor.addKind": "Add {{kind}}",
   "editor.editKind": "Edit {{kind}}",

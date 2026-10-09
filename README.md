@@ -7,7 +7,7 @@
   <img alt="React" src="https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" />
   <img alt="Vite" src="https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white" />
-  <img alt="Version 0.0.1" src="https://img.shields.io/badge/version-0.0.6-6B7D53" />
+  <img alt="Version 0.0.1" src="https://img.shields.io/badge/version-0.0.7-6B7D53" />
   <a href="LICENSE"><img alt="License: AGPL v3" src="https://img.shields.io/badge/License-AGPL_v3-blue" /></a>
 </p>
 
@@ -62,6 +62,8 @@ npm run dev
 ```
 
 打开 [http://localhost:5173](http://localhost:5173)。
+
+开发与生产构建会自动准备并校验抠图资源；首次需要联网下载模型，之后复用本地文件。部署时完整发布 `dist/`，抠图程序与模型均由本站提供，图片留在浏览器中处理。资源版本、哈希及离线准备方式见[抠图资源说明](docs/background-removal-resources.md)。
 
 ```bash
 npm run build      # TypeScript 检查与生产构建
