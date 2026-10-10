@@ -830,5 +830,11 @@
   "viewing.closeEditor": "请先保存或关闭编辑栏，再进入观赏模式。",
   "viewing.previewTitle": "藏品预览",
   "viewing.closePreview": "关闭预览",
-  "viewing.previewHint": "关闭预览后可继续浏览收藏板。"
+  "viewing.previewHint": "关闭预览后可继续浏览收藏板。",
+  "saveRecovery.corrupt": "本机存档无法正常读取，已保留原始内容。当前使用备用画布，可下载原始存档进行恢复。",
+  "saveRecovery.unavailable": "无法读取本机存档。为保护已有内容，本次会话暂停画布保存；恢复浏览器存储权限后，请重新加载。",
+  "saveRecovery.saveFailed": "画布保存失败，原始存档的保护仍生效。请释放存储空间后重试，或下载原始存档。",
+  "saveRecovery.download": "下载原始存档",
+  "saveRecovery.reload": "重新加载",
+  "saveRecovery.dismiss": "关闭恢复提示"
 }

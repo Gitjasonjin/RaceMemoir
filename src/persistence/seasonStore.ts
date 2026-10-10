@@ -3,11 +3,14 @@ import {isBoard,STORAGE_KEY} from '../domain/model.ts'
 import type {Board} from '../domain/model'
 import {t} from '../i18n/runtime.ts'
 import type {View} from '../board/types'
+import {readBoard} from './boardStore.ts'
+import {protectSaved,readSaved} from './saveRecovery.ts'
+import type {SaveReadIssue,SaveStorage} from './saveRecovery'
 
 export const SEASON_STORAGE_KEY='racememoir-season-workspace-v1'
 export interface SeasonBoard {year:number;board:Board;view?:View}
 export interface SeasonWorkspace {version:1;activeYear:number;seasons:SeasonBoard[]}
-export type SeasonStorage=Pick<Storage,'getItem'|'setItem'>
+export type SeasonStorage=SaveStorage
 
 export function isSeasonView(value:unknown):value is View{
   if(!value||typeof value!=='object'||Array.isArray(value))return false
@@ -29,16 +32,17 @@ export function isSeasonWorkspace(value:unknown):value is SeasonWorkspace{
 }
 
 /** Once present, the workspace is authoritative; the old single-board key is only a mirror. */
-export function loadSeasonWorkspace(initial:()=>Board,currentYear=new Date().getFullYear(),storage?:SeasonStorage):SeasonWorkspace{
-  try{
-    const saved:unknown=JSON.parse((storage??localStorage).getItem(SEASON_STORAGE_KEY)||'null')
-    if(isSeasonWorkspace(saved))return saved
-  }catch{/* A damaged or unavailable save must still allow the board to open. */}
-  return {version:1,activeYear:currentYear,seasons:[
-    {year:currentYear,board:initial()},
+export function readSeasonWorkspace(initial?:()=>Board,currentYear=new Date().getFullYear(),storage?:SeasonStorage):{workspace:SeasonWorkspace;issues:SaveReadIssue[]}{
+  const saved=readSaved(SEASON_STORAGE_KEY,isSeasonWorkspace,storage)
+  if(saved.status==='loaded')return {workspace:saved.value,issues:[]}
+  const issues:SaveReadIssue[]=saved.status==='missing'?[]:[{key:SEASON_STORAGE_KEY,...saved}]
+  const fallback=initial?{board:initial(),issues:[]}:readBoard(storage)
+  return {workspace:{version:1,activeYear:currentYear,seasons:[
+    {year:currentYear,board:fallback.board},
     {year:currentYear-1,board:{title:t('seed.title'),items:[],threads:[]}},
-  ]}
+  ]},issues:[...issues,...fallback.issues]}
 }
+export function loadSeasonWorkspace(initial:()=>Board,currentYear=new Date().getFullYear(),storage?:SeasonStorage):SeasonWorkspace{return readSeasonWorkspace(initial,currentYear,storage).workspace}
 
 /** Both boards and their active pointer are committed in a single localStorage write. */
 export function saveSeasonWorkspace(workspace:SeasonWorkspace,storage?:SeasonStorage):boolean{
@@ -46,10 +50,11 @@ export function saveSeasonWorkspace(workspace:SeasonWorkspace,storage?:SeasonSto
   let target:SeasonStorage
   try{
     target=storage??localStorage
+    if(!protectSaved(SEASON_STORAGE_KEY,isSeasonWorkspace,target))return false
     target.setItem(SEASON_STORAGE_KEY,JSON.stringify(workspace))
   }catch{return false}
   // Failure of this compatibility mirror cannot roll back the authoritative workspace.
-  try{target.setItem(STORAGE_KEY,JSON.stringify(workspace.seasons.find(season=>season.year===workspace.activeYear)!.board))}catch{/* The workspace has already saved successfully. */}
+  try{if(protectSaved(STORAGE_KEY,isBoard,target))target.setItem(STORAGE_KEY,JSON.stringify(workspace.seasons.find(season=>season.year===workspace.activeYear)!.board))}catch{return true}
   return true
 }
 
@@ -59,15 +64,19 @@ interface SeasonHistory {undo:Board[];redo:Board[]}
 export class SeasonBoardSession{
   private state:SeasonWorkspace
   private readonly storage?:SeasonStorage
+  private readonly issues:SaveReadIssue[]
+  private recoveryProtected=false
   private readonly histories=new Map<number,SeasonHistory>()
 
-  constructor(workspace:SeasonWorkspace,storage?:SeasonStorage){
+  constructor(workspace:SeasonWorkspace,storage?:SeasonStorage,issues:SaveReadIssue[]=[]){
     this.state=workspace
     this.storage=storage
+    this.issues=[...issues]
     workspace.seasons.forEach(season=>this.histories.set(season.year,{undo:[],redo:[]}))
   }
 
   get workspace(){return this.state}
+  get recoveryIssues():readonly SaveReadIssue[]{return this.issues}
   get year(){return this.state.activeYear}
   get years(){return this.state.seasons.map(season=>season.year).sort((a,b)=>b-a)}
   get board(){return this.state.seasons.find(season=>season.year===this.year)!.board}
@@ -124,7 +133,24 @@ export class SeasonBoardSession{
     return {...this.state,activeYear,seasons:view===undefined?this.state.seasons:this.state.seasons.map(season=>season.year===this.year?{...season,view:{...view}}:season)}
   }
 
+  private protectRecovery():boolean{
+    if(this.recoveryProtected)return true
+    if(this.issues.some(issue=>issue.status==='unavailable'))return false
+    const damaged=this.issues.filter(issue=>issue.status==='corrupt')
+    if(damaged.length){
+      let target:SeasonStorage
+      try{target=this.storage??localStorage}catch{return false}
+      for(const issue of damaged){
+        const protectedSave=issue.key===SEASON_STORAGE_KEY?protectSaved(issue.key,isSeasonWorkspace,target):protectSaved(issue.key,isBoard,target)
+        if(!protectedSave)return false
+      }
+    }
+    this.recoveryProtected=true
+    return true
+  }
+
   flush(view?:View):boolean{
+    if(!this.protectRecovery())return false
     const next=this.pending(view)
     if(!saveSeasonWorkspace(next,this.storage))return false
     this.state=next;return true
@@ -132,6 +158,7 @@ export class SeasonBoardSession{
 
   switchYear(year:number,view?:View):boolean{
     if(!this.state.seasons.some(season=>season.year===year))return false
+    if(!this.protectRecovery())return false
     const next=this.pending(view,year)
     if(!saveSeasonWorkspace(next,this.storage))return false
     this.state=next;return true

@@ -6,7 +6,7 @@ import type {Board} from '../domain/model'
 import {isBoard} from '../domain/model.ts'
 import type {CollectionRecord} from '../domain/records'
 import {validRecord} from '../domain/records.ts'
-import {readArchive,restoreArchive} from './recordArchive.ts'
+import {readArchive,restoreArchive,validateArchive} from './recordArchive.ts'
 import {validateArchiveImages} from './archiveImageBudget.ts'
 
 const LIMIT=80*1024*1024
@@ -17,7 +17,7 @@ async function checksum(bytes:Uint8Array){return [...new Uint8Array(await crypto
 
 export async function makeZipArchive(board:Board,records:CollectionRecord[]):Promise<Blob>{
   // Validate all references before starting any expensive encoding.
-  restoreArchive(board,records)
+  validateArchive(board,records)
   const entries:AsyncZippable={},packed=[]
   let total=0
   const add=async(blob:Blob|undefined):Promise<Asset|undefined>=>{

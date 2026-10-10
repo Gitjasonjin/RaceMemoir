@@ -22,26 +22,29 @@ function dataUrl(blob:Blob):Promise<string>{
 async function load(url:string){
   let cache:Cache|undefined,cached:Response|undefined
   try{cache=await caches.open(CACHE);cached=await cache.match(url)}catch{/* Storage-disabled browsers can still display the map. */}
-  let response=cached
+  let response=cached,verifiedBlob:Blob|undefined
   if(!cached||expires(cached)<=Date.now()){
     try{
-      response=await limited(async()=>{
+      const downloaded=await limited(async()=>{
         const fetched=await fetch(url,{signal:AbortSignal.timeout(15000),referrerPolicy:'strict-origin-when-cross-origin'})
         if(!fetched.ok||!fetched.headers.get('content-type')?.startsWith('image/'))throw new AppError("routeTileCache.001")
         const blob=await fetched.blob(),bitmap=await createImageBitmap(blob);bitmap.close()
         const headers=new Headers(fetched.headers)
         headers.set('x-racememoir-cached-at',String(Date.now()-Number(headers.get('age')||0)*1000))
-        return new Response(blob,{headers})
+        return {response:new Response(blob,{headers}),blob}
       })
+      response=downloaded.response;verifiedBlob=downloaded.blob
       try{
         if(!/no-store|no-cache/i.test(response.headers.get('cache-control')||''))await cache?.put(url,response.clone())
         else await cache?.delete(url)
       }catch{/* Quota errors do not discard the downloaded image. */}
     }catch(error){if(!cached)throw error;response=cached}
   }
-  const blob=await response!.blob()
-  try{const bitmap=await createImageBitmap(blob);bitmap.close()}
-  catch(error){try{await cache?.delete(url)}catch{/* Retry can use the network. */}throw error}
+  const blob=verifiedBlob??await response!.blob()
+  if(!verifiedBlob){
+    try{const bitmap=await createImageBitmap(blob);bitmap.close()}
+    catch(error){try{await cache?.delete(url)}catch{/* Retry can use the network. */}throw error}
+  }
   const image=await dataUrl(blob)
   if(memory.size>=64)memory.delete(memory.keys().next().value!)
   memory.set(url,{image,expires:expires(response!)})

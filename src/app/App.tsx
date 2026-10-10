@@ -39,6 +39,7 @@ import Clothespin from '../appearance/Clothespin'
 import { hangPhotos } from '../board/photoLine'
 import { threadCurve } from '../board/threadCurve'
 import { useBoardSave } from '../persistence/useBoardSave'
+import SaveRecoveryNotice from '../persistence/SaveRecoveryNotice'
 import { resolveStyle, resolveBackground } from '../domain/styleCatalog'
 import { selectionBounds, intersectsSelection } from '../board/selection'
 import type { Bounds } from '../board/canvas'
@@ -339,9 +340,8 @@ export default function App() {
     },
   })
 
-  const toggleViewing=()=>{
+  const enterViewing=()=>{
     if(!library.ready||library.saving||fileOperation.current||gesture.current||touchGestures.active()||seasonTransition.activeRef.current)return
-    if(viewing){exitViewing();return}
     if(memoryPanel||mapPanel||exhibitPanel||(recordPanel&&recordPanel.mode!=='library')){setToast(msg('viewing.closeEditor'));return}
     closePanel();closeCanvasMenu();layerTarget.cancel();setModal(null);setYearExpanded(false)
     setSelected(null);setSelectedThread(null);setConnecting(null);setCursor(null);setTool('select');setMultiSelect(false)
@@ -563,7 +563,10 @@ export default function App() {
     {!viewing&&selectedItem?.exhibit&&exhibitPanel===selectedItem.id&&!selectedItem.locked&&!selectedItem.groupId&&<MedalExhibitEditor item={selectedItem} records={library.records} onAdd={slot=>openExhibitSlot(selectedItem,slot)} onChange={transformItem} onClose={()=>closePanel()} onSplit={splitSelection} onEdit={medal=>{openRecord({mode:'detail',id:medal.recordId,exhibitId:selectedItem.id,medalId:medal.id})}}/>}
     {!library.ready&&<div className="records-loading" role="status"><div><h2>{library.error?tr("App.063"):tr("App.062")}</h2>{library.error&&<><p>{library.error}</p><button className="primary-button" onClick={library.retry}>{tr("App.061")}</button></>}</div></div>}
     <FileOperationOverlay operation={operation}/>
-    {saveError&&<div className="save-failure-banner" role="alert"><span>{saveError}</span><span>{tr("App.060")}</span>{boardSave.error&&<button onClick={boardSave.retry}>{tr("App.059")}</button>}<button onClick={()=>setModal('share')}>{tr("App.058")}</button></div>}
+    <div className="save-notices">
+      <SaveRecoveryNotice issues={history.recoveryIssues} saveFailed={!!boardSave.error}/>
+      {saveError&&<div className="save-failure-banner" role="alert"><span>{saveError}</span><span>{tr("App.060")}</span>{boardSave.error&&<button onClick={boardSave.retry}>{tr("App.059")}</button>}<button onClick={()=>setModal('share')}>{tr("App.058")}</button></div>}
+    </div>
     {!viewing&&library.ready&&recordPanel&&<RecordPanel exhibitMedal={!!editingExhibitMedal||addingExhibitMedal} onBack={addingExhibitMedal?(recordPanel.mode==='medal'?()=>openRecord({...recordPanel,mode:'exhibit-add'}):returnToExhibit):editingExhibitMedal?returnToExhibit:undefined} onImportPhotos={importPhotos} onBibTemplate={()=>openAdd('bib')} styles={recordPanel.mode==='detail'&&selectedItem?.recordId===recordPanel.id?itemStyles:undefined} item={editingExhibitMedal??(recordPanel.mode==='detail'&&selectedItem&&selectedItem.recordId===recordPanel.id?selectedItem:undefined)} onLayout={editingExhibitMedal?transformExhibitMedal:transformItem} mode={recordPanel} records={library.records} references={id=>history.allBoards.reduce((count,board)=>count+boardMembers(board.items).filter(i=>i.recordId===id).length,0)} threadReferences={id=>history.allBoards.reduce((count,board)=>count+recordThreadReferences(board,id),0)} onMode={openRecord} onClose={addingExhibitMedal?returnToExhibit:()=>closePanel()} onSave={saveRecord} onDelete={deleteRecord} onEmptyRecycle={emptyRecycle} onAdd={addingExhibitMedal?record=>addRecord(record):record=>{void addRecord(record).catch(()=>setToast(msg("App.057")))}}/>}
     {!viewing&&memoryPanel&&<MemoryEditor onBibUpload={()=>{openRecord({mode:'bib'})}} memoryPanel={memoryPanel} kind={kind} selectedItem={selectedItem} draft={draft} setDraft={setDraft} transformItem={transformItem} itemStyles={itemStyles} submitMemory={submitMemory} onClose={()=>{closePanel()}}/>}
     {!viewing&&mapItem&&mapPanel&&<RaceMapEditor creating={!!mapPanel.draft} key={mapItem.id} item={mapItem} board={board} records={library.records} groups={mapGroups} groupKey={mapPanel.groupKey} choosing={!!mapPanel.choosing&&tool==='connect'} hiddenThreads={hiddenMapThreads} onClose={()=>{closePanel()}} onSelectGroup={groupKey=>openMap({...mapPanel,groupKey,choosing:false})} onConnect={raceId=>connectEndpoint({itemId:mapItem.id,raceId})} onRemoveThread={id=>commit({...board,threads:board.threads.filter(t=>t.id!==id)})} onSave={change=>{const current=boardRef.current;const next={...mapItem,...change,x:mapItem.x+(mapItem.w-(change.w??mapItem.w))/2,y:mapItem.y+(mapItem.h-(change.h??mapItem.h))/2};if(mapPanel.draft){if(current.items.length>=500)return;commit({...current,items:[...current.items,next]});setSelected(next.id)}else commit({...current,items:current.items.map(i=>i.id===next.id?next:i)})}} onRace={id=>{
@@ -612,7 +615,7 @@ export default function App() {
       </div>
       </div>
     </main>
-    {!viewing&&canvasMenu&&<CanvasContextMenu position={canvasMenu} snapEnabled={snapEnabled} onToggle={toggleSnap} onClose={closeCanvasMenu} canClear={canClear} onClear={()=>{closeCanvasMenu();setModal('clear')}} canView={library.ready&&!library.saving&&!exporting&&!dragging&&!seasonTransition.busy} onViewing={()=>{closeCanvasMenu();toggleViewing()}}/>}
+    {!viewing&&canvasMenu&&<CanvasContextMenu position={canvasMenu} snapEnabled={snapEnabled} onToggle={toggleSnap} onClose={closeCanvasMenu} canClear={canClear} onClear={()=>{closeCanvasMenu();setModal('clear')}} canView={library.ready&&!library.saving&&!exporting&&!dragging&&!seasonTransition.busy} onViewing={()=>{closeCanvasMenu();enterViewing()}}/>}
     <ToolPalette inactive={viewing} multiSelect={multiSelect} onMultiSelect={()=>{setMultiSelect(value=>!value);setTool('select');setConnecting(null);closePanel()}} tool={tool} onSelect={()=>{setMultiSelect(false);setTool('select');setConnecting(null)}} onConnect={()=>{setMultiSelect(false);setTool(tool==='connect'?'select':'connect');setConnecting(null);setSelected(null);setSelectedThread(null)}} onAdd={openAdd}/>
     {layerTarget.mode&&<div className="connection-hint layer-target-hint" data-layer-target-hint role="status"><span>{layerTarget.target?tr("App.045",{v1:board.items.find(i=>i.id===layerTarget.target)?.title.replaceAll('\n',' ')||tr("App.044"),v2:layerTarget.mode.action==='above'?tr("App.042"):tr("App.041")}):tr("App.043",{v1:layerTarget.mode.action==='above'?tr("App.042"):tr("App.041")})}<small>{tr("App.040")}</small></span><button type="button" onClick={layerTarget.cancel} aria-label={tr("App.039")}><X size={16}/></button></div>}
     <HintGroup><div className="history-controls" data-history={historyTick} inert={viewing} aria-hidden={viewing||undefined}><HintButton hint={tr("App.038")} aria-label={tr("App.037")} disabled={viewing||!history.canUndo || dragging||seasonTransition.busy} onClick={undo}><Undo2 size={17}/></HintButton><span/><HintButton hint={tr("App.036")} aria-label={tr("App.035")} disabled={viewing||!history.canRedo || dragging||seasonTransition.busy} onClick={redo}><Redo2 size={17}/></HintButton></div></HintGroup>

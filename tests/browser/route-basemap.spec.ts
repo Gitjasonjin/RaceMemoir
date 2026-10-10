@@ -40,7 +40,15 @@ test('GPX location is automatic, manual overrides survive replacement, medal edi
 async function seed(page:Page){
  await page.addInitScript(()=>{
   const staged=sessionStorage.getItem('basemap-board')
-  if(staged){localStorage.setItem('racememoir-board-v1',staged);sessionStorage.removeItem('basemap-board')}
+  if(staged){
+   const key='racememoir-season-workspace-v1',workspace=JSON.parse(localStorage.getItem(key)||'null')
+   if(workspace){
+    const season=workspace.seasons.find((entry:{year:number})=>entry.year===workspace.activeYear)
+    season.board=JSON.parse(staged)
+    localStorage.setItem(key,JSON.stringify(workspace))
+   }
+   localStorage.setItem('racememoir-board-v1',staged);sessionStorage.removeItem('basemap-board')
+  }
   else if(!localStorage.getItem('racememoir-board-v1'))localStorage.setItem('racememoir-board-v1',JSON.stringify({title:'地图验收',items:[],threads:[]}))
  })
  await page.goto('/');await page.locator('.records-loading').waitFor({state:'hidden'})
@@ -72,6 +80,43 @@ test('basemap loads once, survives offline reload and exports with green elevati
  await page.screenshot({path:info.outputPath('basemap.png')})
  await page.getByRole('button',{name:'分享',exact:true}).click();const pending=page.waitForEvent('download')
  await page.getByRole('button',{name:/导出高清图片/}).click();await(await pending).saveAs(info.outputPath('basemap-export.png'))
+})
+
+test('new tiles decode once while cached and offline fallback tiles remain validated',async({page})=>{
+ const tile=await seed(page);let requests=0
+ await page.route('**/__tile-cache-test/**',r=>{
+  requests++
+  return r.request().url().endsWith('/fresh.png')
+   ?r.fulfill({contentType:'image/png',body:tile,headers:{'cache-control':'max-age=604800'}})
+   :r.abort()
+ })
+ const result=await page.evaluate(async encoded=>{
+  const {loadRouteTile}=await import('/src/items/route/routeTileCache.ts')
+  const cache=await caches.open('racememoir-route-tiles-v1')
+  const image=await(await fetch('data:image/png;base64,'+encoded)).blob()
+  const urls=Object.fromEntries(['fresh','cached','damaged','stale'].map(name=>[name,new URL(`/__tile-cache-test/${name}.png`,location.href).href]))
+  const headers={'content-type':'image/png','cache-control':'max-age=604800','x-racememoir-cached-at':String(Date.now())}
+  await cache.delete(urls.fresh)
+  await cache.put(urls.cached,new Response(image,{headers}))
+  await cache.put(urls.damaged,new Response('not an image',{headers}))
+  await cache.put(urls.stale,new Response(image,{headers:{...headers,'x-racememoir-cached-at':String(Date.now()-14*24*60*60*1000)}}))
+  const original=createImageBitmap;let decodes=0
+  window.createImageBitmap=(...args:Parameters<typeof createImageBitmap>)=>{decodes++;return original(...args)}
+  try{
+   const fresh=await loadRouteTile(urls.fresh),freshDecodes=decodes
+   const cached=await loadRouteTile(urls.cached),cachedDecodes=decodes-freshDecodes
+   let damagedRejected=false
+   try{await loadRouteTile(urls.damaged)}catch{damagedRejected=true}
+   const damagedDecodes=decodes-freshDecodes-cachedDecodes,damagedDeleted=!(await cache.match(urls.damaged))
+   const beforeStale=decodes,stale=await loadRouteTile(urls.stale)
+   return {freshDecodes,cachedDecodes,damagedDecodes,staleDecodes:decodes-beforeStale,damagedRejected,damagedDeleted,sameImages:fresh===cached&&fresh===stale,staleRetained:!!(await cache.match(urls.stale))}
+  }finally{
+   window.createImageBitmap=original
+   await Promise.all(Object.values(urls).map(url=>cache.delete(url)))
+  }
+ },tile.toString('base64'))
+ expect(result).toEqual({freshDecodes:1,cachedDecodes:1,damagedDecodes:1,staleDecodes:1,damagedRejected:true,damagedDeleted:true,sameImages:true,staleRetained:true})
+ expect(requests).toBe(2)
 })
 
 test('failed maps preserve track, block incomplete exports and can retry',async({page})=>{

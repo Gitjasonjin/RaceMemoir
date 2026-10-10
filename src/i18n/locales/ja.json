@@ -830,5 +830,11 @@
   "viewing.closeEditor": "鑑賞モードに入る前に、編集内容を保存するか編集パネルを閉じてください。",
   "viewing.previewTitle": "コレクションのプレビュー",
   "viewing.closePreview": "プレビューを閉じる",
-  "viewing.previewHint": "プレビューを閉じると、ボードの閲覧を続けられます。"
+  "viewing.previewHint": "プレビューを閉じると、ボードの閲覧を続けられます。",
+  "saveRecovery.corrupt": "保存データを正常に読み込めませんでした。元の内容は保持されています。代わりのボードを表示しています。復旧用に元の保存データをダウンロードできます。",
+  "saveRecovery.unavailable": "保存データにアクセスできません。既存の内容を保護するため、このセッションではボードの保存を停止しています。ブラウザーのストレージへのアクセスを許可してから、再読み込みしてください。",
+  "saveRecovery.saveFailed": "ボードを保存できませんでした。元の保存データは引き続き保護されています。空き容量を確保して再試行するか、元の保存データをダウンロードしてください。",
+  "saveRecovery.download": "元の保存データをダウンロード",
+  "saveRecovery.reload": "再読み込み",
+  "saveRecovery.dismiss": "復旧の通知を閉じる"
 }

@@ -1,12 +1,14 @@
 import {useCallback,useRef,useState} from 'react'
 import type {SetStateAction} from 'react'
 import type {Board} from '../domain/model'
-import {loadBoard} from '../persistence/boardStore'
-import {loadSeasonWorkspace,SeasonBoardSession} from '../persistence/seasonStore'
+import {readSeasonWorkspace,SeasonBoardSession} from '../persistence/seasonStore'
 import type {View} from './types'
 
-export function useSeasonBoards(initial:()=>Board=loadBoard,currentYear=new Date().getFullYear()){
-  const [session]=useState(()=>new SeasonBoardSession(loadSeasonWorkspace(initial,currentYear)))
+export function useSeasonBoards(initial?:()=>Board,currentYear=new Date().getFullYear()){
+  const [session]=useState(()=>{
+    const loaded=readSeasonWorkspace(initial,currentYear)
+    return new SeasonBoardSession(loaded.workspace,undefined,loaded.issues)
+  })
   const [board,setRenderedBoard]=useState(session.board)
   const boardRef=useRef(board)
   const [historyTick,setHistoryTick]=useState(0)
@@ -53,5 +55,5 @@ export function useSeasonBoards(initial:()=>Board=loadBoard,currentYear=new Date
   },[session,refresh])
 
   return {board,boardRef,setBoard,remember,commit,undo,redo,forgetRecord,historyTick,canUndo:session.canUndo,canRedo:session.canRedo,
-    year:session.year,years:session.years,get allBoards(){return session.allBoards},switchYear,get restoreView(){return session.restoreView},flush,saveTick,updateBoards}
+    year:session.year,years:session.years,get allBoards(){return session.allBoards},switchYear,get restoreView(){return session.restoreView},flush,saveTick,updateBoards,recoveryIssues:session.recoveryIssues}
 }

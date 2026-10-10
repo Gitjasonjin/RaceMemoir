@@ -15,6 +15,21 @@ const records:CollectionRecord[]=[
 ]
 const board={title:'备份测试',items:[{...seed.items[2],recordId:'photo'},{...seed.items[0],recordId:'medal'},{...seed.items[4],recordId:'route'}],threads:[]}
 
+test('ZIP export preserves ids without generating import ids',async t=>{
+  t.mock.method(crypto,'randomUUID',()=>{throw new Error('Export must not generate record ids')})
+  const blob=await makeZipArchive(board,records)
+  const entries=unzipSync(new Uint8Array(await blob.arrayBuffer()))
+  const manifest=JSON.parse(strFromU8(entries['manifest.json']))
+  assert.deepEqual(manifest.records.map((record:CollectionRecord)=>record.id),records.map(record=>record.id))
+  assert.deepEqual(manifest.board,board)
+})
+test('ZIP export rejects invalid records, duplicate ids and missing or mismatched references',async()=>{
+  await assert.rejects(makeZipArchive(board,[{...records[0],name:''},...records.slice(1)]),/无效/)
+  await assert.rejects(makeZipArchive(board,[...records,records[0]]),/重复记录 ID/)
+  for(const recordId of ['missing','medal']){
+    await assert.rejects(makeZipArchive({...board,items:[{...board.items[0],recordId}]},records),/缺少物件关联/)
+  }
+})
 test('ZIP metadata references separate assets, deduplicates bytes and restores all content',async()=>{
   const blob=await makeZipArchive(board,records)
   const entries=unzipSync(new Uint8Array(await blob.arrayBuffer()))

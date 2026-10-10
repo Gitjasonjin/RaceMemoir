@@ -838,5 +838,11 @@
   "viewing.closeEditor": "Save or close the editor before viewing the board.",
   "viewing.previewTitle": "Keepsake preview",
   "viewing.closePreview": "Close preview",
-  "viewing.previewHint": "Close the preview to continue exploring your board."
+  "viewing.previewHint": "Close the preview to continue exploring your board.",
+  "saveRecovery.corrupt": "Your local save could not be read. Its original contents have been preserved. A fallback board is open; download the original save for recovery.",
+  "saveRecovery.unavailable": "Your local save cannot be accessed. Board saving is paused for this session to protect your existing data. Restore browser storage access, then reload.",
+  "saveRecovery.saveFailed": "The board could not be saved. Your original save remains protected. Free up storage and retry, or download the original save.",
+  "saveRecovery.download": "Download original save",
+  "saveRecovery.reload": "Reload",
+  "saveRecovery.dismiss": "Dismiss recovery notice"
 }
