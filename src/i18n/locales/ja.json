@@ -824,5 +824,11 @@
   "season.closeEditor": "編集を保存するか閉じてから、シーズンを切り替えてください。",
   "season.saveFailed": "現在のシーズンを保存できなかったため、ボードを切り替えていません。保存を再試行してください。",
   "image.animationUnsupported": "アニメーション画像には対応していません。静止画の PNG、JPG、WebP を選択してください。",
-  "image.importBudget": "今回の画像の合計が {{pixels}} 画素または {{mb}} MB を超えています。分けて読み込んでください。"
+  "image.importBudget": "今回の画像の合計が {{pixels}} 画素または {{mb}} MB を超えています。分けて読み込んでください。",
+  "viewing.enter": "ボードを鑑賞",
+  "viewing.exit": "鑑賞モードを終了",
+  "viewing.closeEditor": "鑑賞モードに入る前に、編集内容を保存するか編集パネルを閉じてください。",
+  "viewing.previewTitle": "コレクションのプレビュー",
+  "viewing.closePreview": "プレビューを閉じる",
+  "viewing.previewHint": "プレビューを閉じると、ボードの閲覧を続けられます。"
 }

@@ -1,0 +1,38 @@
+.viewing-toggle{display:flex;align-items:center;justify-content:center;width:44px;height:44px;flex-shrink:0;border-radius:10px;color:var(--ui-forest);transition:background .18s,box-shadow .18s}
+.viewing-toggle:hover{background:var(--ui-hover)}
+.viewing-toggle[aria-pressed=true]{background:var(--ui-forest);color:var(--ui-paper);box-shadow:0 2px 8px #153d3126}
+.viewing-toggle:focus-visible{outline:2px solid var(--ui-forest);outline-offset:3px}
+.viewing-toggle:disabled{opacity:.45;cursor:default}
+/* Resolve the normal header height on :root, before viewing overrides it on the shell. */
+:root{--viewing-header-height:var(--ui-topbar-height)}
+.app-shell>.topbar{position:absolute;top:0;left:0;right:0;height:var(--viewing-header-height);opacity:1;transform:translateY(0);transition:transform 280ms cubic-bezier(.22,.61,.36,1),opacity 240ms ease,visibility 0s}
+.app-shell :is(.tool-palette,.history-controls,.bottom-hint){opacity:1;transition:opacity 240ms ease,visibility 0s}
+.app-shell .board-actions{transition:top 280ms cubic-bezier(.22,.61,.36,1)}
+.app-shell .board-actions :is(.board-action-editing,.board-action-exit){overflow:hidden;transition:height 280ms cubic-bezier(.22,.61,.36,1),margin-bottom 280ms cubic-bezier(.22,.61,.36,1),border-width 280ms ease,opacity 240ms ease,visibility 0s,background-color .18s,color .18s}
+.app-shell .board-action-exit{height:0;margin-bottom:-8px;border-top-width:0;border-bottom-width:0;opacity:0;visibility:hidden;pointer-events:none;transition-delay:0s,0s,0s,0s,240ms,0s,0s}
+.app-shell.is-viewing{--ui-topbar-height:0px;min-height:0}
+.app-shell.is-viewing>.topbar{opacity:0;transform:translateY(-24px);visibility:hidden;pointer-events:none;transition-delay:0s,0s,280ms}
+.app-shell.is-viewing :is(.tool-palette,.history-controls,.bottom-hint){opacity:0;visibility:hidden;pointer-events:none;transition-delay:0s,240ms}
+.app-shell.is-viewing .board-action-editing{height:0;margin-bottom:-8px;border-top-width:0;border-bottom-width:0;opacity:0;visibility:hidden;pointer-events:none;transition-delay:0s,0s,0s,0s,240ms,0s,0s}
+.app-shell.is-viewing .board-action-exit{height:44px;margin-bottom:0;border-top-width:1px;border-bottom-width:1px;opacity:1;visibility:visible;pointer-events:auto;transition-delay:0s,0s,0s,80ms,0s,0s,0s}
+.is-viewing .board-actions{top:calc(20px + env(safe-area-inset-top))}
+.is-viewing .board-action-calendar{display:flex}
+.is-viewing .board-action-exit{min-width:44px}
+.is-viewing .board-action-exit:disabled{opacity:.45;cursor:default}
+.is-viewing .board-light-fixtures{top:env(safe-area-inset-top)}
+.is-viewing .year-capsule-stage{display:flex;--year-capsule-offset:calc(20px + env(safe-area-inset-top))}
+.is-viewing .year-capsule-stage[data-lighting]{--year-capsule-offset:calc(var(--board-lamp-height) + 16px + env(safe-area-inset-top))}
+.is-viewing .board-viewport,.is-viewing .memory,.is-viewing .memory.is-locked{cursor:grab}
+.is-viewing .board-viewport.is-dragging,.is-viewing .board-viewport.is-dragging .memory{cursor:grabbing}
+.is-viewing .thread-hit{pointer-events:none}
+.is-viewing .memory .selection-outline{display:none}
+.is-viewing .memory:focus-visible{outline:2px dashed var(--ui-paper);outline-offset:6px}
+.is-viewing .pushpin,.is-viewing .medal-thread-eyelet{cursor:zoom-in}
+@media(max-width:700px), (pointer:coarse) and (max-height:500px){
+  .is-viewing .board-actions,.is-viewing .zoom-controls{top:calc(8px + env(safe-area-inset-top))}
+  .is-viewing .year-capsule-stage{max-width:calc(100vw - 16px);--year-capsule-offset:calc(60px + env(safe-area-inset-top))}
+  .is-viewing .year-capsule-stage[data-lighting]{--year-capsule-offset:max(calc(60px + env(safe-area-inset-top)),calc(var(--board-lamp-height) + 16px + env(safe-area-inset-top)))}
+}
+@media(prefers-reduced-motion:reduce){
+  .viewing-toggle,.app-shell>.topbar,.app-shell :is(.tool-palette,.history-controls,.bottom-hint,.board-actions),.app-shell .board-actions :is(.board-action-editing,.board-action-exit){transition:none;transition-delay:0s}
+}

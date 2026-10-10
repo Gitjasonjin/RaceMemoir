@@ -42,3 +42,4 @@
 @import 'touch.css';
 
 @import '../shared/ui/ui.css';
+@import '../board/viewingMode.css';

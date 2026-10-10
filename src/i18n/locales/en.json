@@ -832,5 +832,11 @@
   "season.closeEditor": "Save or close the editor before switching seasons.",
   "season.saveFailed": "This season could not be saved. The board was not switched. Please retry saving.",
   "image.animationUnsupported": "Animated images are not supported. Choose a still PNG, JPG, or WebP image.",
-  "image.importBudget": "This import exceeds {{pixels}} total image pixels or {{mb}} MB. Import fewer images at a time."
+  "image.importBudget": "This import exceeds {{pixels}} total image pixels or {{mb}} MB. Import fewer images at a time.",
+  "viewing.enter": "View board",
+  "viewing.exit": "Exit viewing",
+  "viewing.closeEditor": "Save or close the editor before viewing the board.",
+  "viewing.previewTitle": "Keepsake preview",
+  "viewing.closePreview": "Close preview",
+  "viewing.previewHint": "Close the preview to continue exploring your board."
 }
