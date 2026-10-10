@@ -38,10 +38,12 @@ test('upload bib, correct corners, restore original, reuse, recycle and round-tr
  await button('适应画布').click();await page.screenshot({path:info.outputPath('bib-board.png')})
  await button('分享').click()
  const zipDownload=page.waitForEvent('download');await page.getByRole('button',{name:/导出收藏板文件/}).click();const zip=await zipDownload;const zipPath=info.outputPath('bib.zip');await zip.saveAs(zipPath)
+ await expect(page.locator('.file-operation-floating')).toBeHidden();await expect(page.locator('dialog.modal')).toBeHidden();await button('分享').click()
  const pngDownload=page.waitForEvent('download');await page.getByRole('button',{name:/导出高清图片/}).click();const png=await pngDownload;const pngPath=info.outputPath('bib.png');await png.saveAs(pngPath)
  const bytes=await readFile(pngPath);expect(bytes.length).toBeGreaterThan(50_000)
  const pngPixels=await page.evaluate(async encoded=>{const blob=await(await fetch('data:image/png;base64,'+encoded)).blob(),bitmap=await createImageBitmap(blob);const c=document.createElement('canvas');c.width=bitmap.width;c.height=bitmap.height;const ctx=c.getContext('2d')!;ctx.drawImage(bitmap,0,0);const pixels=ctx.getImageData(0,0,c.width,c.height).data;let green=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i]<80&&pixels[i+1]>50&&pixels[i+1]<120&&pixels[i+2]>40&&pixels[i+3]>200)green++;bitmap.close();return green},bytes.toString('base64'));expect(pngPixels).toBeGreaterThan(5000)
- await button('关闭').click();await page.locator('input[accept*=".zip"]').setInputFiles(zipPath);await expect(page.locator('.toast')).toContainText('收藏板及关联文件已导入');await expect(page.locator('.bib-upload>img')).toHaveCount(2)
+ await expect(page.locator('.file-operation-floating')).toBeHidden();await expect(page.locator('dialog.modal')).toBeHidden()
+ await page.locator('input[accept*=".zip"]').setInputFiles(zipPath);await expect(page.locator('.toast')).toContainText('收藏板及关联文件已导入');await expect(page.locator('.bib-upload>img')).toHaveCount(2)
  await page.reload();await page.locator('.records-loading').waitFor({state:'hidden'});await expect(page.locator('.bib-upload>img')).toHaveCount(2);await expect(page.locator('.thread-hit')).toHaveCount(1)
 })
 

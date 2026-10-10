@@ -105,6 +105,40 @@ test('seasons have independent undo and redo stacks and switching creates no his
   assert.equal(session.board.title,'Previous edit')
 })
 
+test('viewing previews switch seasons and views in memory while preserving both histories and the save baseline',()=>{
+  const storage=new MemoryStorage(),session=fresh(storage,blank('Current original'))
+  const currentView={x:12,y:-18,scale:.8},previousView={x:-80,y:140,scale:1.5}
+  session.commit(blank('Current edit'))
+  assert.equal(session.switchYear(2025,currentView),true)
+  const previousOriginal=session.board.title
+  session.commit(blank('Previous edit'))
+  assert.equal(session.switchYear(2026,previousView),true)
+  const original=storage.getItem(SEASON_STORAGE_KEY),mirror=storage.getItem(STORAGE_KEY),writes=[...storage.writes]
+  const previewCurrentView={x:30,y:40,scale:1.2},previewPreviousView={x:-55,y:70,scale:.9}
+  assert.equal(session.previewYear(2025,previewCurrentView),true)
+  assert.equal(session.year,2025);assert.equal(session.board.title,'Previous edit')
+  assert.deepEqual(session.restoreView,previousView)
+  assert.equal(session.canUndo,true);assert.equal(session.isCurrent(),true)
+  assert.equal(session.undo(),true);assert.equal(session.board.title,previousOriginal)
+  assert.equal(session.redo(),true);assert.equal(session.board.title,'Previous edit')
+  assert.equal(session.previewYear(2026,previewPreviousView),true)
+  assert.deepEqual(session.restoreView,previewCurrentView)
+  assert.equal(session.canUndo,true);assert.equal(session.isCurrent(),true)
+  assert.equal(session.undo(),true);assert.equal(session.board.title,'Current original')
+  assert.equal(session.redo(),true);assert.equal(session.board.title,'Current edit')
+  assert.equal(session.previewYear(2025),true)
+  assert.deepEqual(session.restoreView,previewPreviousView)
+  assert.equal(session.canUndo,true);assert.equal(session.isCurrent(),true)
+  assert.equal(storage.getItem(SEASON_STORAGE_KEY),original)
+  assert.equal(storage.getItem(STORAGE_KEY),mirror)
+  assert.deepEqual(storage.writes,writes)
+  assert.equal(session.flush(),true)
+  assert.equal(saved(storage).activeYear,2025)
+  assert.deepEqual(saved(storage).seasons.map(season=>season.view),[previewCurrentView,previewPreviousView])
+  assert.deepEqual(saved(storage).seasons.map(season=>season.board.title),['Current edit','Previous edit'])
+  assert.equal(JSON.parse(storage.getItem(STORAGE_KEY)!).title,'Previous edit')
+})
+
 test('a failed workspace write does not change the active pointer, source board, view or histories',()=>{
   const storage=new MemoryStorage(),session=fresh(storage,blank('Original'))
   const initialView={x:1,y:2,scale:1}

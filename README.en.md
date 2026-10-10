@@ -57,6 +57,8 @@ npm run dev
 
 Development and production builds prepare and verify background-removal resources automatically. The first setup downloads the model; subsequent runs reuse verified local files. Deploy the entire `dist/` directory to serve the runtime and model from your own site. Images are processed in the browser. See [resource versions, hashes, and offline setup](docs/background-removal-resources.md).
 
+Use a modern browser with Web Locks support. When multiple pages are open in the same browser, only one can edit; the others enter viewing mode automatically. Entering viewing mode saves changes and releases editing access so another page can take over. Exiting requests editing access again and loads the latest data if the saved workspace has changed. If a save conflict is detected, saving and deletion pause while your current contents remain available for backup export.
+
 Open [http://localhost:5173](http://localhost:5173).
 
 ```bash

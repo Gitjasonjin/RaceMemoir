@@ -105,6 +105,7 @@ async function expectBlocked(page:Page,key:SourceKey,raw:string){
 const damaged:[string,Seed][]=[
  ['workspace malformed JSON',{key:WORKSPACE,raw:'{\n  "version": 1,\n  "activeYear": \n}'}],
  ['workspace invalid schema',{key:WORKSPACE,raw:JSON.stringify({version:1,activeYear:2040,seasons:[]})}],
+ ['workspace extreme camera scale',{key:WORKSPACE,raw:JSON.stringify({version:1,activeYear:2040,seasons:[{year:2040,board:FALLBACK,view:{x:0,y:0,scale:1e-308}},{year:2039,board:FALLBACK}]})}],
  ['legacy board malformed JSON',{key:BOARD,raw:'{\n  "title": "尚未解析的原始收藏板",\n'}],
  ['legacy board invalid schema',{key:BOARD,raw:JSON.stringify({title:77,items:[],threads:[]})}],
 ]

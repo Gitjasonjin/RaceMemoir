@@ -4,6 +4,7 @@ import type {CollectionRecord} from '../domain/records'
 import type {Board} from '../domain/model'
 import {getDecorations} from '../domain/model'
 import {contentBounds,fitCamera} from './canvas'
+import {MIN_CAMERA_SCALE} from '../domain/geometryLimits'
 import type {Gesture,View} from './types'
 const clamp=(value:number,min:number,max:number)=>Math.min(max,Math.max(min,value))
 
@@ -29,7 +30,7 @@ export function useCanvasCamera(boardRef:RefObject<Board>,gesture:RefObject<Gest
     })
     observer.observe(el);return ()=>observer.disconnect()
   }, [fit,rebaseViewport])
-  const zoomAt = useCallback((scale: number, px: number, py: number) => { if(gesture.current)return;setView(v=>{ const next = clamp(scale,Math.min(.05,v.scale),4); return {scale:next,x:px-(px-v.x)*next/v.scale,y:py-(py-v.y)*next/v.scale} }) }, [])
+  const zoomAt = useCallback((scale: number, px: number, py: number) => { if(gesture.current)return;setView(v=>{ const next = clamp(scale,Math.max(MIN_CAMERA_SCALE,Math.min(.05,v.scale)),4); return {scale:next,x:px-(px-v.x)*next/v.scale,y:py-(py-v.y)*next/v.scale} }) }, [])
   const zoom = (factor: number) => { const el=viewport.current; if(el) zoomAt(view.scale*factor,el.clientWidth/2,el.clientHeight/2) }
   useEffect(() => {
     const el = viewport.current; if(!el) return

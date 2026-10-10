@@ -828,6 +828,7 @@
   "viewing.enter": "ボードを鑑賞",
   "viewing.exit": "鑑賞モードを終了",
   "viewing.closeEditor": "鑑賞モードに入る前に、編集内容を保存するか編集パネルを閉じてください。",
+  "viewing.saveFailed": "変更を保存できなかったため、鑑賞モードに切り替えていません。保存を再試行するか、バックアップを書き出してください。",
   "viewing.previewTitle": "コレクションのプレビュー",
   "viewing.closePreview": "プレビューを閉じる",
   "viewing.previewHint": "プレビューを閉じると、ボードの閲覧を続けられます。",
@@ -836,5 +837,12 @@
   "saveRecovery.saveFailed": "ボードを保存できませんでした。元の保存データは引き続き保護されています。空き容量を確保して再試行するか、元の保存データをダウンロードしてください。",
   "saveRecovery.download": "元の保存データをダウンロード",
   "saveRecovery.reload": "再読み込み",
-  "saveRecovery.dismiss": "復旧の通知を閉じる"
+  "saveRecovery.dismiss": "復旧の通知を閉じる",
+  "saveConflict.readOnly": "別のページでボードを編集中のため、このページは読み取り専用です。鑑賞モードを終了すると、編集権限の取得を試みます。",
+  "saveConflict.viewOnly": "別のページで編集中のため、鑑賞モードに切り替えました。",
+  "saveConflict.busy": "別のページで編集中です。そのページを鑑賞モードに切り替えるか閉じてから、もう一度お試しください。",
+  "saveConflict.acquired": "編集権限を取得し、編集モードに戻りました。",
+  "saveConflict.reloadFailed": "最新のコレクションを読み込めなかったため、鑑賞モードを維持しています。再試行するか、再読み込みしてください。",
+  "saveConflict.changed": "別のページでコレクションが更新されたため、このページの保存と削除を停止しました。現在の内容は保持されています。必要ならバックアップをエクスポートしてから再読み込みしてください。",
+  "saveConflict.unsupported": "このブラウザーでは複数のページを安全に調整できないため、書き込みを停止しました。ブラウザーを更新して再読み込みしてください。"
 }

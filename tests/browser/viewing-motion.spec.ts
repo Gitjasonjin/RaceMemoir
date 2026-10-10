@@ -31,10 +31,23 @@ async function transitionFrames(page:Page,entering:boolean){
     const palette=document.querySelector<HTMLElement>('.tool-palette')!
     const exit=document.querySelector<HTMLButtonElement>('.board-action-exit')!
     const trigger=document.querySelector<HTMLButtonElement>(entering?'.canvas-viewing-action[role="menuitem"]':'.board-action-exit')!
+    const shell=document.querySelector<HTMLElement>('.app-shell')!
     const before=scene.style.cssText
-    trigger.click()
+    if(shell.classList.contains('is-viewing')===entering)throw new Error('Viewing transition must start in the opposite mode')
+    // Exiting first awaits the writer-lease check. Anchor animation samples to
+    // the committed class change, not to the click that starts that async check.
+    const start=await new Promise<number>((resolve,reject)=>{
+      const observer=new MutationObserver(()=>{
+        if(shell.classList.contains('is-viewing')!==entering)return
+        observer.disconnect();clearTimeout(timeout);resolve(performance.now())
+      })
+      const timeout=setTimeout(()=>{
+        observer.disconnect();reject(new Error('Viewing mode did not change after the authorized action'))
+      },5000)
+      observer.observe(shell,{attributes:true,attributeFilter:['class']})
+      trigger.click()
+    })
     const samples=[]
-    const start=performance.now()
     await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()))
     for(const at of [0,80,160,360]){
       while(performance.now()-start<at)await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()))

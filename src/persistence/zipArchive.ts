@@ -8,6 +8,7 @@ import type {CollectionRecord} from '../domain/records'
 import {validRecord} from '../domain/records.ts'
 import {readArchive,restoreArchive,validateArchive} from './recordArchive.ts'
 import {validateArchiveImages} from './archiveImageBudget.ts'
+import {hasArchiveBudget} from './archiveLimits.ts'
 
 const LIMIT=80*1024*1024
 const META_LIMIT=16*1024*1024
@@ -48,7 +49,7 @@ export async function readBackup(file:Blob,signal?:AbortSignal){
   if(bytes[0]!==0x50||bytes[1]!==0x4b)return readArchive(new TextDecoder().decode(bytes))
   const entries=await unzipBackup(bytes,signal)
   const manifest=JSON.parse(strFromU8(entries['manifest.json']))
-  if(!manifest||manifest.format!=='racememoir'||![3,4,5,6,7,8].includes(manifest.version)||!isBoard(manifest.board)||!Array.isArray(manifest.records)||manifest.records.length>10000)throw new AppError("zipArchive.006")
+  if(!manifest||manifest.format!=='racememoir'||![3,4,5,6,7,8].includes(manifest.version)||!isBoard(manifest.board)||!hasArchiveBudget(manifest.records))throw new AppError("zipArchive.006")
   const cache=new Map<string,Blob>()
   const read=async(value:unknown):Promise<Blob|undefined>=>{
     if(value===undefined)return undefined
@@ -65,8 +66,9 @@ export async function readBackup(file:Blob,signal?:AbortSignal){
     return cache.get(key)!
   }
   const records:CollectionRecord[]=[]
-  for(const r of manifest.records){
-    if(!r||typeof r!=='object')throw new AppError("zipArchive.002")
+  for(const value of manifest.records){
+    if(!value||typeof value!=='object')throw new AppError("zipArchive.002")
+    const r=value as Record<string,unknown>
     const decoded=r.kind==='photo'?{...r,image:await read(r.image)}:(r.kind==='medal'||r.kind==='bib'||r.kind==='sticker')?{...r,image:await read(r.image),originalImage:await read(r.originalImage)}:{...r,gpx:await read(r.gpx)}
     if(!validRecord(decoded))throw new AppError("zipArchive.001")
     records.push(decoded)

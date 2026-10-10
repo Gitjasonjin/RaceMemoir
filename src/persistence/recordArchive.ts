@@ -5,6 +5,7 @@ import { migrateBoard, validRecord } from '../domain/records.ts'
 import type { CollectionRecord } from '../domain/records.ts'
 import {boardMembers} from '../domain/medalExhibit.ts'
 import {validateArchiveImages} from './archiveImageBudget.ts'
+import {hasArchiveBudget} from './archiveLimits.ts'
 
 async function encodeBlob(blob:Blob){
   const bytes=new Uint8Array(await blob.arrayBuffer());let binary=''
@@ -21,7 +22,7 @@ function decodeBlob(value:unknown):Blob|undefined{
   return new Blob([bytes],{type:match[1]})
 }
 export async function makeArchive(board:Board,records:CollectionRecord[]){
-  if(!isBoard(board)||records.some(r=>!validRecord(r)))throw new AppError("recordArchive.010")
+  if(!hasArchiveBudget(records)||!isBoard(board)||records.some(r=>!validRecord(r)))throw new AppError("recordArchive.010")
   const ids=new Set(records.map(r=>r.id))
   if(boardMembers(board.items).some(i=>i.recordId&&!ids.has(i.recordId)))throw new AppError("recordArchive.009")
   const packed=[]
@@ -42,7 +43,7 @@ export async function readArchive(text:string):Promise<{board:Board;records:Coll
     const migrated=migrateBoard(raw,[]);board=migrated.board;records=migrated.created
   }else{
     const a=raw as {format?:unknown;version?:unknown;board?:unknown;records?:unknown}
-    if(!a||a.format!=='racememoir'||a.version!==2||!isBoard(a.board)||!Array.isArray(a.records))throw new AppError("recordArchive.007")
+    if(!a||a.format!=='racememoir'||a.version!==2||!isBoard(a.board)||!hasArchiveBudget(a.records))throw new AppError("recordArchive.007")
     board=a.board
     records=a.records.map(value=>{
       if(!value||typeof value!=='object')throw new AppError("recordArchive.006")
@@ -52,11 +53,12 @@ export async function readArchive(text:string):Promise<{board:Board;records:Coll
       return decoded
     })
   }
+  if(!hasArchiveBudget(records))throw new AppError("recordArchive.004")
   await validateArchiveImages(records)
   return restoreArchive(board,records)
 }
 export function validateArchive(board:Board,records:CollectionRecord[]){
-  if(!isBoard(board)||records.some(r=>!validRecord(r)))throw new AppError("recordArchive.004")
+  if(!hasArchiveBudget(records)||!isBoard(board)||records.some(r=>!validRecord(r)))throw new AppError("recordArchive.004")
   const ids=new Map(records.map(r=>[r.id,r]))
   if(ids.size!==records.length)throw new AppError("recordArchive.003")
   for(const item of boardMembers(board.items)){

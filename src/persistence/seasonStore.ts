@@ -6,22 +6,24 @@ import type {View} from '../board/types'
 import {readBoard} from './boardStore.ts'
 import {protectSaved,readSaved} from './saveRecovery.ts'
 import type {SaveReadIssue,SaveStorage} from './saveRecovery'
+import {MAX_WORLD_COORDINATE,MIN_CAMERA_SCALE} from '../domain/geometryLimits.ts'
 
 export const SEASON_STORAGE_KEY='racememoir-season-workspace-v1'
 export interface SeasonBoard {year:number;board:Board;view?:View}
-export interface SeasonWorkspace {version:1;activeYear:number;seasons:SeasonBoard[]}
+export interface SeasonWorkspace {version:1;activeYear:number;seasons:SeasonBoard[];revision?:string}
 export type SeasonStorage=SaveStorage
 
 export function isSeasonView(value:unknown):value is View{
   if(!value||typeof value!=='object'||Array.isArray(value))return false
   const view=value as View
-  return [view.x,view.y,view.scale].every(Number.isFinite)&&view.scale>0&&view.scale<=4
+  return [view.x,view.y,view.scale].every(Number.isFinite)&&Math.abs(view.x)<=10*MAX_WORLD_COORDINATE&&Math.abs(view.y)<=10*MAX_WORLD_COORDINATE&&view.scale>=MIN_CAMERA_SCALE&&view.scale<=4
 }
 
 export function isSeasonWorkspace(value:unknown):value is SeasonWorkspace{
   if(!value||typeof value!=='object')return false
   const workspace=value as SeasonWorkspace
   if(workspace.version!==1||!Array.isArray(workspace.seasons)||workspace.seasons.length!==2)return false
+  if(workspace.revision!==undefined&&(typeof workspace.revision!=='string'||!/^[-a-zA-Z0-9]{1,64}$/.test(workspace.revision)))return false
   const years=new Set<number>()
   for(const season of workspace.seasons){
     if(!season||!Number.isInteger(season.year)||season.year<1||season.year>9999||years.has(season.year)||!isBoard(season.board))return false
@@ -45,11 +47,12 @@ export function readSeasonWorkspace(initial?:()=>Board,currentYear=new Date().ge
 export function loadSeasonWorkspace(initial:()=>Board,currentYear=new Date().getFullYear(),storage?:SeasonStorage):SeasonWorkspace{return readSeasonWorkspace(initial,currentYear,storage).workspace}
 
 /** Both boards and their active pointer are committed in a single localStorage write. */
-export function saveSeasonWorkspace(workspace:SeasonWorkspace,storage?:SeasonStorage):boolean{
+export function saveSeasonWorkspace(workspace:SeasonWorkspace,storage?:SeasonStorage,expected?:string|null):boolean{
   if(!isSeasonWorkspace(workspace))return false
   let target:SeasonStorage
   try{
     target=storage??localStorage
+    if(expected!==undefined&&target.getItem(SEASON_STORAGE_KEY)!==expected)return false
     if(!protectSaved(SEASON_STORAGE_KEY,isSeasonWorkspace,target))return false
     target.setItem(SEASON_STORAGE_KEY,JSON.stringify(workspace))
   }catch{return false}
@@ -66,17 +69,35 @@ export class SeasonBoardSession{
   private readonly storage?:SeasonStorage
   private readonly issues:SaveReadIssue[]
   private recoveryProtected=false
+  private expected?:string|null
+  private conflict=false
   private readonly histories=new Map<number,SeasonHistory>()
 
   constructor(workspace:SeasonWorkspace,storage?:SeasonStorage,issues:SaveReadIssue[]=[]){
     this.state=workspace
     this.storage=storage
     this.issues=[...issues]
+    try{
+      const raw=(storage??localStorage).getItem(SEASON_STORAGE_KEY)
+      // Do not turn an already stale caller's snapshot into a new write baseline.
+      const saved=readSaved(SEASON_STORAGE_KEY,isSeasonWorkspace,storage)
+      this.expected=saved.status==='loaded'&&JSON.stringify(saved.value)!==JSON.stringify(workspace)?JSON.stringify(workspace):raw
+    }catch{/* Unavailable storage is handled by recovery/save failure. */}
     workspace.seasons.forEach(season=>this.histories.set(season.year,{undo:[],redo:[]}))
   }
 
   get workspace(){return this.state}
   get recoveryIssues():readonly SaveReadIssue[]{return this.issues}
+  get conflicted(){return this.conflict}
+  isCurrent():boolean{
+    if(this.conflict)return false
+    try{
+      if(this.expected===undefined)return false
+      if((this.storage??localStorage).getItem(SEASON_STORAGE_KEY)===this.expected)return true
+      this.conflict=true
+    }catch{/* A read failure must not be treated as permission to overwrite. */}
+    return false
+  }
   get year(){return this.state.activeYear}
   get years(){return this.state.seasons.map(season=>season.year).sort((a,b)=>b-a)}
   get board(){return this.state.seasons.find(season=>season.year===this.year)!.board}
@@ -149,18 +170,28 @@ export class SeasonBoardSession{
     return true
   }
 
-  flush(view?:View):boolean{
+  flush(view?:View,touch=false):boolean{
+    if(!this.isCurrent())return false
     if(!this.protectRecovery())return false
-    const next=this.pending(view)
-    if(!saveSeasonWorkspace(next,this.storage))return false
+    const next=touch?{...this.pending(view),revision:crypto.randomUUID()}:this.pending(view)
+    if(!saveSeasonWorkspace(next,this.storage,this.expected))return false
+    this.expected=JSON.stringify(next)
     this.state=next;return true
+  }
+
+  /** Viewing can navigate seasons without changing another page's saved workspace. */
+  previewYear(year:number,view?:View):boolean{
+    if(!this.state.seasons.some(season=>season.year===year))return false
+    this.state=this.pending(view,year);return true
   }
 
   switchYear(year:number,view?:View):boolean{
     if(!this.state.seasons.some(season=>season.year===year))return false
+    if(!this.isCurrent())return false
     if(!this.protectRecovery())return false
     const next=this.pending(view,year)
-    if(!saveSeasonWorkspace(next,this.storage))return false
+    if(!saveSeasonWorkspace(next,this.storage,this.expected))return false
+    this.expected=JSON.stringify(next)
     this.state=next;return true
   }
 }

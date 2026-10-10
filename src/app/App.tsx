@@ -83,7 +83,8 @@ export default function App() {
   const [multiSelect,setMultiSelect]=useState(false)
   const history=useSeasonBoards()
   const {board,boardRef,setBoard,remember,commit,historyTick}=history
-  const library = useRecords(board, next => {boardRef.current=next;setBoard(next)})
+  const readOnly=!history.writable
+  const library = useRecords(board, next => {boardRef.current=next;setBoard(next)},history.recordWrites)
   useEffect(()=>{preloadBackgroundTextures()},[])
   const {recordPanel,memoryPanel,mapPanel,exhibitPanel,decorationOpen,decorationScope,closePanel,openRecord,openMemory,openMap,openExhibit,openDecoration}=useEditorPanel()
   const memoryEditingId = useRef<string|null>(null)
@@ -124,8 +125,9 @@ export default function App() {
   const [kind, setKind] = useState<Kind>('photo')
   const [draft, setDraft] = useState({title:'',variant:'',image:samplePhotos[0],number:'0826',date:''})
   const [toast, setToast]=useNotice('')
-  const boardSave=useBoardSave(board,library.ready&&!dragging,()=>history.flush(viewRef.current),history.saveTick)
-  const saveError=library.error||library.saveError||boardSave.error
+  const boardSave=useBoardSave(board,library.ready&&!dragging&&!readOnly,()=>history.flush(viewRef.current),history.saveTick)
+  const writeError=history.writeStatus==='conflict'?tr('saveConflict.changed'):history.writeStatus==='read-only'?tr('saveConflict.readOnly'):history.writeStatus==='unsupported'?tr('saveConflict.unsupported'):''
+  const saveError=writeError||library.error||library.saveError||boardSave.error
   const saved=!library.ready?tr("App.114"):saveError?tr("App.113"):library.saving||boardSave.saving||dragging?tr("App.112"):tr("App.111",{v1:formatTime(Math.max(boardSave.time,library.savedAt))})
   const layerTarget=useLayerTarget({board,selectedIds,viewport,view,commit,onBegin:()=>{closePanel();setSelectedThread(null);setTool('select');setConnecting(null)},onDone:()=>setToast(msg("App.110"))})
   const openCanvasMenuAt=(x:number,y:number)=>{
@@ -148,15 +150,32 @@ export default function App() {
     if(focused instanceof SVGElement && focused.matches('.threads [role=button]') && focused.getAttribute('aria-pressed')!=='true')focused.blur()
   },[selectedThread])
 
-  const exitViewing=useCallback(()=>{
-    if(fileOperation.current||gesture.current||seasonTransition.activeRef.current)return
-    setPreviewId(null);setYearExpanded(false);setViewing(false);setSpace(false)
-  },[])
+  const editingRequest=useRef(false)
+  useLayoutEffect(()=>{
+    if(viewing||(history.writeStatus!=='read-only'&&history.writeStatus!=='unsupported'))return
+    closePanel();closeCanvasMenu();layerTarget.cancel();setModal(null);setYearExpanded(false)
+    setSelected(null);setSelectedThread(null);setConnecting(null);setCursor(null);setTool('select');setMultiSelect(false)
+    setGuides([]);setMarquee(null);setSpace(false);setPreviewId(null);setViewing(true)
+    if(history.writeStatus==='read-only')setToast(msg('saveConflict.viewOnly'))
+  },[history.writeStatus])
+  const exitViewing=useCallback(async()=>{
+    if(fileOperation.current||gesture.current||seasonTransition.activeRef.current||editingRequest.current||!library.ready)return
+    editingRequest.current=true
+    try{
+      const result=await history.requestEditing(library.reload)
+      if(result!=='acquired'){
+        setToast(msg(result==='busy'?'saveConflict.busy':result==='unsupported'?'saveConflict.unsupported':result==='conflict'?'saveConflict.changed':'saveConflict.reloadFailed'))
+        return
+      }
+      setPreviewId(null);setYearExpanded(false);setViewing(false);setSpace(false)
+      setToast(msg('saveConflict.acquired'))
+    }finally{editingRequest.current=false}
+  },[history.requestEditing,library.reload,library.ready])
   const undo = useCallback(() => {if(!viewing&&!seasonTransition.activeRef.current&&history.undo()){setSelected(null);setSelectedThread(null)}},[history.undo,setSelected,viewing])
   const redo = useCallback(() => {if(!viewing&&!seasonTransition.activeRef.current&&history.redo()){setSelected(null);setSelectedThread(null)}},[history.redo,setSelected,viewing])
   useEffect(() => { if (!toast) return; const timer = setTimeout(()=>setToast(''),3200); return () => clearTimeout(timer) }, [toast])
 
-  const canClear=!viewing&&library.ready&&!exporting&&!library.saving&&(board.items.length>0||board.threads.length>0)
+  const canClear=!viewing&&!readOnly&&library.ready&&!exporting&&!library.saving&&(board.items.length>0||board.threads.length>0)
   const clearBoard=()=>{
     const current=boardRef.current
     if(!canClear||fileOperation.current||gesture.current||touchGestures.active())return
@@ -185,6 +204,7 @@ export default function App() {
         else if(['Delete','Backspace','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)||((e.ctrlKey||e.metaKey)&&['z','y'].includes(e.key.toLowerCase())))e.preventDefault()
         return
       }
+      if(readOnly){if(e.key==='0')fit();return}
       if (e.code === 'Space' && !(e.target instanceof HTMLElement && e.target.closest('button,[data-decoration-panel]'))) { e.preventDefault(); setSpace(true) }
       if (e.key === 'Escape') { if(gesture.current?.type==='marquee'){gesture.current=null;setMarquee(null)} setConnecting(null); setTool('select'); setSelected(null); setSelectedThread(null);  closePanel() }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); if(e.shiftKey) redo(); else undo() }
@@ -208,7 +228,7 @@ export default function App() {
     }
     window.addEventListener('keydown',down); window.addEventListener('keyup',up); window.addEventListener('blur',blur)
     return () => {window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',blur)}
-  }, [modal, undo, redo, removeSelected, fit, selectedIds, commit, library.ready,viewing,previewId,exitViewing])
+  }, [modal, undo, redo, removeSelected, fit, selectedIds, commit, library.ready,viewing,previewId,exitViewing,readOnly])
 
   useEffect(()=>{
     if(!dragging || gesture.current?.type!=='item')return
@@ -253,13 +273,13 @@ export default function App() {
     if(seasonTransition.activeRef.current)return
     if (e.button !== 0 && e.button !== 1) return
     if (gesture.current) return
-    if(!viewing&&e.altKey&&e.button===0&&tool==='select'&&!space){
+    if(!readOnly&&!viewing&&e.altKey&&e.button===0&&tool==='select'&&!space){
       e.stopPropagation();e.preventDefault()
       const r=viewport.current!.getBoundingClientRect(),p=screenToWorld(e.clientX-r.left,e.clientY-r.top,viewRef.current)
       const hits=boardRef.current.items.filter(i=>intersectsSelection(i,{x:p.x,y:p.y,width:0,height:0})).reverse()
       if(hits.length){const previous=overlap.current,repeat=previous&&Math.hypot(p.x-previous.x,p.y-previous.y)<5/view.scale,index=repeat?hits.findIndex(i=>i.id===previous.id):-1,target=hits[(index+1)%hits.length];overlap.current={...p,id:target.id};setSelected(target.id);setSelectedThread(null);closePanel();if(!target.groupId&&!target.locked)editItem(target);setToast(msg("App.104",{v1:target.title.replaceAll('\n',' ')}))}return
     }
-    if(!viewing&&(e.ctrlKey||multiSelect)&&e.button===0&&tool==='select'&&!space){
+    if(!readOnly&&!viewing&&(e.ctrlKey||multiSelect)&&e.button===0&&tool==='select'&&!space){
       e.stopPropagation();e.preventDefault()
       const rect=viewport.current!.getBoundingClientRect(),point=screenToWorld(e.clientX-rect.left,e.clientY-rect.top,viewRef.current)
       gesture.current={type:'marquee',ids:selectedIds,pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,x:point.x,y:point.y,cameraX:view.x,cameraY:view.y,before:boardRef.current,moved:false}
@@ -268,7 +288,7 @@ export default function App() {
     }
     if (!viewing && tool === 'connect' && item && !space) {e.stopPropagation(); connectItem(item.id); return}
     e.stopPropagation(); e.preventDefault()
-    const isPan = viewing || !item || space || e.button === 1
+    const isPan = readOnly || viewing || !item || space || e.button === 1
     const gestureIds=item?(selectedIds.includes(item.id)?selectedIds:expandGroups(boardRef.current.items,[item.id])):[]
     if (!isPan && item) {if(!selectedIds.includes(item.id))setSelected(item.id); setSelectedThread(null);if(gestureIds.length>1||lockedSelection(boardRef.current.items,gestureIds)){closePanel()}if(lockedSelection(boardRef.current.items,gestureIds)){setToast(msg("App.103"));return}}
     else if(!space) {setSelected(null); setSelectedThread(null)}
@@ -318,6 +338,7 @@ export default function App() {
   }
   const touchGestures=useCanvasTouch({viewport,view:viewRef,setView,
     onTap:event=>{
+      if(readOnly){const {item}=touchTarget(event);if(item)setPreviewId(item.id);return}
       if(viewing){const {item}=touchTarget(event);if(item)setPreviewId(item.id);return}
       if(layerTarget.mode){layerTarget.onDown(event);return}
       const target=touchTarget(event),item=target.item
@@ -343,6 +364,7 @@ export default function App() {
   const enterViewing=()=>{
     if(!library.ready||library.saving||fileOperation.current||gesture.current||touchGestures.active()||seasonTransition.activeRef.current)return
     if(memoryPanel||mapPanel||exhibitPanel||(recordPanel&&recordPanel.mode!=='library')){setToast(msg('viewing.closeEditor'));return}
+    if(library.saveError||!boardSave.retry()||!history.releaseEditing()){setToast(msg('viewing.saveFailed'));return}
     closePanel();closeCanvasMenu();layerTarget.cancel();setModal(null);setYearExpanded(false)
     setSelected(null);setSelectedThread(null);setConnecting(null);setCursor(null);setTool('select');setMultiSelect(false)
     setGuides([]);setMarquee(null);setSpace(false);setPreviewId(null);setViewing(true)
@@ -364,7 +386,7 @@ export default function App() {
   }
 
   const openAdd = (nextKind: Kind) => {
-    if(viewing)return
+    if(viewing||readOnly)return
     seasonTransition.cancel()
     setMultiSelect(false)
     setModal(null);closePanel()
@@ -379,6 +401,7 @@ export default function App() {
     setKind(nextKind);setDraft({title:'',variant:resolveStyle(nextKind).id,image:samplePhotos[0],number:'0826',date:''});openMemory('add')
   }
   const editItem = (item: Memory) => {
+    if(readOnly){setPreviewId(item.id);return}
     if(viewing){setPreviewId(item.id);return}
     if(item.groupId||item.locked){setSelected(item.id);closePanel();return}
     if(item.kind==='race-map'){openMapEditor(item);return}
@@ -417,6 +440,7 @@ export default function App() {
   const lockSelection=()=>{const current=boardRef.current,locked=!lockedSelection(current.items,selectedIds);commit({...current,items:current.items.map(i=>selectedIds.includes(i.id)?{...i,locked}:i)});closePanel()}
   const layoutControls=<LayoutMenu key={'layout:'+selectedIds.join(',')} items={board.items} ids={selectedIds} onArrange={arrangeSelection} onGroup={groupSelection} onLock={lockSelection}/>
   const addRecord = async (record: CollectionRecord,layout?:Partial<Memory>) => {
+    if(!history.recordWrites.writable)throw new AppError('saveConflict.readOnly')
     const current=boardRef.current
     if(recordPanel?.exhibitId&&recordPanel.exhibitSlot!==undefined){
       if(record.kind!=='medal')throw new AppError("App.094")
@@ -565,7 +589,8 @@ export default function App() {
     <FileOperationOverlay operation={operation}/>
     <div className="save-notices">
       <SaveRecoveryNotice issues={history.recoveryIssues} saveFailed={!!boardSave.error}/>
-      {saveError&&<div className="save-failure-banner" role="alert"><span>{saveError}</span><span>{tr("App.060")}</span>{boardSave.error&&<button onClick={boardSave.retry}>{tr("App.059")}</button>}<button onClick={()=>setModal('share')}>{tr("App.058")}</button></div>}
+      {writeError&&history.writeStatus!=='read-only'&&<div className="save-conflict-banner save-recovery-banner" role="alert"><p>{writeError}</p><div className="save-recovery-actions"><button type="button" onClick={()=>location.reload()}>{tr('saveRecovery.reload')}</button><button type="button" onClick={()=>setModal('share')}>{tr('App.058')}</button></div></div>}
+      {!writeError&&saveError&&<div className="save-failure-banner" role="alert"><span>{saveError}</span><span>{tr("App.060")}</span>{boardSave.error&&<button onClick={boardSave.retry}>{tr("App.059")}</button>}<button onClick={()=>setModal('share')}>{tr("App.058")}</button></div>}
     </div>
     {!viewing&&library.ready&&recordPanel&&<RecordPanel exhibitMedal={!!editingExhibitMedal||addingExhibitMedal} onBack={addingExhibitMedal?(recordPanel.mode==='medal'?()=>openRecord({...recordPanel,mode:'exhibit-add'}):returnToExhibit):editingExhibitMedal?returnToExhibit:undefined} onImportPhotos={importPhotos} onBibTemplate={()=>openAdd('bib')} styles={recordPanel.mode==='detail'&&selectedItem?.recordId===recordPanel.id?itemStyles:undefined} item={editingExhibitMedal??(recordPanel.mode==='detail'&&selectedItem&&selectedItem.recordId===recordPanel.id?selectedItem:undefined)} onLayout={editingExhibitMedal?transformExhibitMedal:transformItem} mode={recordPanel} records={library.records} references={id=>history.allBoards.reduce((count,board)=>count+boardMembers(board.items).filter(i=>i.recordId===id).length,0)} threadReferences={id=>history.allBoards.reduce((count,board)=>count+recordThreadReferences(board,id),0)} onMode={openRecord} onClose={addingExhibitMedal?returnToExhibit:()=>closePanel()} onSave={saveRecord} onDelete={deleteRecord} onEmptyRecycle={emptyRecycle} onAdd={addingExhibitMedal?record=>addRecord(record):record=>{void addRecord(record).catch(()=>setToast(msg("App.057")))}}/>}
     {!viewing&&memoryPanel&&<MemoryEditor onBibUpload={()=>{openRecord({mode:'bib'})}} memoryPanel={memoryPanel} kind={kind} selectedItem={selectedItem} draft={draft} setDraft={setDraft} transformItem={transformItem} itemStyles={itemStyles} submitMemory={submitMemory} onClose={()=>{closePanel()}}/>}
@@ -574,10 +599,10 @@ export default function App() {
       const member=boardMembers(board.items).find(i=>i.recordId===id),item=member?ownerOf(board.items,member.id):undefined
       if(item){const el=viewport.current;if(el)setView(v=>({...v,x:el.clientWidth/2-(item.x+item.w/2)*v.scale,y:el.clientHeight/2-(item.y+item.h/2)*v.scale}));editItem(item)}else{setSelected(null);openRecord({mode:'detail',id,origin:'canvas'})}
     }}/>}
-    <Topbar viewing={viewing} board={board} saved={saved} saveError={saveError} saveFailed={!!boardSave.error} onRetry={boardSave.retry} onRename={title=>commit({...board,title})} onShare={()=>setModal('share')}/>
-    {(!touchLayout||viewing)&&<YearCapsule expanded={yearExpanded} onCollapse={()=>setYearExpanded(false)} launcherRef={yearButton} lighting={light.enabled} year={history.year} years={history.years} onYearChange={switchSeason} disabled={!library.ready||library.saving||exporting||dragging}/>}
+    <Topbar viewing={viewing} readOnly={readOnly} board={board} saved={saved} saveError={saveError} saveFailed={!!boardSave.error&&!readOnly} onRetry={boardSave.retry} onRename={title=>commit({...board,title})} onShare={()=>setModal('share')}/>
+    {(!touchLayout||viewing)&&<YearCapsule expanded={yearExpanded} onCollapse={()=>setYearExpanded(false)} launcherRef={yearButton} lighting={light.enabled} year={history.year} years={history.years} onYearChange={switchSeason} disabled={history.claiming||(readOnly&&history.writeStatus!=='read-only')||!library.ready||library.saving||exporting||dragging}/>}
     {light.enabled&&<BoardLighting/>}
-    <BoardActions viewing={viewing} exitControl={{onExit:exitViewing,buttonRef:viewingExitButton,disabled:exporting||dragging||seasonTransition.busy}} decorationOpen={decorationOpen} libraryOpen={recordPanel?.mode==='library'} onDecoration={()=>decorationOpen?closePanel():openDecoration('board')} onLibrary={()=>openRecord({mode:'library'})} yearControl={touchLayout&&!viewing?undefined:{expanded:yearExpanded,onToggle:()=>setYearExpanded(value=>!value),buttonRef:yearButton}}/>
+    <BoardActions viewing={viewing} exitControl={{onExit:exitViewing,buttonRef:viewingExitButton,disabled:!library.ready||history.claiming||exporting||dragging||seasonTransition.busy}} decorationOpen={decorationOpen} libraryOpen={recordPanel?.mode==='library'} onDecoration={()=>decorationOpen?closePanel():openDecoration('board')} onLibrary={()=>openRecord({mode:'library'})} yearControl={touchLayout&&!viewing?undefined:{expanded:yearExpanded,onToggle:()=>setYearExpanded(value=>!value),buttonRef:yearButton}}/>
     {!viewing&&decorationOpen && <DecorationPanel lighting={light} onBackground={id=>{if(resolveBackground(boardRef.current.backgroundStyle).id!==id)commit({...boardRef.current,backgroundStyle:id})}} onCurvature={curvature=>{const current=boardRef.current;commit({...current,threads:current.threads.map(t=>t.id===selectedThread?{...t,curvature}:t)})}} board={board} thread={board.threads.find(t=>t.id===selectedThread)} scope={decorationScope} onClose={()=>closePanel()} onPinToggle={enabled=>{if(selected)commit(setTapePin(board,selected,enabled))}} onChange={change=>{
       const target = decorationScope==='selection' ? (change.kind==='thread'?selectedThread:selected) : undefined
       if(decorationScope==='selection' && !target) return
@@ -616,7 +641,7 @@ export default function App() {
       </div>
     </main>
     {!viewing&&canvasMenu&&<CanvasContextMenu position={canvasMenu} snapEnabled={snapEnabled} onToggle={toggleSnap} onClose={closeCanvasMenu} canClear={canClear} onClear={()=>{closeCanvasMenu();setModal('clear')}} canView={library.ready&&!library.saving&&!exporting&&!dragging&&!seasonTransition.busy} onViewing={()=>{closeCanvasMenu();enterViewing()}}/>}
-    <ToolPalette inactive={viewing} multiSelect={multiSelect} onMultiSelect={()=>{setMultiSelect(value=>!value);setTool('select');setConnecting(null);closePanel()}} tool={tool} onSelect={()=>{setMultiSelect(false);setTool('select');setConnecting(null)}} onConnect={()=>{setMultiSelect(false);setTool(tool==='connect'?'select':'connect');setConnecting(null);setSelected(null);setSelectedThread(null)}} onAdd={openAdd}/>
+    <ToolPalette inactive={viewing} readOnly={readOnly} multiSelect={multiSelect} onMultiSelect={()=>{setMultiSelect(value=>!value);setTool('select');setConnecting(null);closePanel()}} tool={tool} onSelect={()=>{setMultiSelect(false);setTool('select');setConnecting(null)}} onConnect={()=>{setMultiSelect(false);setTool(tool==='connect'?'select':'connect');setConnecting(null);setSelected(null);setSelectedThread(null)}} onAdd={openAdd}/>
     {layerTarget.mode&&<div className="connection-hint layer-target-hint" data-layer-target-hint role="status"><span>{layerTarget.target?tr("App.045",{v1:board.items.find(i=>i.id===layerTarget.target)?.title.replaceAll('\n',' ')||tr("App.044"),v2:layerTarget.mode.action==='above'?tr("App.042"):tr("App.041")}):tr("App.043",{v1:layerTarget.mode.action==='above'?tr("App.042"):tr("App.041")})}<small>{tr("App.040")}</small></span><button type="button" onClick={layerTarget.cancel} aria-label={tr("App.039")}><X size={16}/></button></div>}
     <HintGroup><div className="history-controls" data-history={historyTick} inert={viewing} aria-hidden={viewing||undefined}><HintButton hint={tr("App.038")} aria-label={tr("App.037")} disabled={viewing||!history.canUndo || dragging||seasonTransition.busy} onClick={undo}><Undo2 size={17}/></HintButton><span/><HintButton hint={tr("App.036")} aria-label={tr("App.035")} disabled={viewing||!history.canRedo || dragging||seasonTransition.busy} onClick={redo}><Redo2 size={17}/></HintButton></div></HintGroup>
     {tool==='connect' && <div className="connection-hint"><span className="red-dot"/>{connecting?tr("App.034"):tr("App.033")}<button onClick={()=>{setTool('select');setConnecting(null)}} aria-label={tr("App.032")}><X size={16}/></button></div>}
@@ -629,6 +654,6 @@ export default function App() {
     <input ref={inputFile} type="file" accept=".zip,application/zip,.json,application/json" hidden onChange={e=>void importJson(e.target.files?.[0])}/>
     {toast && <div className="toast" role="status"><Check size={17}/>{toast}</div>}
     <ViewingPreview item={board.items.find(item=>item.id===previewId)??null} records={library.records} raceGroups={mapGroups} pinStyle={decorations.pin} tapeStyle={decorations.tape} onClose={()=>setPreviewId(null)}/>
-    <BoardDialog readOnly={viewing} onClear={clearBoard} canClear={canClear} modal={modal} board={board} exporting={exporting} exportImage={exportImage} exportJson={exportJson} onImport={()=>inputFile.current?.click()} onClose={()=>setModal(null)}/>
+    <BoardDialog readOnly={viewing||readOnly} onClear={clearBoard} canClear={canClear&&!readOnly} modal={modal} board={board} exporting={exporting} exportImage={exportImage} exportJson={exportJson} onImport={()=>inputFile.current?.click()} onClose={()=>setModal(null)}/>
   </div>
 }

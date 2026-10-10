@@ -1,15 +1,29 @@
-import {t as tr} from '../../i18n/runtime.ts'
-import {useRef,useState} from 'react'
+import {errorNotice,msg,t as tr} from '../../i18n/runtime.ts'
+import {useNotice} from '../../i18n/useNotice'
+import {useEffect,useRef,useState} from 'react'
 import {useBlobUrl} from '../../shared/useBlobUrl'
 import type {BibRecord} from '../../domain/records'
 import {surroundingColor} from './bibErasure'
 import type {BibErasure} from './bibErasure'
+import {checkBibImageDimensions,readBibImageHeader} from './bibImageValidation'
+import type {ImageSize} from '../../shared/imageHeader'
 
 export default function BibNameEraser({record,busy,onApply,onCancel}:{record:BibRecord;busy:boolean;onApply:(areas:BibErasure[])=>void;onCancel:()=>void}){
- const url=useBlobUrl(record.originalImage),area=useRef<HTMLDivElement>(null)
+ const [validated,setValidated]=useState<{image:Blob;declaredWidth:number;declaredHeight:number;header:ImageSize}>()
+ const current=validated?.image===record.originalImage&&validated.declaredWidth===record.originalWidth&&validated.declaredHeight===record.originalHeight?validated:undefined
+ const url=useBlobUrl(current?.image),area=useRef<HTMLDivElement>(null)
+ const [error,setError]=useNotice('')
  const pixels=useRef<{data:Uint8ClampedArray;width:number;height:number}|null>(null),start=useRef<{x:number;y:number}|null>(null)
  const history=useRef<BibErasure[][]>([])
  const [areas,setAreas]=useState(record.erasures||[]),[selected,setSelected]=useState(Math.max(0,(record.erasures?.length||1)-1)),[box,setBox]=useState<Omit<BibErasure,'color'>|null>(null),[picking,setPicking]=useState(false),[ready,setReady]=useState(false)
+ useEffect(()=>{
+  let active=true
+  setValidated(undefined);pixels.current=null;setReady(false);setError('')
+  void readBibImageHeader(record.originalImage,{width:record.originalWidth,height:record.originalHeight}).then(header=>{
+   if(active)setValidated({image:record.originalImage,declaredWidth:record.originalWidth,declaredHeight:record.originalHeight,header})
+  }).catch(e=>{if(active)setError(errorNotice(e,msg('readImageSize.003')))})
+  return()=>{active=false;pixels.current=null}
+ },[record.originalImage,record.originalWidth,record.originalHeight,setError])
  const change=(next:BibErasure[])=>{history.current.push(areas);setAreas(next)}
  const color=(value:string)=>{if(areas[selected])change(areas.map((r,i)=>i===selected?{...r,color:value}:r))}
  const point=(x:number,y:number)=>{const r=area.current!.getBoundingClientRect();return {x:Math.max(0,Math.min(1,(x-r.left)/r.width)),y:Math.max(0,Math.min(1,(y-r.top)/r.height))}}
@@ -26,13 +40,22 @@ export default function BibNameEraser({record,busy,onApply,onCancel}:{record:Bib
    }} onPointerMove={e=>{if(start.current)setBox(rectangle(point(e.clientX,e.clientY)))}}
    onPointerUp={e=>{if(!start.current)return;const rect=rectangle(point(e.clientX,e.clientY));start.current=null;setBox(null);const image=pixels.current!;if(rect.width*image.width<2||rect.height*image.height<2)return;change([...areas,{...rect,color:surroundingColor(image.data,image.width,image.height,rect)}]);setSelected(areas.length)}}
    onPointerCancel={()=>{start.current=null;setBox(null)}} onLostPointerCapture={()=>{start.current=null;setBox(null)}}>
-   {url&&<img src={url} alt={tr("BibNameEraser.012")} draggable={false} onLoad={e=>{const image=e.currentTarget,canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;const ctx=canvas.getContext('2d',{willReadFrequently:true})!;ctx.drawImage(image,0,0);pixels.current={data:ctx.getImageData(0,0,canvas.width,canvas.height).data,width:canvas.width,height:canvas.height};setReady(true)}}/>}
+   {current&&url&&<img src={url} alt={tr("BibNameEraser.012")} draggable={false} onError={()=>{pixels.current=null;setReady(false);setError(msg('readImageSize.003'))}} onLoad={e=>{
+    try{
+     const image=e.currentTarget
+     checkBibImageDimensions({width:image.naturalWidth,height:image.naturalHeight},current.header)
+     const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight
+     const ctx=canvas.getContext('2d',{willReadFrequently:true})!;ctx.drawImage(image,0,0)
+     pixels.current={data:ctx.getImageData(0,0,canvas.width,canvas.height).data,width:canvas.width,height:canvas.height};setError('');setReady(true)
+    }catch(e){pixels.current=null;setReady(false);setError(errorNotice(e,msg('readImageSize.003')))}
+   }}/>}
    {areas.map((r,i)=><div key={i} className={`bib-erasure ${i===selected?'selected':''}`} style={{left:`${r.x*100}%`,top:`${r.y*100}%`,width:`${r.width*100}%`,height:`${r.height*100}%`,background:r.color}}/>)}
    {box&&<div className="bib-erase-selection" style={{left:`${box.x*100}%`,top:`${box.y*100}%`,width:`${box.width*100}%`,height:`${box.height*100}%`}}/>}
   </div>
   {!!areas.length&&<><div className="bib-erase-regions" role="group" aria-label={tr("BibNameEraser.011")}>{areas.map((_,i)=><button type="button" key={i} disabled={busy} aria-label={tr("BibNameEraser.010",{v1:i+1})} aria-pressed={selected===i} onClick={()=>{setSelected(i);setPicking(false)}}>{i+1}</button>)}</div><label className="bib-erase-color">{tr("BibNameEraser.009")}<input type="color" aria-label={tr("BibNameEraser.008")} disabled={busy} value={areas[selected]?.color||'#f3edda'} onChange={e=>color(e.target.value)}/></label></>}
   <div className="record-actions"><button type="button" disabled={busy||!areas.length} aria-pressed={picking} onClick={()=>setPicking(!picking)}>{picking?tr("BibNameEraser.007"):tr("BibNameEraser.006")}</button><button type="button" disabled={busy||!areas.length} onClick={()=>{change(areas.filter((_,i)=>i!==selected));setSelected(Math.max(0,selected-1));setPicking(false)}}>{tr("BibNameEraser.005")}</button><button type="button" disabled={busy||!history.current.length} onClick={()=>{const previous=history.current.pop()!;setAreas(previous);setSelected(Math.max(0,previous.length-1));setPicking(false)}}>{tr("BibNameEraser.004")}</button><button type="button" disabled={busy||!areas.length} onClick={()=>{change([]);setSelected(0);setPicking(false)}}>{tr("BibNameEraser.003")}</button></div>
   {areas.length>=50&&<p className="record-muted">{tr("BibNameEraser.002")}</p>}
+  {error&&<p className="record-error" role="alert">{error}</p>}
   <div className="record-actions"><button type="button" disabled={busy||!ready} onClick={()=>onApply(areas)}>{busy?tr("BibImageAdjustment.003"):tr("BibNameEraser.001")}</button><button type="button" onClick={onCancel}>{busy?tr("BibImageAdjustment.001"):tr("BoardDialog.042")}</button></div>
  </section>
 }

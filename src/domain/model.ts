@@ -1,6 +1,7 @@
 import {MAX_MAP_SCALE,MAP_SIZE_OPTIONS} from './mapSettings.ts'
 import { PIN_STYLES, TAPE_STYLES, THREAD_STYLES, resolveStyle } from './styleCatalog.ts'
 import {EXHIBIT_LAYOUTS} from './medalExhibit.ts'
+import {isSafeGeometry,rotationRadians} from './geometryLimits.ts'
 import type {MedalExhibit} from './medalExhibit'
 export type Kind = 'photo' | 'medal' | 'bib' | 'note' | 'map' | 'race-map' | 'sticker'
 export interface MapView {x:number;y:number;scale:number}
@@ -91,7 +92,7 @@ export function isBoard(value: unknown): value is Board {
   }
   for (const item of [...b.items,...members]) {
     if (!item || typeof item.id !== 'string' || ids.has(item.id) || !['photo', 'medal', 'bib', 'note', 'map', 'race-map', 'sticker'].includes(item.kind) || typeof item.title !== 'string') return false
-    if (![item.x, item.y, item.w, item.h, item.rotation].every(Number.isFinite) || item.w < 30 || item.h < 30 || item.w > WIDTH || item.h > (item.kind==='race-map'?Math.max(HEIGHT,...MAP_SIZE_OPTIONS.map(s=>s.h)):HEIGHT)) return false
+    if (!isSafeGeometry(item) || item.w < 30 || item.h < 30 || item.w > WIDTH || item.h > (item.kind==='race-map'?Math.max(HEIGHT,...MAP_SIZE_OPTIONS.map(s=>s.h)):HEIGHT)) return false
     if (['subtitle', 'image', 'variant', 'number'].some(key => item[key as keyof Memory] !== undefined && typeof item[key as keyof Memory] !== 'string')) return false
     if (item.image && !['/images/mountain.jpg', '/images/hiking.jpg', '/images/sunrise.jpg'].includes(item.image)) return false
     if (!validStyle(item.pinStyle, PIN_STYLES) || !validStyle(item.tapeStyle, TAPE_STYLES)) return false
@@ -135,7 +136,7 @@ export function pinPosition(item: Memory, defaultPin:PinStyle='classic') {
     px+=((hash&65535)/65535*2-1)*Math.min(item.w*.1,20)
     py+=((hash>>>16)/65535*2-1)*(clip?1.5:3)
   }
-  const angle = item.rotation * Math.PI / 180
+  const angle = rotationRadians(item.rotation)
   const dx = px - item.w / 2, dy = py - item.h / 2
   return { x: item.x + item.w / 2 + dx * Math.cos(angle) - dy * Math.sin(angle), y: item.y + item.h / 2 + dx * Math.sin(angle) + dy * Math.cos(angle) }
 }

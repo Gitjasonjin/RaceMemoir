@@ -836,6 +836,7 @@
   "viewing.enter": "View board",
   "viewing.exit": "Exit viewing",
   "viewing.closeEditor": "Save or close the editor before viewing the board.",
+  "viewing.saveFailed": "Your changes could not be saved. Viewing mode was not opened. Retry saving or export a backup.",
   "viewing.previewTitle": "Keepsake preview",
   "viewing.closePreview": "Close preview",
   "viewing.previewHint": "Close the preview to continue exploring your board.",
@@ -844,5 +845,12 @@
   "saveRecovery.saveFailed": "The board could not be saved. Your original save remains protected. Free up storage and retry, or download the original save.",
   "saveRecovery.download": "Download original save",
   "saveRecovery.reload": "Reload",
-  "saveRecovery.dismiss": "Dismiss recovery notice"
+  "saveRecovery.dismiss": "Dismiss recovery notice",
+  "saveConflict.readOnly": "Another page is editing your board. This page is read-only. Exit viewing mode to try to take over editing.",
+  "saveConflict.viewOnly": "Another page is editing. Viewing mode is on.",
+  "saveConflict.busy": "Another page is still editing. Put that page in viewing mode or close it, then try again.",
+  "saveConflict.acquired": "Editing access acquired. You are back in editing mode.",
+  "saveConflict.reloadFailed": "Could not load the latest collection. Viewing mode is still on. Try again or reload.",
+  "saveConflict.changed": "Another page updated your collection. Saving and deletion are paused here. Your current contents are preserved; export a backup before reloading the latest data.",
+  "saveConflict.unsupported": "This browser cannot safely coordinate multiple pages. Writing is paused. Update your browser, then reload."
 }

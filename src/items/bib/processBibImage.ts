@@ -1,14 +1,19 @@
 import {AppError} from '../../i18n/runtime.ts'
-import {validErasures} from './bibErasure'
+import {validErasures} from './bibErasure.ts'
 import type {BibErasure} from './bibErasure'
-import {outputSize,perspectiveTransform} from './bibGeometry'
+import {outputSize,perspectiveTransform} from './bibGeometry.ts'
 import type {Quad} from './bibGeometry'
+import {checkBibImageDimensions,readBibImageHeader} from './bibImageValidation.ts'
 
 /** Always resample the original, never an earlier processed preview. */
 export async function processBibImage(original:Blob,quad:Quad,signal:AbortSignal,erasures:BibErasure[]=[]){
  if(!validErasures(erasures))throw new AppError("processBibImage.004")
+ signal.throwIfAborted()
+ const header=await readBibImageHeader(original)
+ signal.throwIfAborted()
  const bitmap=await createImageBitmap(original)
  try{
+  checkBibImageDimensions(bitmap,header);signal.throwIfAborted()
   const project=perspectiveTransform(quad),size=outputSize(quad,bitmap.width,bitmap.height)
   if(size.width<16||size.height<16||size.width*size.height>25_000_000)throw new AppError("processBibImage.003")
   const source=document.createElement('canvas');source.width=bitmap.width;source.height=bitmap.height

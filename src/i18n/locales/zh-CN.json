@@ -828,6 +828,7 @@
   "viewing.enter": "进入观赏模式",
   "viewing.exit": "退出观赏模式",
   "viewing.closeEditor": "请先保存或关闭编辑栏，再进入观赏模式。",
+  "viewing.saveFailed": "尚未能保存当前改动，未进入观赏模式。请重试保存或导出备份。",
   "viewing.previewTitle": "藏品预览",
   "viewing.closePreview": "关闭预览",
   "viewing.previewHint": "关闭预览后可继续浏览收藏板。",
@@ -836,5 +837,12 @@
   "saveRecovery.saveFailed": "画布保存失败，原始存档的保护仍生效。请释放存储空间后重试，或下载原始存档。",
   "saveRecovery.download": "下载原始存档",
   "saveRecovery.reload": "重新加载",
-  "saveRecovery.dismiss": "关闭恢复提示"
+  "saveRecovery.dismiss": "关闭恢复提示",
+  "saveConflict.readOnly": "另一个页面正在编辑收藏板。此页为只读，可退出观赏模式以尝试接管编辑。",
+  "saveConflict.viewOnly": "另一个页面正在编辑，已进入观赏模式。",
+  "saveConflict.busy": "另一个页面仍在编辑，暂时无法退出观赏模式。请让该页面进入观赏模式或关闭后再试。",
+  "saveConflict.acquired": "已获得编辑权限，返回编辑模式。",
+  "saveConflict.reloadFailed": "未能读取最新收藏数据，仍保持观赏模式。请重试或重新加载。",
+  "saveConflict.changed": "收藏数据已被其他页面更新，已暂停此页的保存和删除。当前内容仍保留，可先导出备份，再刷新加载最新数据。",
+  "saveConflict.unsupported": "当前浏览器无法安全协调多个页面，已暂停写入。请更新浏览器后重新加载。"
 }
