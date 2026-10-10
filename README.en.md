@@ -37,16 +37,12 @@ Frame your medals, pin up photos, tape down race bibs, and turn GPX tracks into 
 
 ## Features
 
-- ✅ **Collect keepsakes**: Organize and reuse medals, photos, race bibs, notes, stickers, and route cards in one library.
-- ✅ **Prepare images**: Import photos in batches, remove medal backgrounds, crop and correct bib perspectives, and create cutout stickers with adjustable white borders.
-- ✅ **Arrange freely**: Use an infinite canvas with grouping, locking, alignment, equal spacing, snapping guides, and undo/redo.
-- ✅ **View your collection**: Hide interface tools, preview keepsakes, pan, zoom, and switch seasons. Entering or leaving viewing mode preserves your current view.
-- ✅ **Season boards**: Start with the current and previous year, each keeping its own layouts, threads, backgrounds, and views with a shared library. Your existing board stays in the current year; image and ZIP exports use the selected season.
-- ✅ **Touch controls**: Zoom and pan with two fingers, long-press to select multiple items, and adjust photo crops and map views with gestures.
-- ✅ **Personalize your board**: Customize photo paper and frames, combine medals in display cases, and connect memories with adjustable curved red threads.
-- ✅ **Map your memories**: Add paper maps to the canvas, mark race locations with red circles and pins, and connect them to keepsakes.
-- ✅ **Create route tickets**: Import GPX tracks to create race tickets with real maps and elevation profiles, automatic start-point positioning, and adjustable locations.
-- ✅ **Save and share**: Save automatically on your device, export high-resolution images and complete ZIP backups, restore backups, and import legacy JSON files.
+- ✅ **Collect keepsakes**: Upload and reuse medals, photos, race bibs, notes, and stickers, with batch photo import and automatic background removal.
+- ✅ **Create freely**: Arrange keepsakes on an infinite canvas with red threads, custom styles, grouping, alignment, and undo/redo.
+- ✅ **Map your memories**: Mark race locations and turn GPX tracks into route cards with real maps and elevation profiles.
+- ✅ **Season boards**: Switch between separate yearly canvases with a shared collection library.
+- ✅ **Enjoy your collection**: Use viewing mode, touch gestures, and Chinese, English, or Japanese interfaces.
+- ✅ **Save and share**: Save locally and automatically, export high-resolution images, and back up or restore your board with ZIP files.
 
 ## Getting Started
 

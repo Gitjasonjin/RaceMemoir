@@ -112,14 +112,13 @@ export default function App() {
   const [modal, setModal] = useState<BoardModal>(null)
   const [viewing,setViewing]=useState(false)
   const [previewId,setPreviewId]=useState<string|null>(null)
-  const viewingButton=useRef<HTMLButtonElement>(null)
   const viewingExitButton=useRef<HTMLButtonElement>(null)
   const previousViewing=useRef(false)
   useLayoutEffect(()=>{
     if(previousViewing.current===viewing)return
     previousViewing.current=viewing
     rebaseViewport()
-    ;(viewing?viewingExitButton.current:viewingButton.current)?.focus({preventScroll:true})
+    ;(viewing?viewingExitButton.current:viewport.current)?.focus({preventScroll:true})
   },[viewing,rebaseViewport])
   const [kind, setKind] = useState<Kind>('photo')
   const [draft, setDraft] = useState({title:'',variant:'',image:samplePhotos[0],number:'0826',date:''})
@@ -128,6 +127,10 @@ export default function App() {
   const saveError=library.error||library.saveError||boardSave.error
   const saved=!library.ready?tr("App.114"):saveError?tr("App.113"):library.saving||boardSave.saving||dragging?tr("App.112"):tr("App.111",{v1:formatTime(Math.max(boardSave.time,library.savedAt))})
   const layerTarget=useLayerTarget({board,selectedIds,viewport,view,commit,onBegin:()=>{closePanel();setSelectedThread(null);setTool('select');setConnecting(null)},onDone:()=>setToast(msg("App.110"))})
+  const openCanvasMenuAt=(x:number,y:number)=>{
+    if(viewing||gesture.current||seasonTransition.activeRef.current)return
+    layerTarget.cancel();setCanvasMenu({x,y})
+  }
   const inputFile = useRef<HTMLInputElement>(null)
   const selectedPhotos=board.items.filter(item=>selectedIds.includes(item.id)&&item.kind==='photo')
   const selectedItem = board.items.find(item => item.id === selected)
@@ -332,7 +335,7 @@ export default function App() {
     onLongPress:viewing?undefined:event=>{
       const {item}=touchTarget(event)
       if(item&&tool==='select'){setMultiSelect(true);setSelectedIds(current=>[...new Set([...current,...expandGroups(boardRef.current.items,[item.id])])]);setSelectedThread(null);closePanel();setToast(msg("App.102"))}
-      else if(!item){layerTarget.cancel();setCanvasMenu({x:event.clientX,y:event.clientY})}
+      else if(!item)openCanvasMenuAt(event.clientX,event.clientY)
     },
   })
 
@@ -568,7 +571,7 @@ export default function App() {
       const member=boardMembers(board.items).find(i=>i.recordId===id),item=member?ownerOf(board.items,member.id):undefined
       if(item){const el=viewport.current;if(el)setView(v=>({...v,x:el.clientWidth/2-(item.x+item.w/2)*v.scale,y:el.clientHeight/2-(item.y+item.h/2)*v.scale}));editItem(item)}else{setSelected(null);openRecord({mode:'detail',id,origin:'canvas'})}
     }}/>}
-    <Topbar viewing={viewing} onViewing={toggleViewing} viewingRef={viewingButton} viewingDisabled={!library.ready||library.saving||exporting||dragging||seasonTransition.busy} board={board} saved={saved} saveError={saveError} saveFailed={!!boardSave.error} onRetry={boardSave.retry} onRename={title=>commit({...board,title})} onShare={()=>setModal('share')}/>
+    <Topbar viewing={viewing} board={board} saved={saved} saveError={saveError} saveFailed={!!boardSave.error} onRetry={boardSave.retry} onRename={title=>commit({...board,title})} onShare={()=>setModal('share')}/>
     {(!touchLayout||viewing)&&<YearCapsule expanded={yearExpanded} onCollapse={()=>setYearExpanded(false)} launcherRef={yearButton} lighting={light.enabled} year={history.year} years={history.years} onYearChange={switchSeason} disabled={!library.ready||library.saving||exporting||dragging}/>}
     {light.enabled&&<BoardLighting/>}
     <BoardActions viewing={viewing} exitControl={{onExit:exitViewing,buttonRef:viewingExitButton,disabled:exporting||dragging||seasonTransition.busy}} decorationOpen={decorationOpen} libraryOpen={recordPanel?.mode==='library'} onDecoration={()=>decorationOpen?closePanel():openDecoration('board')} onLibrary={()=>openRecord({mode:'library'})} yearControl={touchLayout&&!viewing?undefined:{expanded:yearExpanded,onToggle:()=>setYearExpanded(value=>!value),buttonRef:yearButton}}/>
@@ -577,7 +580,7 @@ export default function App() {
       if(decorationScope==='selection' && !target) return
       commit(changeDecoration(board,change,target??undefined))
     }}/>}
-    <main onContextMenu={e=>{e.preventDefault();if(viewing||gesture.current||touchGestures.active()||(e.nativeEvent as PointerEvent).pointerType==='touch')return;layerTarget.cancel();setCanvasMenu({x:e.clientX,y:e.clientY})}} className={`board-viewport ${space?'space-mode':''} ${dragging?'is-dragging':''} ${tool==='connect'?'connect-mode':''} ${layerTarget.mode?'layer-target-mode':''}`} ref={viewport} onDoubleClickCapture={e=>{if(tool==='connect'){e.preventDefault();e.stopPropagation();setTool('select');setConnecting(null);setToast(msg("App.056"))}}}  onPointerMoveCapture={e=>{if(!touchGestures.move(e))layerTarget.onMove(e)}} onPointerUpCapture={e=>touchGestures.up(e)} onPointerCancelCapture={e=>touchGestures.up(e,true)} onLostPointerCaptureCapture={e=>touchGestures.lost(e)} onPointerLeave={()=>{if(layerTarget.mode)layerTarget.clearHover()}} onPointerDownCapture={e=>{if(touchGestures.down(e))return;if(e.button===2){e.stopPropagation();return}if(layerTarget.mode){layerTarget.onDown(e);return}if(!viewing&&e.ctrlKey&&e.button===0&&tool==='select'&&!space)startGesture(e)}} onPointerDown={e=>startGesture(e)} onPointerMove={moveGesture} onPointerUp={()=>endGesture()} onPointerCancel={()=>endGesture(true)} onLostPointerCapture={()=>endGesture(viewing)}>
+    <main tabIndex={-1} onKeyDown={e=>{if(e.key==='ContextMenu'||e.shiftKey&&e.key==='F10'){e.preventDefault();e.stopPropagation();if(touchGestures.active())return;const rect=e.currentTarget.getBoundingClientRect();openCanvasMenuAt(rect.left+rect.width/2,rect.top+rect.height/2)}}} onContextMenu={e=>{e.preventDefault();if(touchGestures.active()||(e.nativeEvent as PointerEvent).pointerType==='touch')return;openCanvasMenuAt(e.clientX,e.clientY)}} className={`board-viewport ${space?'space-mode':''} ${dragging?'is-dragging':''} ${tool==='connect'?'connect-mode':''} ${layerTarget.mode?'layer-target-mode':''}`} ref={viewport} onDoubleClickCapture={e=>{if(tool==='connect'){e.preventDefault();e.stopPropagation();setTool('select');setConnecting(null);setToast(msg("App.056"))}}}  onPointerMoveCapture={e=>{if(!touchGestures.move(e))layerTarget.onMove(e)}} onPointerUpCapture={e=>touchGestures.up(e)} onPointerCancelCapture={e=>touchGestures.up(e,true)} onLostPointerCaptureCapture={e=>touchGestures.lost(e)} onPointerLeave={()=>{if(layerTarget.mode)layerTarget.clearHover()}} onPointerDownCapture={e=>{if(touchGestures.down(e))return;if(e.button===2){e.stopPropagation();return}if(layerTarget.mode){layerTarget.onDown(e);return}if(!viewing&&e.ctrlKey&&e.button===0&&tool==='select'&&!space)startGesture(e)}} onPointerDown={e=>startGesture(e)} onPointerMove={moveGesture} onPointerUp={()=>endGesture()} onPointerCancel={()=>endGesture(true)} onLostPointerCapture={()=>endGesture(viewing)}>
       <div className="season-canvas-layer" ref={canvasLayer}>
       <CanvasBackground id={board.backgroundStyle} view={view}/>
       <BoardLightWash/>
@@ -609,7 +612,7 @@ export default function App() {
       </div>
       </div>
     </main>
-    {!viewing&&canvasMenu&&<CanvasContextMenu position={canvasMenu} snapEnabled={snapEnabled} onToggle={toggleSnap} onClose={closeCanvasMenu} canClear={canClear} onClear={()=>{closeCanvasMenu();setModal('clear')}}/>}
+    {!viewing&&canvasMenu&&<CanvasContextMenu position={canvasMenu} snapEnabled={snapEnabled} onToggle={toggleSnap} onClose={closeCanvasMenu} canClear={canClear} onClear={()=>{closeCanvasMenu();setModal('clear')}} canView={library.ready&&!library.saving&&!exporting&&!dragging&&!seasonTransition.busy} onViewing={()=>{closeCanvasMenu();toggleViewing()}}/>}
     <ToolPalette inactive={viewing} multiSelect={multiSelect} onMultiSelect={()=>{setMultiSelect(value=>!value);setTool('select');setConnecting(null);closePanel()}} tool={tool} onSelect={()=>{setMultiSelect(false);setTool('select');setConnecting(null)}} onConnect={()=>{setMultiSelect(false);setTool(tool==='connect'?'select':'connect');setConnecting(null);setSelected(null);setSelectedThread(null)}} onAdd={openAdd}/>
     {layerTarget.mode&&<div className="connection-hint layer-target-hint" data-layer-target-hint role="status"><span>{layerTarget.target?tr("App.045",{v1:board.items.find(i=>i.id===layerTarget.target)?.title.replaceAll('\n',' ')||tr("App.044"),v2:layerTarget.mode.action==='above'?tr("App.042"):tr("App.041")}):tr("App.043",{v1:layerTarget.mode.action==='above'?tr("App.042"):tr("App.041")})}<small>{tr("App.040")}</small></span><button type="button" onClick={layerTarget.cancel} aria-label={tr("App.039")}><X size={16}/></button></div>}
     <HintGroup><div className="history-controls" data-history={historyTick} inert={viewing} aria-hidden={viewing||undefined}><HintButton hint={tr("App.038")} aria-label={tr("App.037")} disabled={viewing||!history.canUndo || dragging||seasonTransition.busy} onClick={undo}><Undo2 size={17}/></HintButton><span/><HintButton hint={tr("App.036")} aria-label={tr("App.035")} disabled={viewing||!history.canRedo || dragging||seasonTransition.busy} onClick={redo}><Redo2 size={17}/></HintButton></div></HintGroup>

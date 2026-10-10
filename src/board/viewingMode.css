@@ -1,10 +1,6 @@
-.viewing-toggle{display:flex;align-items:center;justify-content:center;width:44px;height:44px;flex-shrink:0;border-radius:10px;color:var(--ui-forest);transition:background .18s,box-shadow .18s}
-.viewing-toggle:hover{background:var(--ui-hover)}
-.viewing-toggle[aria-pressed=true]{background:var(--ui-forest);color:var(--ui-paper);box-shadow:0 2px 8px #153d3126}
-.viewing-toggle:focus-visible{outline:2px solid var(--ui-forest);outline-offset:3px}
-.viewing-toggle:disabled{opacity:.45;cursor:default}
 /* Resolve the normal header height on :root, before viewing overrides it on the shell. */
 :root{--viewing-header-height:var(--ui-topbar-height)}
+.board-viewport:focus-visible{outline:none}
 .app-shell>.topbar{position:absolute;top:0;left:0;right:0;height:var(--viewing-header-height);opacity:1;transform:translateY(0);transition:transform 280ms cubic-bezier(.22,.61,.36,1),opacity 240ms ease,visibility 0s}
 .app-shell :is(.tool-palette,.history-controls,.bottom-hint){opacity:1;transition:opacity 240ms ease,visibility 0s}
 .app-shell .board-actions{transition:top 280ms cubic-bezier(.22,.61,.36,1)}
@@ -34,5 +30,5 @@
   .is-viewing .year-capsule-stage[data-lighting]{--year-capsule-offset:max(calc(60px + env(safe-area-inset-top)),calc(var(--board-lamp-height) + 16px + env(safe-area-inset-top)))}
 }
 @media(prefers-reduced-motion:reduce){
-  .viewing-toggle,.app-shell>.topbar,.app-shell :is(.tool-palette,.history-controls,.bottom-hint,.board-actions),.app-shell .board-actions :is(.board-action-editing,.board-action-exit){transition:none;transition-delay:0s}
+  .app-shell>.topbar,.app-shell :is(.tool-palette,.history-controls,.bottom-hint,.board-actions),.app-shell .board-actions :is(.board-action-editing,.board-action-exit){transition:none;transition-delay:0s}
 }

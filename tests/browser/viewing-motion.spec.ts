@@ -12,17 +12,25 @@ async function openBoard(page:Page){
   })
   await page.goto('/')
   await page.locator('.records-loading').waitFor({state:'hidden'})
-  await expect(page.getByRole('button',{name:'进入观赏模式',exact:true})).toBeEnabled()
+  await expect(page.locator('.topbar').getByRole('button',{name:'进入观赏模式',exact:true})).toHaveCount(0)
+}
+
+async function openViewingMenu(page:Page){
+  await page.locator('.board-viewport').click({button:'right',position:{x:12,y:180}})
+  const entry=page.getByRole('menuitem',{name:'进入观赏模式',exact:true})
+  await expect(entry).toBeEnabled()
+  return entry
 }
 
 // Capture real intermediate frames, rather than just checking the final CSS rules.
 async function transitionFrames(page:Page,entering:boolean){
+  if(entering)await openViewingMenu(page)
   return page.evaluate(async entering=>{
     const scene=document.querySelector<HTMLElement>('.scene')!
     const header=document.querySelector<HTMLElement>('.topbar')!
     const palette=document.querySelector<HTMLElement>('.tool-palette')!
     const exit=document.querySelector<HTMLButtonElement>('.board-action-exit')!
-    const trigger=document.querySelector<HTMLButtonElement>(entering?'.viewing-toggle':'.board-action-exit')!
+    const trigger=document.querySelector<HTMLButtonElement>(entering?'.canvas-viewing-action[role="menuitem"]':'.board-action-exit')!
     const before=scene.style.cssText
     trigger.click()
     const samples=[]
@@ -61,7 +69,7 @@ test('viewing fades and lifts the chrome in both directions without moving the c
   expect(exited.samples[1].y).toBeLessThan(0)
   for(const sample of exited.samples){expect(sample.camera).toBe(exited.before);expect(sample.exitInert).toBe(true)}
   expect(exited.samples.at(-1)!.header).toBe(1)
-  await expect(page.locator('.viewing-toggle')).toBeFocused()
+  await expect(page.locator('.board-viewport')).toBeFocused()
   await expect(page.locator('.board-action-exit')).toBeHidden()
 })
 
@@ -69,13 +77,17 @@ test('rapid reversals settle correctly, and fading controls cannot steal focus',
   await page.emulateMedia({reducedMotion:'no-preference'})
   await openBoard(page)
   const camera=await page.locator('.scene').getAttribute('style')
+  await openViewingMenu(page)
   await page.evaluate(async()=>{
     const wait=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms))
-    document.querySelector<HTMLButtonElement>('.viewing-toggle')!.click()
+    document.querySelector<HTMLButtonElement>('.canvas-viewing-action[role="menuitem"]')!.click()
     await wait(80)
     document.querySelector<HTMLButtonElement>('.board-action-exit')!.click()
     await wait(70)
-    document.querySelector<HTMLButtonElement>('.viewing-toggle')!.click()
+    const viewport=document.querySelector<HTMLElement>('.board-viewport')!,bounds=viewport.getBoundingClientRect()
+    viewport.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,button:2,clientX:bounds.x+12,clientY:bounds.y+180}))
+    await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()))
+    document.querySelector<HTMLButtonElement>('.canvas-viewing-action[role="menuitem"]')!.click()
   })
   await expect(page.locator('.topbar')).toBeHidden()
   await expect(page.locator('.tool-palette')).toBeHidden()
@@ -96,7 +108,7 @@ test('reduced motion switches immediately and retains the mobile layout and came
   await page.emulateMedia({reducedMotion:'reduce'})
   await openBoard(page)
   const camera=await page.locator('.scene').getAttribute('style')
-  await page.getByRole('button',{name:'进入观赏模式',exact:true}).click()
+  await (await openViewingMenu(page)).click()
   await expect(page.locator('.topbar')).toBeHidden()
   await expect(page.locator('.tool-palette')).toBeHidden()
   await expect(page.locator('.board-action-exit')).toHaveCSS('opacity','1')
@@ -107,4 +119,5 @@ test('reduced motion switches immediately and retains the mobile layout and came
   await page.getByRole('button',{name:'退出观赏模式',exact:true}).click()
   await expect(page.locator('.topbar')).toHaveCSS('opacity','1')
   await expect(page.locator('.scene')).toHaveAttribute('style',camera!)
+  await expect(page.locator('.board-viewport')).toBeFocused()
 })

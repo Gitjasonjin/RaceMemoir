@@ -33,7 +33,7 @@
   .zoom-controls button{width:44px;height:44px}.zoom-controls .zoom-value{height:44px;border-radius:0 7px 7px 0}
   .zoom-controls button[aria-label=适应画布]{border-radius:7px 0 0 7px}
   .zoom-controls>span,.zoom-controls button[aria-label=放大],.zoom-controls button[aria-label=缩小]{display:none}
-  .bottom-hint{top:calc(118px + env(safe-area-inset-top));bottom:auto;left:8px;max-width:calc(100% - 16px);padding:0 8px;font-size:10px;gap:0;min-height:34px}.bottom-hint>span{line-height:18px}.bottom-hint button{width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
+  .bottom-hint{top:calc(118px + env(safe-area-inset-top));bottom:auto;left:8px;max-width:calc(100% - 16px);padding:0 0 0 8px;font-size:10px;gap:0;min-height:34px}.bottom-hint>span{line-height:18px}.bottom-hint button{width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
   .app-shell .selection-bar{bottom:calc(72px + env(safe-area-inset-bottom));left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100% - 16px);padding:5px;gap:2px;background:var(--ui-floating);border:1px solid var(--ui-border);box-shadow:var(--ui-toolbar-shadow);flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}
   .app-shell .selection-bar>*,.app-shell .selection-bar button{flex-shrink:0}.app-shell .selection-bar button{width:44px;height:44px}.selection-label{display:none}
   .app-shell .selection-bar .photo-line-action span{display:none}

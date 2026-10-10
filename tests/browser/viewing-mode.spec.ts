@@ -57,12 +57,33 @@ async function openBoard(page:Page){
   },legacyBoard)
   await page.goto('/')
   await ready(page)
+  await expect(page.locator('.topbar').getByRole('button',{name:'进入观赏模式',exact:true})).toHaveCount(0)
+}
+async function openViewingMenu(page:Page,name:string='进入观赏模式',touch=false){
+  const point=await page.locator('.board-viewport').evaluate(viewport=>{
+    const bounds=viewport.getBoundingClientRect()
+    for(const y of [180,bounds.height*.35,bounds.height*.6])for(const x of [12,bounds.width*.8,bounds.width*.5]){
+      const point={x:bounds.x+Math.min(x,bounds.width-12),y:bounds.y+Math.min(y,bounds.height-12)},target=document.elementFromPoint(point.x,point.y)
+      if(target&&viewport.contains(target)&&!target.closest('[data-board-item],[data-board-anchor],[data-board-thread],button,[data-ui-overlay],.empty-board'))return point
+    }
+    throw new Error('No blank canvas point is available for the viewing menu')
+  })
+  if(touch){
+    const cdp=await page.context().newCDPSession(page)
+    await sendTouch(cdp,'touchStart',[{id:1,...point}]);await page.waitForTimeout(600);await sendTouch(cdp,'touchEnd',[])
+    await cdp.detach()
+  }else await page.mouse.click(point.x,point.y,{button:'right'})
+  const entry=page.getByRole('menuitem',{name,exact:true})
+  await expect(entry).toBeVisible()
+  return entry
 }
 async function enter(page:Page,name:string='进入观赏模式'){
   const before=(await scene(page).getAttribute('style'))!
-  await button(page,name).click()
+  await (await openViewingMenu(page,name)).click()
   await expect(shell(page)).toHaveClass(/\bis-viewing\b/)
+  await expect(page.locator('.canvas-context-menu')).toHaveCount(0)
   await assertViewingLayout(page,labels.find(label=>label.enter===name)!.exit)
+  await expect(button(page,labels.find(label=>label.enter===name)!.exit)).toBeFocused()
   await expect(scene(page)).toHaveAttribute('style',before)
 }
 async function exit(page:Page,name:string='退出观赏模式'){
@@ -70,7 +91,8 @@ async function exit(page:Page,name:string='退出观赏模式'){
   await button(page,name).click()
   await expect(shell(page)).not.toHaveClass(/\bis-viewing\b/)
   await expect(page.locator('.topbar')).toBeVisible()
-  await expect(button(page,labels.find(label=>label.exit===name)!.enter)).toBeFocused()
+  await expect(page.locator('.board-viewport')).toHaveAttribute('tabindex','-1')
+  await expect(page.locator('.board-viewport')).toBeFocused()
   await expect(scene(page)).toHaveAttribute('style',before)
 }
 async function changeLanguage(page:Page,name:string){
@@ -179,7 +201,7 @@ test('photo, demo medal and note previews are read-only dialogs; Escape closes t
   await page.keyboard.press('Escape');await expect(shell(page)).not.toHaveClass(/\bis-viewing\b/)
   await expect(page.locator('.topbar')).toBeVisible()
   await expect(scene(page)).toHaveAttribute('style',editCamera)
-  await expect(button(page,'进入观赏模式')).toBeFocused()
+  await expect(page.locator('.board-viewport')).toBeFocused()
   await expect(page.locator('[data-record-panel],[data-decoration-panel]')).toHaveCount(0)
 })
 
@@ -238,7 +260,8 @@ test('season switching stays available in viewing and reload returns to editing 
   for(const season of saved.seasons)expect(Object.keys(season).sort()).toEqual(season.view?['board','view','year']:['board','year'])
   await page.reload();await ready(page)
   await expect(shell(page)).not.toHaveClass(/\bis-viewing\b/)
-  await expect(button(page,'进入观赏模式')).toBeVisible()
+  await expect(await openViewingMenu(page)).toBeEnabled()
+  await page.keyboard.press('Escape')
   await expect(page.locator('.tool-palette')).toBeVisible()
   expect(await activeBoard(page)).toEqual(before.seasons.find(season=>season.year===year)!.board)
 })
@@ -249,7 +272,7 @@ test('unsaved editing blocks entering viewing and keeps the draft until it is sa
   await item(page,'note').press('Enter')
   const draft=page.getByRole('textbox',{name:'写下你的记忆',exact:true})
   await draft.fill('进入观赏之前保留的草稿')
-  await button(page,'进入观赏模式').click()
+  await (await openViewingMenu(page)).click()
   await expect(shell(page)).not.toHaveClass(/\bis-viewing\b/)
   await expect(draft).toHaveValue('进入观赏之前保留的草稿')
   await expect(page.locator('.toast')).toContainText('请先保存或关闭编辑栏')
@@ -260,14 +283,28 @@ test('unsaved editing blocks entering viewing and keeps the draft until it is sa
   await expect(page.getByRole('dialog')).toContainText('进入观赏之前保留的草稿')
 })
 
-test('entering viewing is disabled while an edit drag is active',async({page})=>{
+test('an edit drag prevents opening the viewing menu until the drag ends',async({page})=>{
   await openBoard(page)
   const box=(await item(page,'note').boundingBox())!,x=box.x+box.width/2,y=box.y+box.height/2
   await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+22,y+18,{steps:4})
-  await expect(button(page,'进入观赏模式')).toBeDisabled()
+  await page.locator('.board-viewport').dispatchEvent('contextmenu',{button:2,clientX:x+22,clientY:y+18})
+  await expect(page.locator('.canvas-context-menu')).toHaveCount(0)
   await expect(shell(page)).not.toHaveClass(/\bis-viewing\b/)
   await page.mouse.up()
-  await expect(button(page,'进入观赏模式')).toBeEnabled()
+  await expect(await openViewingMenu(page)).toBeEnabled()
+})
+
+test('canvas keyboard menu shortcuts enter viewing and restore canvas focus on exit',async({page})=>{
+  await openBoard(page)
+  for(const key of ['ContextMenu','Shift+F10']){
+    await page.locator('.board-viewport').focus()
+    await page.keyboard.press(key)
+    const entry=page.getByRole('menuitem',{name:'进入观赏模式',exact:true})
+    await expect(entry).toBeVisible();await entry.click()
+    await expect(shell(page)).toHaveClass(/\bis-viewing\b/)
+    await expect(button(page,'退出观赏模式')).toBeFocused()
+    await exit(page)
+  }
 })
 
 test('all three languages translate viewing controls and previews without changing board content',async({page})=>{
@@ -301,7 +338,8 @@ test.describe('phone viewing',()=>{
       test.skip(browserName!=='chromium','Native touch dispatch uses the same Chromium CDP path as mobile-gestures.spec.ts.')
       await openBoard(page);await changeLanguage(page,label.language)
       const before=await activeBoard(page),geometry=await itemGeometry(page),editCamera=(await scene(page).getAttribute('style'))!
-      await button(page,label.enter).tap();await expect(shell(page)).toHaveClass(/\bis-viewing\b/)
+      await (await openViewingMenu(page,label.enter,true)).tap();await expect(shell(page)).toHaveClass(/\bis-viewing\b/)
+      await expect(page.locator('.canvas-context-menu')).toHaveCount(0)
       await assertViewingLayout(page,label.exit)
       await expect(scene(page)).toHaveAttribute('style',editCamera)
       await openYears(page)
@@ -344,7 +382,7 @@ test.describe('phone viewing',()=>{
       const exitCamera=(await scene(page).getAttribute('style'))!
       await button(page,label.exit).tap();await expect(shell(page)).not.toHaveClass(/\bis-viewing\b/)
       await expect(page.locator('.topbar')).toBeVisible()
-      await expect(button(page,label.enter)).toBeFocused()
+      await expect(page.locator('.board-viewport')).toBeFocused()
       await expect(scene(page)).toHaveAttribute('style',exitCamera)
       await cdp.detach()
     })
